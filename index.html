@@ -1,0 +1,2347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Swile OS CRM — Middle Market RJ (Supabase + GitHub Edition)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 9999px;
+    }
+    .swile-gradient {
+      background: linear-gradient(135deg, #6d28d9 0%, #db2777 100%);
+    }
+    .card-surface {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-fuchsia-600 selection:text-white">
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-xl bg-slate-900/95 border border-fuchsia-500/40 px-4 py-3 shadow-2xl backdrop-blur-md">
+    <div class="flex items-center gap-3">
+      <span id="toastIcon" class="text-lg">✅</span>
+      <p id="toastMessage" class="text-xs font-medium text-slate-100"></p>
+    </div>
+  </div>
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
+    <div class="mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl swile-gradient flex items-center justify-center font-extrabold text-white text-lg shadow-lg shadow-fuchsia-900/30">
+          S
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">Swile OS CRM</h1>
+            <span class="rounded-full bg-fuchsia-500/15 border border-fuchsia-500/30 px-2.5 py-0.5 text-[11px] font-semibold text-fuchsia-300">
+              Middle Market RJ
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Evolução Fields OS (Takeat) • Arquitetura Supabase PostgreSQL + GitHub CI/CD</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Connection Badge -->
+        <button id="btnOpenSupabaseTab" type="button" onclick="switchTab('supabase')" class="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition">
+          <span id="dbStatusDot" class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="dbStatusLabel">Modo Local + Supabase Ready</span>
+        </button>
+
+        <button id="btnQuickNewAccount" type="button" onclick="openAccountModal()" class="rounded-lg swile-gradient px-3.5 py-1.5 text-xs font-semibold text-white shadow-md hover:opacity-95 transition">
+          + Nova Conta RJ
+        </button>
+
+        <button id="btnQuickExport" type="button" onclick="exportCrmCsv()" class="rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 transition">
+          ⬇ Exportar CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <div class="mx-auto max-w-7xl px-4 overflow-x-auto custom-scroll">
+      <nav class="flex items-center gap-1 border-t border-slate-800/80 pt-2 pb-2 text-xs font-semibold">
+        <button id="tabBtn-cockpit" type="button" onclick="switchTab('cockpit')" class="tab-nav-btn rounded-lg px-3.5 py-2 transition bg-fuchsia-600 text-white">
+          🎯 Hoje & Cockpit RJ
+        </button>
+        <button id="tabBtn-accounts" type="button" onclick="switchTab('accounts')" class="tab-nav-btn rounded-lg px-3.5 py-2 transition text-slate-300 hover:bg-slate-800">
+          🏢 CRM — Contas (15)
+        </button>
+        <button id="tabBtn-pipeline" type="button" onclick="switchTab('pipeline')" class="tab-nav-btn rounded-lg px-3.5 py-2 transition text-slate-300 hover:bg-slate-800">
+          📊 Pipeline Kanban (TPV)
+        </button>
+        <button id="tabBtn-followups" type="button" onclick="switchTab('followups')" class="tab-nav-btn rounded-lg px-3.5 py-2 transition text-slate-300 hover:bg-slate-800">
+          📅 Follow-ups & Rotas RJ
+        </button>
+        <button id="tabBtn-playbook" type="button" onclick="switchTab('playbook')" class="tab-nav-btn rounded-lg px-3.5 py-2 transition text-slate-300 hover:bg-slate-800">
+          🗝️ Playbook CHAVE & Objeções
+        </button>
+        <button id="tabBtn-supabase" type="button" onclick="switchTab('supabase')" class="tab-nav-btn rounded-lg px-3.5 py-2 transition text-emerald-300 hover:bg-slate-800">
+          ⚡ Supabase & GitHub Setup
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-5 space-y-6">
+
+    <!-- =================================================================== -->
+    <!-- TAB 1: COCKPIT & HOJE                                               -->
+    <!-- =================================================================== -->
+    <section id="view-cockpit" class="space-y-6">
+      <!-- Breaking 2026 Market Triggers Banner -->
+      <div class="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-r from-violet-950/80 via-slate-900 to-fuchsia-950/70 p-4 shadow-lg">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="rounded bg-fuchsia-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">Gatilhos Quentes Out/Nov 2026</span>
+              <span class="text-xs font-semibold text-fuchsia-200">Munição de Abordagem Middle Market RJ</span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-200">
+              <strong>1) Compra da Caju pelo iFood (20/10/2026):</strong> Janela aberta para migrar clientes Caju/iFood preocupados com unificação de sistemas e suporte.
+              <strong class="ml-2">2) Interoperabilidade Plena do PAT (Nov/2026):</strong> Toda maquininha passa a aceitar qualquer bandeira (teto MDR 3,6%), derrubando a trava das tradicionais (Alelo, Pluxee, Ticket, VR).
+            </p>
+          </div>
+          <button id="btnJumpToPlaybook" type="button" onclick="switchTab('playbook')" class="shrink-0 rounded-xl bg-white/10 border border-white/20 px-3.5 py-2 text-xs font-semibold text-white hover:bg-white/20 transition">
+            Ver Scripts de Ataque →
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card-surface rounded-2xl p-4">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span>Contas Mapeadas (RJ)</span>
+            <span class="rounded-md bg-violet-500/15 px-2 py-0.5 text-[11px] text-violet-300 font-semibold">ICP 100–1.000 vidas</span>
+          </div>
+          <p id="kpiTotalAccounts" class="mt-2 text-2xl font-extrabold text-white">15</p>
+          <p id="kpiHotAccountsSub" class="mt-1 text-xs text-slate-400">11 prioridade alta • 8 quentes</p>
+        </div>
+
+        <div class="card-surface rounded-2xl p-4">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span>Vidas / Cartões Ativos</span>
+            <span class="rounded-md bg-fuchsia-500/15 px-2 py-0.5 text-[11px] text-fuchsia-300 font-semibold">Mastercard Swile</span>
+          </div>
+          <p id="kpiTotalLives" class="mt-2 text-2xl font-extrabold text-white">6.820</p>
+          <p id="kpiAvgTicketSub" class="mt-1 text-xs text-slate-400">Ticket médio: R$ 889 / vida</p>
+        </div>
+
+        <div class="card-surface rounded-2xl p-4">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span>Potencial Recarga (TPV/Mês)</span>
+            <span class="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-300 font-semibold">Taxa Zero Flex</span>
+          </div>
+          <p id="kpiMonthlyTpv" class="mt-2 text-2xl font-extrabold text-emerald-400">R$ 5.976.700</p>
+          <p id="kpiAnnualTpvSub" class="mt-1 text-xs text-slate-400">Anualizado: R$ 71,72M / ano</p>
+        </div>
+
+        <div class="card-surface rounded-2xl p-4">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span>Forecast Pipeline Ponderado</span>
+            <span class="rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-300 font-semibold">TPV × Prob.</span>
+          </div>
+          <p id="kpiWeightedForecast" class="mt-2 text-2xl font-extrabold text-amber-300">R$ 1.842.000</p>
+          <p id="kpiActiveOppsSub" class="mt-1 text-xs text-slate-400">7 oportunidades ativas no funil</p>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="card-surface rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-sm font-bold text-white">Vidas Ativas por Operadora Atual (Leads RJ)</h2>
+              <p class="text-xs text-slate-400">Onde estão concentrados os cartões que vamos migrar para a Swile</p>
+            </div>
+            <span class="text-[11px] text-slate-400">Clique nas abas para filtrar</span>
+          </div>
+          <div class="relative h-64">
+            <canvas id="chartProviders"></canvas>
+          </div>
+        </div>
+
+        <div class="card-surface rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-sm font-bold text-white">Potencial de TPV Mensal por Polo Corporativo (RJ)</h2>
+              <p class="text-xs text-slate-400">Distribuição geográfica para planejamento de Field Sales & Inside</p>
+            </div>
+            <span class="text-[11px] text-slate-400">Em R$ / mês</span>
+          </div>
+          <div class="relative h-64">
+            <canvas id="chartPolos"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cockpit Operational Grid: Priority Follow-ups + Top Accounts -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Left: Next Actions (Single Source of Truth) -->
+        <div class="lg:col-span-6 card-surface rounded-2xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h2 class="text-sm font-bold text-white">⚡ Fonte Única de Próxima Ação (Follow-ups de Hoje)</h2>
+                <p class="text-xs text-slate-400">Correção #2 da Seção 9: Toda próxima ação centralizada em Follow-ups</p>
+              </div>
+              <button id="btnAddFollowupCockpit" type="button" onclick="openFollowupModal()" class="rounded-lg bg-slate-800 border border-slate-700 px-2.5 py-1 text-xs font-medium text-fuchsia-300 hover:bg-slate-700">
+                + Novo Follow-up
+              </button>
+            </div>
+            <div id="cockpitFollowupsList" class="space-y-2.5 max-h-80 overflow-y-auto custom-scroll pr-1"></div>
+          </div>
+        </div>
+
+        <!-- Right: Top Commercial Score Accounts -->
+        <div class="lg:col-span-6 card-surface rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-sm font-bold text-white">🔥 Top Contas por Score Comercial ICP (0–100)</h2>
+              <p class="text-xs text-slate-400">Fórmula automática: Vidas + Prioridade + Vulnerabilidade do Cartão Atual</p>
+            </div>
+            <button id="btnSeeAllAccountsCockpit" type="button" onclick="switchTab('accounts')" class="text-xs font-semibold text-fuchsia-400 hover:underline">
+              Ver todas as 15 →
+            </button>
+          </div>
+          <div id="cockpitTopAccountsList" class="space-y-2.5 max-h-80 overflow-y-auto custom-scroll pr-1"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 2: CRM — CONTAS MIDDLE MARKET RJ                                -->
+    <!-- =================================================================== -->
+    <section id="view-accounts" class="hidden space-y-4">
+      <div class="card-surface rounded-2xl p-4 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-bold text-white">Base de Contas & Leads Qualificados — Rio de Janeiro</h2>
+            <p class="text-xs text-slate-400">Fonte Única de Verdade (Geografia, Cartão Atual, Vidas, TPV Mensal/Anual, Dores do RH e Reclamações de Usuários)</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btnNewAccountTable" type="button" onclick="openAccountModal()" class="rounded-lg swile-gradient px-3 py-1.5 text-xs font-semibold text-white">
+              + Cadastrar Empresa
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label for="searchAccounts" class="block text-[11px] font-medium text-slate-400 mb-1">Buscar Empresa, Bairro ou Dor</label>
+            <input id="searchAccounts" type="text" oninput="renderAccountsTable()" placeholder="Ex: Beep Saúde, Barra, Caju, obras..." class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-fuchsia-500 focus:outline-none" />
+          </div>
+          <div>
+            <label for="filterProvider" class="block text-[11px] font-medium text-slate-400 mb-1">Cartão / Operadora Atual</label>
+            <select id="filterProvider" onchange="renderAccountsTable()" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-fuchsia-500 focus:outline-none">
+              <option value="ALL">Todas as Operadoras</option>
+              <option value="Caju">Caju (Adquirida p/ iFood Out/26)</option>
+              <option value="Flash">Flash Benefícios</option>
+              <option value="iFood Benefícios">iFood Benefícios</option>
+              <option value="Alelo">Alelo</option>
+              <option value="Pluxee (ex-Sodexo)">Pluxee (ex-Sodexo)</option>
+              <option value="VR Benefícios">VR Benefícios</option>
+              <option value="Ticket">Ticket</option>
+            </select>
+          </div>
+          <div>
+            <label for="filterPolo" class="block text-[11px] font-medium text-slate-400 mb-1">Polo Empresarial RJ</label>
+            <select id="filterPolo" onchange="renderAccountsTable()" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-fuchsia-500 focus:outline-none">
+              <option value="ALL">Todos os Polos do RJ</option>
+              <option value="Centro / Porto Maravilha">Centro / Porto Maravilha</option>
+              <option value="Barra da Tijuca / Recreio">Barra da Tijuca / Recreio</option>
+              <option value="Zona Sul / Barra">Zona Sul / Barra</option>
+              <option value="Zona Norte / Del Castilho">Zona Norte / Del Castilho / São Cristóvão</option>
+              <option value="Niterói / Região Metropolitana">Niterói / Região Metropolitana</option>
+              <option value="Zona Oeste - Campo Grande">Zona Oeste - Campo Grande</option>
+            </select>
+          </div>
+          <div>
+            <label for="filterPriority" class="block text-[11px] font-medium text-slate-400 mb-1">Prioridade ICP</label>
+            <select id="filterPriority" onchange="renderAccountsTable()" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-fuchsia-500 focus:outline-none">
+              <option value="ALL">Todas as Prioridades</option>
+              <option value="Alta">🔴 Alta Prioridade</option>
+              <option value="Média">🟡 Média Prioridade</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto custom-scroll rounded-xl border border-slate-800">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 bg-slate-900/90 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <th class="py-3 px-3">Empresa & Setor</th>
+                <th class="py-3 px-3">Polo / Bairro (RJ)</th>
+                <th class="py-3 px-3">Decisor & Contato RH</th>
+                <th class="py-3 px-3 text-right">Vidas Ativas</th>
+                <th class="py-3 px-3 text-right">TPV Mensal</th>
+                <th class="py-3 px-3">Cartão Atual</th>
+                <th class="py-3 px-3 text-center">Score ICP</th>
+                <th class="py-3 px-3">Próxima Melhor Ação</th>
+                <th class="py-3 px-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="accountsTableBody" class="divide-y divide-slate-800/70 text-xs"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 3: PIPELINE KANBAN (OPORTUNIDADES & FORECAST TPV)               -->
+    <!-- =================================================================== -->
+    <section id="view-pipeline" class="hidden space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 card-surface rounded-2xl p-4">
+        <div>
+          <h2 class="text-base font-bold text-white">Pipeline Comercial B2B — Oportunidades Middle Market RJ</h2>
+          <p class="text-xs text-slate-400">Ponte numérica automática (`Peso Estágio` 1 a 5) sincronizada com a Etapa do Funil da Conta no CRM</p>
+        </div>
+        <button id="btnOpenNewOppModal" type="button" onclick="openOpportunityModal()" class="rounded-lg swile-gradient px-3.5 py-2 text-xs font-semibold text-white">
+          + Nova Oportunidade no Pipeline
+        </button>
+      </div>
+
+      <div id="kanbanBoardContainer" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3"></div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 4: FOLLOW-UPS, AGENDA & ROTAS FIELD RJ                          -->
+    <!-- =================================================================== -->
+    <section id="view-followups" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Follow-ups list -->
+        <div class="lg:col-span-7 card-surface rounded-2xl p-4 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-base font-bold text-white">Central de Follow-ups & Cadência (Fonte Única)</h2>
+              <p class="text-xs text-slate-400">Nenhuma próxima ação fica espalhada em campos soltos: tudo nasce e conclui aqui</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <select id="filterFollowupStatus" onchange="renderFollowupsTab()" class="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white">
+                <option value="ALL">Todos os Status</option>
+                <option value="Pendente">⏳ Pendentes</option>
+                <option value="Concluído">✅ Concluídos</option>
+              </select>
+              <button id="btnNewFollowupTab" type="button" onclick="openFollowupModal()" class="rounded-lg swile-gradient px-3 py-1.5 text-xs font-semibold text-white">
+                + Agendar Ação
+              </button>
+            </div>
+          </div>
+
+          <div id="followupsFullList" class="space-y-2.5"></div>
+        </div>
+
+        <!-- Field Routes RJ -->
+        <div class="lg:col-span-5 card-surface rounded-2xl p-4 space-y-4">
+          <div>
+            <h2 class="text-base font-bold text-white">🗺️ Planejamento de Rotas Field Sales (RJ)</h2>
+            <p class="text-xs text-slate-400">Correção #3 da Seção 9: Rotas enxutas agrupadas por Polo Corporativo sem duplicar dados do CRM</p>
+          </div>
+          <div id="routesRjList" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 5: PLAYBOOK MÉTODO CHAVE, BATTLECARDS & COACH IA                -->
+    <!-- =================================================================== -->
+    <section id="view-playbook" class="hidden space-y-6">
+      <!-- Top Method CHAVE Cards -->
+      <div class="card-surface rounded-2xl p-4 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-bold text-white">🗝️ Método CHAVE Adaptado — Swile Middle Market RJ</h2>
+            <p class="text-xs text-slate-400">Do antigo script de salão de restaurantes (Takeat) para negociações B2B com RH Estratégico, DP e CFO</p>
+          </div>
+          <span class="rounded-full bg-fuchsia-500/20 border border-fuchsia-500/30 px-3 py-1 text-xs font-semibold text-fuchsia-300">
+            Conexão • Hipótese • Ancoragem • Virada • Extensão
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+          <div class="rounded-xl border border-slate-700/80 bg-slate-900/70 p-3 space-y-1.5">
+            <span class="inline-block rounded bg-violet-600/30 px-2 py-0.5 font-bold text-violet-300">1. C — Conexão</span>
+            <p class="font-semibold text-white">0 a 90 segundos</p>
+            <p class="text-slate-300">Nunca abra oferecendo "cartão sem taxa". Cite a vaga aberta na Gupy/Sólides, o programa interno (ex: BeInspired, CuideCy) ou a compra da Caju pelo iFood.</p>
+          </div>
+          <div class="rounded-xl border border-slate-700/80 bg-slate-900/70 p-3 space-y-1.5">
+            <span class="inline-block rounded bg-fuchsia-600/30 px-2 py-0.5 font-bold text-fuchsia-300">2. H — Hipótese</span>
+            <p class="font-semibold text-white">3 Perguntas de Diagnóstico</p>
+            <p class="text-slate-300">1) O que gera mais chamados no fechamento do mês? 2) Como premiam metas e apoiam Home Office hoje? 3) Qual o impacto de manter cartões separados em 2026?</p>
+          </div>
+          <div class="rounded-xl border border-slate-700/80 bg-slate-900/70 p-3 space-y-1.5">
+            <span class="inline-block rounded bg-pink-600/30 px-2 py-0.5 font-bold text-pink-300">3. A — Ancoragem</span>
+            <p class="font-semibold text-white">Valor antes da Condição</p>
+            <p class="text-slate-300">Faça o RH/CFO calcular o TPV mensal mal percebido pelo time e as horas do DP com 2ª via antes de mostrar Mastercard + X-Pay + Swile Shop + Taxa Zero.</p>
+          </div>
+          <div class="rounded-xl border border-slate-700/80 bg-slate-900/70 p-3 space-y-1.5">
+            <span class="inline-block rounded bg-amber-600/30 px-2 py-0.5 font-bold text-amber-300">4. V — Virada</span>
+            <p class="font-semibold text-white">Fechamento pelo "Como"</p>
+            <p class="text-slate-300">"Começamos unificando VA/VR e Home Office já na próxima recarga ou já incluímos a carteira de Premiação de Metas no mesmo cartão?"</p>
+          </div>
+          <div class="rounded-xl border border-slate-700/80 bg-slate-900/70 p-3 space-y-1.5">
+            <span class="inline-block rounded bg-emerald-600/30 px-2 py-0.5 font-bold text-emerald-300">5. E — Extensão</span>
+            <p class="font-semibold text-white">Adoção X-Pay & Expansão</p>
+            <p class="text-slate-300">Follow-up 7 dias pós-1ª carga, ativação de Apple/Google Pay pela equipe, expansão para carteiras de Educação/Saúde e indicação na ABRH-RJ.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Battlecards + Objection Matrix -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Battlecard Selector -->
+        <div class="lg:col-span-6 card-surface rounded-2xl p-4 space-y-4">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm font-bold text-white">⚔️ Battlecard por Concorrente & Script de Abordagem</h3>
+              <p class="text-xs text-slate-400">Selecione o cartão atual do lead para ver dores, reclamações e copiar a mensagem</p>
+            </div>
+            <select id="battlecardSelect" onchange="renderBattlecardDetail()" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-fuchsia-300">
+              <option value="Caju">Caju (Adquirida p/ iFood em 20/10/2026)</option>
+              <option value="Flash">Flash Benefícios</option>
+              <option value="iFood Benefícios">iFood Benefícios</option>
+              <option value="Alelo">Alelo (Tradicional Elo)</option>
+              <option value="Pluxee (ex-Sodexo)">Pluxee (ex-Sodexo)</option>
+              <option value="Ticket">Ticket / VR Benefícios</option>
+            </select>
+          </div>
+
+          <div id="battlecardDetailBox" class="space-y-3 text-xs"></div>
+        </div>
+
+        <!-- Objection Handling Matrix -->
+        <div class="lg:col-span-6 card-surface rounded-2xl p-4 space-y-4">
+          <div>
+            <h3 class="text-sm font-bold text-white">🛡️ Matriz de Objeções e Rejeições (Isolamento + Contorno)</h3>
+            <p class="text-xs text-slate-400">Clique em "Copiar Resposta" para usar no WhatsApp, e-mail ou durante a call</p>
+          </div>
+          <div id="objectionsListContainer" class="space-y-2.5 max-h-96 overflow-y-auto custom-scroll pr-1"></div>
+        </div>
+      </div>
+
+      <!-- AI Sales Coach Auditor Generator -->
+      <div class="card-surface rounded-2xl p-4 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-bold text-white">🤖 Gerador de Prompt — Coach IA Auditor do Método CHAVE (Swile)</h3>
+            <p class="text-xs text-slate-400">Cole o resumo de uma reunião ou call com um lead Middle Market RJ e gere o prompt de auditoria</p>
+          </div>
+          <button id="btnCopyCoachPrompt" type="button" onclick="copyCoachPrompt()" class="rounded-lg swile-gradient px-3.5 py-1.5 text-xs font-semibold text-white">
+            📋 Copiar Prompt de Auditoria
+          </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label for="coachPersonaSelect" class="block text-[11px] font-medium text-slate-400 mb-1">Persona na Reunião</label>
+            <select id="coachPersonaSelect" onchange="updateCoachPromptPreview()" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white">
+              <option value="RH Estratégico / Head de People (Foco em Cultura, Marca Empregadora e eNPS)">1. RH Estratégico / Head de People</option>
+              <option value="Coordenador(a) de DP / Benefícios (Foco em Operação, 2ª Via e PAT)">2. Coordenador(a) de DP / Benefícios</option>
+              <option value="CFO / Diretor(a) Financeiro ou Compras (Foco em Taxa Zero e Compliance PAT)">3. CFO / Compras & Jurídico</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label for="coachCallNotes" class="block text-[11px] font-medium text-slate-400 mb-1">Resumo da Conversa / Objeções que Surgiram</label>
+            <input id="coachCallNotes" type="text" oninput="updateCoachPromptPreview()" value="Conversei com a Diretora de Gente da Beep Saúde (900 vidas, usam iFood Benefícios). Ela gostou do X-Pay e da carteira Mobilidade para a frota, mas disse que o DP tem receio do trabalho de trocar 900 cartões." class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white" />
+          </div>
+        </div>
+        <textarea id="coachPromptOutput" readonly rows="5" class="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] text-slate-300"></textarea>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 6: SUPABASE & GITHUB SETUP                                      -->
+    <!-- =================================================================== -->
+    <section id="view-supabase" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Left: Live Supabase Connection -->
+        <div class="lg:col-span-5 card-surface rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-3 py-0.5 text-xs font-bold text-emerald-300">
+              Supabase PostgreSQL Live Connector
+            </span>
+            <span id="supabaseConnBadge" class="text-xs text-slate-400">Status: Cache Local Ativo</span>
+          </div>
+          <h2 class="text-base font-bold text-white">Conectar este CRM ao seu Projeto Supabase</h2>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Este aplicativo já carrega o SDK oficial <code class="text-emerald-300">@supabase/supabase-js</code>. Ao colar a URL e a Anon Key do seu projeto Supabase abaixo, todas as 15 contas do RJ, oportunidades e follow-ups são sincronizados diretamente com o seu banco PostgreSQL na nuvem.
+          </p>
+
+          <div class="space-y-3">
+            <div>
+              <label for="inputSupabaseUrl" class="block text-xs font-medium text-slate-300 mb-1">Supabase Project URL</label>
+              <input id="inputSupabaseUrl" type="url" placeholder="https://seu-projeto.supabase.co" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" />
+            </div>
+            <div>
+              <label for="inputSupabaseKey" class="block text-xs font-medium text-slate-300 mb-1">Supabase Anon / Public Key</label>
+              <input id="inputSupabaseKey" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" />
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button id="btnConnectSupabase" type="button" onclick="connectAndSyncSupabase()" class="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-bold text-white transition">
+                ⚡ Conectar & Sincronizar com Supabase
+              </button>
+              <button id="btnPushSeedToSupabase" type="button" onclick="pushLocalSeedToSupabase()" class="rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 transition">
+                ⬆️ Enviar 15 Contas RJ p/ o Banco
+              </button>
+              <button id="btnDisconnectSupabase" type="button" onclick="disconnectSupabase()" class="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs text-slate-300 transition">
+                Usar Modo Local
+              </button>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 space-y-2 text-xs">
+            <p class="font-bold text-white">📦 Como subir para o seu GitHub em 3 passos:</p>
+            <ol class="list-decimal list-inside space-y-1 text-slate-300">
+              <li>Baixe o pacote <code class="text-fuchsia-300">swile_os_crm_supabase_github.zip</code> entregue no chat.</li>
+              <li>Rode o SQL ao lado no <strong>SQL Editor</strong> do seu projeto no Supabase.</li>
+              <li>Faça <code class="text-emerald-300">git push origin main</code> para o seu repositório GitHub — o GitHub Actions (<code class="text-fuchsia-300">.github/workflows/deploy.yml</code>) publica o CRM automaticamente no GitHub Pages!</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Right: SQL Schema + Seed Ready to Copy -->
+        <div class="lg:col-span-7 card-surface rounded-2xl p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm font-bold text-white">🗄️ Script SQL para o Supabase (Schema + View 360° + RLS)</h3>
+              <p class="text-xs text-slate-400">Cole no SQL Editor do Supabase para criar todas as tabelas e fórmulas no PostgreSQL</p>
+            </div>
+            <button id="btnCopySqlSchema" type="button" onclick="copySqlSchemaText()" class="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-white transition">
+              📋 Copiar SQL Completo
+            </button>
+          </div>
+
+          <textarea id="sqlSchemaTextarea" readonly rows="16" class="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] text-emerald-300 custom-scroll"></textarea>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: DETALHE 360° DA CONTA / EDITAR / CRIAR CONTA                 -->
+  <!-- ===================================================================== -->
+  <div id="accountModal" class="fixed inset-0 z-40 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-3xl rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 id="accountModalTitle" class="text-base font-bold text-white">Raio-X 360° da Conta Middle Market RJ</h3>
+          <p class="text-xs text-slate-400">Fonte Única de Dados do CRM (Atualiza Pipeline, TPV e Score automaticamente)</p>
+        </div>
+        <button id="btnCloseAccountModal" type="button" onclick="closeAccountModal()" class="rounded-lg bg-slate-800 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-700">
+          ✕ Fechar
+        </button>
+      </div>
+
+      <input id="accFormId" type="hidden" />
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div>
+          <label for="accFormCompany" class="block text-slate-400 mb-1">Empresa *</label>
+          <input id="accFormCompany" type="text" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white" />
+        </div>
+        <div>
+          <label for="accFormSector" class="block text-slate-400 mb-1">Setor / Vertical</label>
+          <input id="accFormSector" type="text" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white" />
+        </div>
+        <div>
+          <label for="accFormPolo" class="block text-slate-400 mb-1">Polo Empresarial RJ</label>
+          <select id="accFormPolo" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white">
+            <option value="Centro / Porto Maravilha">Centro / Porto Maravilha</option>
+            <option value="Barra da Tijuca / Recreio">Barra da Tijuca / Recreio</option>
+            <option value="Zona Sul / Barra">Zona Sul / Barra</option>
+            <option value="Zona Norte / Del Castilho">Zona Norte / Del Castilho</option>
+            <option value="Niterói / Região Metropolitana">Niterói / Região Metropolitana</option>
+            <option value="Zona Oeste - Campo Grande">Zona Oeste - Campo Grande</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="accFormProvider" class="block text-slate-400 mb-1">Cartão / Operadora Atual</label>
+          <select id="accFormProvider" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white">
+            <option value="Caju">Caju</option>
+            <option value="Flash">Flash</option>
+            <option value="iFood Benefícios">iFood Benefícios</option>
+            <option value="Alelo">Alelo</option>
+            <option value="Pluxee (ex-Sodexo)">Pluxee (ex-Sodexo)</option>
+            <option value="VR Benefícios">VR Benefícios</option>
+            <option value="Ticket">Ticket</option>
+          </select>
+        </div>
+        <div>
+          <label for="accFormLives" class="block text-slate-400 mb-1">Nº de Vidas / Usuários no Cartão</label>
+          <input id="accFormLives" type="number" min="10" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white" />
+        </div>
+        <div>
+          <label for="accFormTicket" class="block text-slate-400 mb-1">Ticket Médio Mensal por Vida (R$)</label>
+          <input id="accFormTicket" type="number" min="100" step="10" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white" />
+        </div>
+
+        <div>
+          <label for="accFormDecisor" class="block text-slate-400 mb-1">Decisor Alvo (RH / DP / CFO)</label>
+          <input id="accFormDecisor" type="text" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white" />
+        </div>
+        <div>
+          <label for="accFormPhone" class="block text-slate-400 mb-1">Telefone / WhatsApp</label>
+          <input id="accFormPhone" type="text" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white" />
+        </div>
+        <div>
+          <label for="accFormEmail" class="block text-slate-400 mb-1">E-mail / Canal RH</label>
+          <input id="accFormEmail" type="text" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white" />
+        </div>
+
+        <div>
+          <label for="accFormPriority" class="block text-slate-400 mb-1">Prioridade ICP</label>
+          <select id="accFormPriority" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white">
+            <option value="Alta">Alta</option>
+            <option value="Média">Média</option>
+            <option value="Baixa">Baixa</option>
+          </select>
+        </div>
+        <div>
+          <label for="accFormInterest" class="block text-slate-400 mb-1">Nível de Interesse</label>
+          <select id="accFormInterest" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white">
+            <option value="Quente">Quente</option>
+            <option value="Morno">Morno</option>
+            <option value="Frio">Frio</option>
+          </select>
+        </div>
+        <div>
+          <label for="accFormStatus" class="block text-slate-400 mb-1">Status da Conta</label>
+          <select id="accFormStatus" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white">
+            <option value="Lead Mapeado">Lead Mapeado</option>
+            <option value="Outbound Iniciado">Outbound Iniciado</option>
+            <option value="Discovery RH/DP">Discovery RH/DP</option>
+            <option value="Demo / Diagnóstico Agendado">Demo / Diagnóstico Agendado</option>
+            <option value="Proposta & Simulação PAT">Proposta & Simulação PAT</option>
+            <option value="Fechado ✅">Fechado ✅</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+        <div>
+          <label for="accFormAddress" class="block text-slate-400 mb-1">Endereço Verificado no RJ</label>
+          <input id="accFormAddress" type="text" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white" />
+        </div>
+        <div>
+          <label for="accFormWebsite" class="block text-slate-400 mb-1">Site Oficial / Página Gupy ou Sólides</label>
+          <input id="accFormWebsite" type="url" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white" />
+        </div>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="accFormRhPains" class="block text-slate-400 mb-1">Principais Dores do RH & Empresa</label>
+          <textarea id="accFormRhPains" rows="2" class="w-full rounded-lg border border-slate-700 bg-slate-950 p-2 text-white"></textarea>
+        </div>
+        <div>
+          <label for="accFormUserPains" class="block text-slate-400 mb-1">Dores / Reclamações de Colaboradores (Reclame Aqui / App / Operação)</label>
+          <textarea id="accFormUserPains" rows="2" class="w-full rounded-lg border border-slate-700 bg-slate-950 p-2 text-white"></textarea>
+        </div>
+        <div>
+          <label for="accFormTrigger" class="block text-slate-400 mb-1">Gatilho de Abordagem Swile (Out/Nov 2026)</label>
+          <textarea id="accFormTrigger" rows="2" class="w-full rounded-lg border border-slate-700 bg-slate-950 p-2 text-fuchsia-200"></textarea>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-3">
+        <button id="btnCopyAccountPitch" type="button" onclick="copyPersonalizedPitchFromModal()" class="rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/10 px-3.5 py-2 text-xs font-semibold text-fuchsia-300 hover:bg-fuchsia-500/20">
+          💬 Copiar Mensagem CHAVE Personalizada p/ esta Conta
+        </button>
+        <div class="flex items-center gap-2">
+          <button id="btnCancelAccountModal" type="button" onclick="closeAccountModal()" class="rounded-lg bg-slate-800 px-3.5 py-2 text-xs text-slate-300">
+            Cancelar
+          </button>
+          <button id="btnSaveAccountModal" type="button" onclick="saveAccountFromModal()" class="rounded-lg swile-gradient px-4 py-2 text-xs font-bold text-white">
+            💾 Salvar Conta no CRM
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: NOVO FOLLOW-UP                                               -->
+  <!-- ===================================================================== -->
+  <div id="followupModal" class="fixed inset-0 z-40 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h3 class="text-sm font-bold text-white">📅 Agendar Próxima Ação (Follow-up)</h3>
+        <button id="btnCloseFollowupModal" type="button" onclick="closeFollowupModal()" class="text-xs text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="fuAccountSelect" class="block text-slate-400 mb-1">Empresa (Conta CRM)</label>
+          <select id="fuAccountSelect" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"></select>
+        </div>
+        <div>
+          <label for="fuTitleInput" class="block text-slate-400 mb-1">Ação / Objetivo do Contato</label>
+          <input id="fuTitleInput" type="text" placeholder="Ex: Enviar comparativo Taxa Zero + X-Pay p/ Diretora RH" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="fuDateInput" class="block text-slate-400 mb-1">Data Prevista</label>
+            <input id="fuDateInput" type="date" value="2026-10-30" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+          </div>
+          <div>
+            <label for="fuChannelSelect" class="block text-slate-400 mb-1">Canal</label>
+            <select id="fuChannelSelect" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white">
+              <option value="WhatsApp">💬 WhatsApp</option>
+              <option value="LinkedIn">💼 LinkedIn</option>
+              <option value="Ligação">📞 Ligação</option>
+              <option value="Visita Presencial">🤝 Visita Presencial RJ</option>
+              <option value="E-mail">📧 E-mail Consultivo</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btnCancelFollowup" type="button" onclick="closeFollowupModal()" class="rounded-lg bg-slate-800 px-3 py-1.5 text-xs text-slate-300">Cancelar</button>
+        <button id="btnSaveFollowup" type="button" onclick="saveFollowupFromModal()" class="rounded-lg swile-gradient px-4 py-1.5 text-xs font-bold text-white">Salvar Follow-up</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 3: NOVA OPORTUNIDADE NO PIPELINE                                -->
+  <!-- ===================================================================== -->
+  <div id="opportunityModal" class="fixed inset-0 z-40 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h3 class="text-sm font-bold text-white">📊 Criar Oportunidade no Pipeline</h3>
+        <button id="btnCloseOppModal" type="button" onclick="closeOpportunityModal()" class="text-xs text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="oppAccountSelect" class="block text-slate-400 mb-1">Conta do CRM</label>
+          <select id="oppAccountSelect" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"></select>
+        </div>
+        <div>
+          <label for="oppStageSelect" class="block text-slate-400 mb-1">Estágio Inicial</label>
+          <select id="oppStageSelect" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white">
+            <option value="1">1. Qualificado (SQL)</option>
+            <option value="2">2. Discovery & Vidas</option>
+            <option value="3">3. Demo Dash RH & App</option>
+            <option value="4">4. Proposta & Simulação PAT</option>
+            <option value="5">Fechado ✅</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="oppProbInput" class="block text-slate-400 mb-1">Probabilidade (%)</label>
+            <input id="oppProbInput" type="number" min="10" max="100" step="5" value="40" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+          </div>
+          <div>
+            <label for="oppCloseDateInput" class="block text-slate-400 mb-1">Previsão Fechamento</label>
+            <input id="oppCloseDateInput" type="date" value="2026-11-20" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white" />
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btnCancelOppModal" type="button" onclick="closeOpportunityModal()" class="rounded-lg bg-slate-800 px-3 py-1.5 text-xs text-slate-300">Cancelar</button>
+        <button id="btnSaveOppModal" type="button" onclick="saveOpportunityFromModal()" class="rounded-lg swile-gradient px-4 py-1.5 text-xs font-bold text-white">Criar no Kanban</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION LOGIC                                                     -->
+  <!-- ===================================================================== -->
+  <script>
+    // 1. INITIAL SEED DATA — 15 REAL MIDDLE MARKET ACCOUNTS IN RIO DE JANEIRO
+    const INITIAL_ACCOUNTS = [
+      {
+        id: "acc-1",
+        code: "LD-01",
+        company_name: "Nomus",
+        website: "https://www.nomus.com.br/",
+        sector: "Tecnologia / SaaS ERP Industrial",
+        polo_rj: "Centro / Porto Maravilha",
+        neighborhood: "Centro",
+        address: "Av. Prof. Pereira Reis, 76 - Centro, Rio de Janeiro - RJ, 20220-800",
+        phone: "+55 21 2018-0633",
+        email_rh: "nomus.gupy.io | comercial@nomus.com.br",
+        decision_maker_name: "Head de Pessoas & Cultura / CFO",
+        employees_count: 180,
+        active_card_users: 170,
+        avg_monthly_ticket: 920,
+        current_provider: "Caju",
+        current_model: "Multibenefícios (Visa)",
+        status: "Outbound Iniciado",
+        priority_icp: "Alta",
+        interest_level: "Quente",
+        rh_pains: "Gestão de equipe híbrida (sede RJ + remoto nacional); necessidade de manter employer branding forte para reter devs e CS; incerteza após venda da Caju para o iFood (20/10/2026).",
+        user_complaints: "Bloqueios preventivos pontuais na bandeira Visa, demora no suporte via chat em pico e ausência de clube robusto de descontos.",
+        swile_trigger_2026: "Abordar sobre a compra da Caju pelo iFood (20/10/2026): apresentar a Swile como alternativa global independente (B-Corp), com X-Pay + Swile Shop + Mastercard Surpreenda."
+      },
+      {
+        id: "acc-2",
+        code: "LD-02",
+        company_name: "Beep Saúde",
+        website: "https://beepsaude.com.br/",
+        sector: "HealthTech / Saúde Domiciliar",
+        polo_rj: "Zona Sul / Barra",
+        neighborhood: "Botafogo / Barra da Tijuca",
+        address: "Rua Voluntários da Pátria / Hub Barra da Tijuca, Rio de Janeiro - RJ",
+        phone: "+55 21 3577-3231",
+        email_rh: "beepsaude.gupy.io | gente@beepsaude.com.br",
+        decision_maker_name: "Diretora de Gente & Gestão / DHO",
+        employees_count: 950,
+        active_card_users: 900,
+        avg_monthly_ticket: 880,
+        current_provider: "iFood Benefícios",
+        current_model: "Multibenefícios (Elo/Visa)",
+        status: "Discovery RH/DP",
+        priority_icp: "Alta",
+        interest_level: "Quente",
+        rh_pains: "Operação intensiva de campo (enfermeiras, motoristas, frota na Barra e Zona Sul) combinada com time de BI; alta rotatividade operacional exige cartão virtual imediato.",
+        user_complaints: "Colaboradores externos reclamam que o iFood Benefícios foca em delivery/restaurantes do app e tem menor flexibilidade para mobilidade/combustível e farmácia.",
+        swile_trigger_2026: "Operação mista (campo + escritório): mostrar como o Swile Card Mastercard unifica VA/VR + Mobilidade/Combustível + Saúde com carteira digital X-Pay imediata."
+      },
+      {
+        id: "acc-3",
+        code: "LD-03",
+        company_name: "RJZ Cyrela",
+        website: "https://www.cyrela.com.br/",
+        sector: "Incorporação & Construção Civil",
+        polo_rj: "Barra da Tijuca / Recreio",
+        neighborhood: "Barra da Tijuca",
+        address: "Av. das Américas, 2480 / Av. José Silva de Azevedo Neto, 850 - Barra da Tijuca, RJ",
+        phone: "+55 21 3550-2501",
+        email_rh: "cyrela.gupy.io | Pessoas & Performance RJ",
+        decision_maker_name: "Gerente de Pessoas & Performance Regional RJ",
+        employees_count: 550,
+        active_card_users: 520,
+        avg_monthly_ticket: 810,
+        current_provider: "Flash",
+        current_model: "Multibenefícios (Mastercard/Visa)",
+        status: "Demo / Diagnóstico Agendado",
+        priority_icp: "Alta",
+        interest_level: "Quente",
+        rh_pains: "Gestão descentralizada entre escritório na Barra e dezenas de canteiros de obras pelo RJ (VR atual de R$ 36,65/dia); cobrança de módulos extras na Flash.",
+        user_complaints: "Relatos em obras sobre demora/cobrança em 2ª via de cartão físico e atendimento robotizado quando há bloqueio de senha.",
+        swile_trigger_2026: "Conectar com os programas internos 'CuideCy' e 'Plurall': demonstrar Taxa Zero real + Swile Shop (+1.000 lojas) e entrega ágil por centro de custo (obras RJ)."
+      },
+      {
+        id: "acc-4",
+        code: "LD-04",
+        company_name: "Bemobi",
+        website: "https://www.bemobi.com/",
+        sector: "Tecnologia / FinTech Pagamentos",
+        polo_rj: "Centro / Porto Maravilha",
+        neighborhood: "Saúde (Porto Maravilha)",
+        address: "Av. Barão de Tefé, 27 - Saúde, Rio de Janeiro - RJ, 20220-460",
+        phone: "+55 21 3529-9001",
+        email_rh: "bemobi.gupy.io | people@bemobi.com",
+        decision_maker_name: "VP / Head de People & Culture",
+        employees_count: 480,
+        active_card_users: 460,
+        avg_monthly_ticket: 1150,
+        current_provider: "Flash",
+        current_model: "Multibenefícios Flexível",
+        status: "Proposta & Simulação PAT",
+        priority_icp: "Alta",
+        interest_level: "Quente",
+        rh_pains: "Empresa GPTW com pacote robusto (VR/VA nas férias, Auxílio Home Office, programa interno BeInspired); busca inovação para reter talentos de IA e produto.",
+        user_complaints: "Time tech valoriza carteiras digitais e educação, mas sente falta de reconhecimento social integrado no mesmo app do benefício.",
+        swile_trigger_2026: "Conectar o programa 'BeInspired' da Bemobi às carteiras de Premiação Livre + recursos sociais e gamificados da Swile (certificada B-Corp)."
+      },
+      {
+        id: "acc-5",
+        code: "LD-05",
+        company_name: "BIP Brasil (Unidade RJ)",
+        website: "http://bipbrasil.com.br/",
+        sector: "Consultoria de Negócios & Tech",
+        polo_rj: "Centro / Porto Maravilha",
+        neighborhood: "Centro",
+        address: "Av. Rio Branco, 128 - 12º andar - Centro, Rio de Janeiro - RJ, 20040-900",
+        phone: "+55 21 3513-6410",
+        email_rh: "vemprabip.gupy.io | people.br@bip-group.com",
+        decision_maker_name: "Diretora / Head de People Brasil",
+        employees_count: 420,
+        active_card_users: 400,
+        avg_monthly_ticket: 1050,
+        current_provider: "Alelo",
+        current_model: "Tradicional c/ Flex (Elo)",
+        status: "Outbound Iniciado",
+        priority_icp: "Alta",
+        interest_level: "Morno",
+        rh_pains: "Vagas no Centro do RJ destacam tentativa de oferecer benefícios flexíveis, porém amarrados ao ecossistema tradicional Alelo (Elo); consultores alocados em Energia.",
+        user_complaints: "Consultores criticam rigidez da bandeira Elo em plataformas online/educação e interface legada do app Meu Alelo.",
+        swile_trigger_2026: "Usar o gancho da interoperabilidade do PAT (nov/2026): migrar da bandeira Elo para Mastercard Swile com 8 carteiras reais e X-Pay."
+      },
+      {
+        id: "acc-6",
+        code: "LD-06",
+        company_name: "LAMSA (Linha Amarela S/A)",
+        website: "http://www.lamsa.com.br/",
+        sector: "Infraestrutura & Concessões Rodoviárias",
+        polo_rj: "Zona Norte / Del Castilho",
+        neighborhood: "Água Santa / Del Castilho",
+        address: "Linha Amarela, s/n - Água Santa, Rio de Janeiro - RJ, 20745-150",
+        phone: "+55 800 024 2355",
+        email_rh: "trabalheconosco.vagas.com.br/lamsa",
+        decision_maker_name: "Gerente de RH e Administração",
+        employees_count: 680,
+        active_card_users: 650,
+        avg_monthly_ticket: 740,
+        current_provider: "Alelo",
+        current_model: "Tradicional (VA / VR Separados)",
+        status: "Lead Mapeado",
+        priority_icp: "Média",
+        interest_level: "Morno",
+        rh_pains: "Operação 24/7 na Linha Amarela; alto volume de admissões e gestão manual de 2ª via de cartões físicos separados (VA e VR).",
+        user_complaints: "Operadores reclamam quando o saldo acaba no VR e sobra no VA sem possibilidade de transferência entre carteiras.",
+        swile_trigger_2026: "Reduzir carga operacional do DP unificando VA e VR em 1 único cartão Mastercard 100% em conformidade com o PAT."
+      },
+      {
+        id: "acc-7",
+        code: "LD-07",
+        company_name: "Vasco da Gama SAF",
+        website: "https://www.vasco.com.br/",
+        sector: "Esportes, Entretenimento & Gestão SAF",
+        polo_rj: "Zona Norte / Del Castilho",
+        neighborhood: "São Cristóvão",
+        address: "Av. Roberto Dinamite, 10 - Vasco da Gama, Rio de Janeiro - RJ, 20921-060",
+        phone: "+55 21 2176-7373",
+        email_rh: "vascodagamasaf.vagas.solides.com.br",
+        decision_maker_name: "Head de Recursos Humanos / CFO SAF",
+        employees_count: 450,
+        active_card_users: 430,
+        avg_monthly_ticket: 780,
+        current_provider: "Pluxee (ex-Sodexo)",
+        current_model: "Tradicional (Elo)",
+        status: "Outbound Iniciado",
+        priority_icp: "Alta",
+        interest_level: "Quente",
+        rh_pains: "Profissionalização acelerada da gestão corporativa da SAF; necessidade de modernizar processos de DP e atrair profissionais de mercado.",
+        user_complaints: "Reclamações sobre confusão após o rebranding Sodexo->Pluxee, lentidão no app e falta de carteira digital Apple/Google Pay.",
+        swile_trigger_2026: "Modernização digital da SAF: trocar o modelo engessado Pluxee por Swile Mastercard (Taxa Zero + X-Pay + controle unificado)."
+      },
+      {
+        id: "acc-8",
+        code: "LD-08",
+        company_name: "Future Technologies (Future ATP)",
+        website: "https://futurevagas.vagas.solides.com.br/",
+        sector: "Tecnologia da Informação & Redes",
+        polo_rj: "Centro / Porto Maravilha",
+        neighborhood: "Centro",
+        address: "Centro Empresarial Rio de Janeiro - RJ",
+        phone: "+55 21 3500-0000",
+        email_rh: "futurevagas.vagas.solides.com.br",
+        decision_maker_name: "Gerente de Talentos & Pessoas (RH)",
+        employees_count: 310,
+        active_card_users: 300,
+        avg_monthly_ticket: 960,
+        current_provider: "Pluxee (ex-Sodexo)",
+        current_model: "Tradicional (VA/VR Elo)",
+        status: "Discovery RH/DP",
+        priority_icp: "Alta",
+        interest_level: "Quente",
+        rh_pains: "Empresa de TI contratando Arquitetos de Soluções e Engenheiros no RJ, mas ainda usando vale tradicional Pluxee, perdendo atratividade tech.",
+        user_complaints: "Profissionais de TI em regime híbrido criticam falta de auxílio Home Office e Educação integrados no mesmo cartão.",
+        swile_trigger_2026: "Destravar as 8 categorias Swile (incluindo Educação para certificações técnicas e Home Office) a custo zero de taxa."
+      },
+      {
+        id: "acc-9",
+        code: "LD-09",
+        company_name: "Fattu do Brasil (Unidade RJ)",
+        website: "https://fattu.gupy.io/",
+        sector: "Distribuição & Suprimentos Visuais",
+        polo_rj: "Zona Norte / Del Castilho",
+        neighborhood: "Região Metropolitana RJ",
+        address: "Unidade Logística e Comercial Rio de Janeiro - RJ",
+        phone: "+55 21 3000-0000",
+        email_rh: "fattu.gupy.io | DHO Fattu",
+        decision_maker_name: "Coordenadora de DHO",
+        employees_count: 290,
+        active_card_users: 280,
+        avg_monthly_ticket: 750,
+        current_provider: "Caju",
+        current_model: "Multibenefícios (Visa)",
+        status: "Lead Mapeado",
+        priority_icp: "Alta",
+        interest_level: "Morno",
+        rh_pains: "Empresa 9x GPTW com forte cultura ('Estilo Fattu', 'Baby Fattu'); usa Caju para VA/VR e controles separados para mimos.",
+        user_complaints: "Motoristas e equipe logística enfrentam bloqueios preventivos pontuais e sentem falta de descontos em grandes redes.",
+        swile_trigger_2026: "Conectar com 'Estilo Fattu' e 'Baby Fattu': centralizar mimos e benefícios na carteira Premiação Swile + Swile Shop pós-venda da Caju."
+      },
+      {
+        id: "acc-10",
+        code: "LD-10",
+        company_name: "Nasajon Sistemas",
+        website: "http://www.nasajon.com.br/",
+        sector: "Tecnologia / Software Contábil & Folha",
+        polo_rj: "Centro / Porto Maravilha",
+        neighborhood: "Centro",
+        address: "Av. Mal. Floriano, 19 - Sl 1003 - Centro, Rio de Janeiro - RJ, 20080-003",
+        phone: "+55 21 2213-9300",
+        email_rh: "nasajon.com.br | rh@nasajon.com.br",
+        decision_maker_name: "Diretora de Gente & Cultura (Boa Gente Boa)",
+        employees_count: 240,
+        active_card_users: 230,
+        avg_monthly_ticket: 900,
+        current_provider: "VR Benefícios",
+        current_model: "Tradicional / Transição Flex",
+        status: "Outbound Iniciado",
+        priority_icp: "Alta",
+        interest_level: "Quente",
+        rh_pains: "Tradicional empresa carioca de software de RH/folha (GPTW); busca experiência de ponta para o time interno 'Boa Gente Boa'.",
+        user_complaints: "Colaboradores híbridos no Centro querem Apple/Google Pay sem plástico e maior aceitação em farmácias e cursos.",
+        swile_trigger_2026: "Duplo ângulo: fechar as 230 vidas da Nasajon no RJ e abrir parceria de indicação cruzada para clientes de folha da Nasajon."
+      },
+      {
+        id: "acc-11",
+        code: "LD-11",
+        company_name: "Zinzane (Sede & Lojas RJ)",
+        website: "http://www.zinzane.com.br/",
+        sector: "Varejo de Moda & E-commerce",
+        polo_rj: "Zona Sul / Barra",
+        neighborhood: "Centro / Botafogo / Barra",
+        address: "Rua Gonçalves Lédo, 101 - Centro / Rio Sul / BarraShopping, RJ",
+        phone: "+55 21 99211-4065",
+        email_rh: "zinzane.com.br | Gente & Gestão",
+        decision_maker_name: "Head de Gente & Gestão / Operações",
+        employees_count: 850,
+        active_card_users: 780,
+        avg_monthly_ticket: 680,
+        current_provider: "Ticket",
+        current_model: "Tradicional (Elo)",
+        status: "Lead Mapeado",
+        priority_icp: "Alta",
+        interest_level: "Morno",
+        rh_pains: "Marca carioca com dezenas de lojas próprias no RJ; alto giro no varejo exige emissão ágil e pagamento de premiação de metas.",
+        user_complaints: "Equipes de shopping reclamam de taxas/demora de 2ª via e falta de um cartão único que receba também bônus de vendas.",
+        swile_trigger_2026: "Unificar Vale-Refeição/Alimentação + Premiação de Metas de Loja no mesmo Swile Card Mastercard com cartão virtual no dia 1."
+      },
+      {
+        id: "acc-12",
+        code: "LD-12",
+        company_name: "ICONIC Lubrificantes (Sede RJ)",
+        website: "https://www.iconiclubrificantes.com.br/",
+        sector: "Indústria Química & Energia",
+        polo_rj: "Barra da Tijuca / Recreio",
+        neighborhood: "Barra da Tijuca / São Cristóvão",
+        address: "Av. das Américas, 3434 - Bl 7, 4° andar - Barra da Tijuca, RJ",
+        phone: "+55 21 3906-1515",
+        email_rh: "iconiclubrificantes.com.br | RH RJ",
+        decision_maker_name: "Gerente de Remuneração e Benefícios",
+        employees_count: 620,
+        active_card_users: 600,
+        avg_monthly_ticket: 1020,
+        current_provider: "Pluxee (ex-Sodexo)",
+        current_model: "Tradicional Corporativo",
+        status: "Lead Mapeado",
+        priority_icp: "Média",
+        interest_level: "Morno",
+        rh_pains: "Operação dividida entre escritório híbrido na Barra da Tijuca e plantas industriais em São Cristóvão e Duque de Caxias.",
+        user_complaints: "Time da Barra quer flexibilidade (mobilidade/home office), enquanto fábrica prioriza atacadistas e farmácias.",
+        swile_trigger_2026: "Configuração personalizada por grupo no Dash RH: políticas distintas para fábrica e escritório em uma única fatura."
+      },
+      {
+        id: "acc-13",
+        code: "LD-13",
+        company_name: "Grant Thornton Brasil (RJ)",
+        website: "https://www.grantthornton.com.br/onde-estamos/rio-de-janeiro/",
+        sector: "Auditoria & Consultoria Tributária",
+        polo_rj: "Zona Sul / Barra",
+        neighborhood: "Flamengo",
+        address: "Praia do Flamengo, 154 - Conjuntos 401/402 - Flamengo, RJ",
+        phone: "+55 21 3512-4100",
+        email_rh: "grantthornton.com.br | Pessoas & Cultura RJ",
+        decision_maker_name: "Sócio Líder RJ / Gerente Pessoas & Cultura",
+        employees_count: 260,
+        active_card_users: 250,
+        avg_monthly_ticket: 1100,
+        current_provider: "Alelo",
+        current_model: "Tradicional (VA / VR)",
+        status: "Lead Mapeado",
+        priority_icp: "Média",
+        interest_level: "Morno",
+        rh_pains: "Equipe jovem de auditores com alta exigência de cursos/idiomas e deslocamento constante entre clientes no RJ.",
+        user_complaints: "Auditores reclamam que o benefício tradicional não aloca saldo em Educação/Mobilidade e não entra no Apple Pay.",
+        swile_trigger_2026: "Posicionar Swile Card como retenção de auditores: Mastercard + X-Pay + carteiras Educação e Mobilidade com compliance PAT."
+      },
+      {
+        id: "acc-14",
+        code: "LD-14",
+        company_name: "Camorim Serviços Marítimos",
+        website: "http://www.camorim.com.br/",
+        sector: "Logística Portuária & Offshore",
+        polo_rj: "Niterói / Região Metropolitana",
+        neighborhood: "Ilha da Conceição (Niterói)",
+        address: "R. Mario Trilha, 136 - Ilha da Conceição, Niterói - RJ, 24050-190",
+        phone: "+55 21 3906-0450",
+        email_rh: "camorim.com.br | RH Marítimo",
+        decision_maker_name: "Gerente de Recursos Humanos / DP",
+        employees_count: 520,
+        active_card_users: 490,
+        avg_monthly_ticket: 850,
+        current_provider: "VR Benefícios",
+        current_model: "Tradicional (VA / VR)",
+        status: "Lead Mapeado",
+        priority_icp: "Média",
+        interest_level: "Morno",
+        rh_pains: "Forte ritmo de contratações em Niterói; escala de embarque faz colaboradores preferirem Alimentação (supermercado) a Refeição.",
+        user_complaints: "Marítimos embarcados ficam com saldo travado em VR sem conseguir usar em mercados de bairro para a família.",
+        swile_trigger_2026: "Flexibilidade inteligente dentro do PAT (VA/VR no mesmo cartão Mastercard aceito em +4 milhões de locais)."
+      },
+      {
+        id: "acc-15",
+        code: "LD-15",
+        company_name: "Tursan Turismo",
+        website: "https://tursan.com.br/",
+        sector: "Transporte Corporativo & Fretamento",
+        polo_rj: "Zona Oeste - Campo Grande",
+        neighborhood: "Campo Grande",
+        address: "Av. Brasil, 49389 - Campo Grande, Rio de Janeiro - RJ, 23065-480",
+        phone: "+55 21 3554-8000",
+        email_rh: "vagas@tursan.com.br | RH Tursan",
+        decision_maker_name: "Gerente de RH / Departamento Pessoal",
+        employees_count: 380,
+        active_card_users: 360,
+        avg_monthly_ticket: 650,
+        current_provider: "VR Benefícios",
+        current_model: "Tradicional + Vale Premiação separado",
+        status: "Outbound Iniciado",
+        priority_icp: "Alta",
+        interest_level: "Quente",
+        rh_pains: "Expansão de frota na Zona Oeste; oferece vale alimentação e vale premiação separados para motoristas, gerando retrabalho no DP.",
+        user_complaints: "Motoristas em rotas pela ZO, ZN e Serra enfrentam recusas de bandeira fechada e carregam dois cartões.",
+        swile_trigger_2026: "Unificar Vale Alimentação + Vale Premiação de assiduidade dos motoristas em 1 único cartão Swile Mastercard sem taxa."
+      }
+    ];
+
+    const INITIAL_OPPORTUNITIES = [
+      { id: "opp-1", account_id: "acc-4", stage_weight: 4, probability: 75, close_date: "2026-11-12" },
+      { id: "opp-2", account_id: "acc-3", stage_weight: 3, probability: 60, close_date: "2026-11-18" },
+      { id: "opp-3", account_id: "acc-2", stage_weight: 2, probability: 50, close_date: "2026-11-25" },
+      { id: "opp-4", account_id: "acc-8", stage_weight: 2, probability: 45, close_date: "2026-11-28" },
+      { id: "opp-5", account_id: "acc-1", stage_weight: 1, probability: 35, close_date: "2026-12-04" },
+      { id: "opp-6", account_id: "acc-7", stage_weight: 1, probability: 35, close_date: "2026-12-08" },
+      { id: "opp-7", account_id: "acc-10", stage_weight: 1, probability: 30, close_date: "2026-12-10" }
+    ];
+
+    const INITIAL_FOLLOWUPS = [
+      { id: "fu-1", account_id: "acc-1", action_title: "Abordar Head de People sobre compra da Caju pelo iFood (20/10) + enviar comparativo Swile Shop", due_date: "2026-10-30", channel: "LinkedIn", status: "Pendente", priority: "Alta" },
+      { id: "fu-2", account_id: "acc-2", action_title: "Apresentar simulação VA/VR + Mobilidade Frota (900 vidas) para Diretora de Gente da Beep Saúde", due_date: "2026-10-30", channel: "WhatsApp", status: "Pendente", priority: "Alta" },
+      { id: "fu-3", account_id: "acc-3", action_title: "Confirmar Demo presencial no CEO Office Barra (RJZ Cyrela) — foco em logística de cartões p/ obras", due_date: "2026-10-31", channel: "Visita Presencial", status: "Pendente", priority: "Alta" },
+      { id: "fu-4", account_id: "acc-4", action_title: "Validar minuta Taxa Zero + carteira Premiação BeInspired com People & Compras da Bemobi", due_date: "2026-10-31", channel: "E-mail", status: "Pendente", priority: "Alta" },
+      { id: "fu-5", account_id: "acc-7", action_title: "Enviar vídeo de 60s mostrando X-Pay (Apple/Google Pay) para o RH da Vasco da Gama SAF", due_date: "2026-11-02", channel: "WhatsApp", status: "Pendente", priority: "Alta" },
+      { id: "fu-6", account_id: "acc-15", action_title: "Ligar p/ RH da Tursan em Campo Grande sobre unificação do Vale Alimentação + Vale Premiação", due_date: "2026-11-03", channel: "Ligação", status: "Pendente", priority: "Média" }
+    ];
+
+    const ROUTES_RJ = [
+      {
+        id: "rt-1",
+        name: "Rota 01 — Centro & Porto Maravilha (Tech & Consultorias)",
+        polo: "Centro / Porto Maravilha",
+        shift: "Terça-feira (Manhã + Tarde) • Metrô / VLT",
+        km: "14 km",
+        accounts: ["Nomus (Av. Prof. Pereira Reis, 76)", "Bemobi (Av. Barão de Tefé, 27)", "BIP Brasil (Av. Rio Branco, 128)", "Nasajon (Av. Mal. Floriano, 19)", "Future ATP (Centro)"]
+      },
+      {
+        id: "rt-2",
+        name: "Rota 02 — Barra da Tijuca (Eixo Av. das Américas / Península)",
+        polo: "Barra da Tijuca / Recreio",
+        shift: "Quarta-feira (Manhã + Tarde) • Campo Carro",
+        km: "28 km",
+        accounts: ["RJZ Cyrela (Av. das Américas, 2480 / CEO Office)", "ICONIC Lubrificantes (Av. das Américas, 3434)", "Beep Saúde Hub Barra", "Zinzane BarraShopping"]
+      },
+      {
+        id: "rt-3",
+        name: "Rota 03 — Zona Sul (Botafogo & Flamengo)",
+        polo: "Zona Sul / Barra",
+        shift: "Quinta-feira (Manhã) • Metrô / Uber Corporativo",
+        km: "12 km",
+        accounts: ["Beep Saúde Matriz (Botafogo)", "Grant Thornton RJ (Praia do Flamengo, 154)", "Zinzane Rio Sul (Botafogo)"]
+      },
+      {
+        id: "rt-4",
+        name: "Rota 04 — Eixo Zona Norte, Niterói & Zona Oeste Industrial",
+        polo: "Zona Norte / Del Castilho",
+        shift: "Sexta-feira (Campo Estratégico)",
+        km: "46 km",
+        accounts: ["Vasco da Gama SAF (São Cristóvão)", "LAMSA Linha Amarela (Água Santa)", "Camorim Marítima (Ilha da Conceição - Niterói)", "Tursan Turismo (Campo Grande)"]
+      }
+    ];
+
+    const BATTLECARDS_DATA = {
+      "Caju": {
+        badge: "Gatilho Crítico: Comprada pelo iFood em 20/10/2026",
+        model: "Multibenefícios Bandeira Visa (Nota 4,6/5 • 83K avaliações)",
+        pros: "Interface moderna, boa penetração em startups/PMEs e módulos Caju Despesas/Ciclos.",
+        cons: "Comprada pelo iFood Benefícios em 20/10/2026 (em análise no CADE e BC), gerando incerteza no RH sobre mudança de plataforma e perda do suporte dedicado; bloqueios preventivos pontuais na rede Visa.",
+        winArg: "Posicionar a Swile como a WorkTech global independente (certificada B-Corp), com bandeira Mastercard (+4M locais), programa Mastercard Surpreenda e Swile Shop (+1.000 lojas com até 50% OFF).",
+        script: "Olá, [Nome]! Vi pelas vagas da [Empresa] no RJ que vocês cuidam muito bem da experiência do time e hoje operam com a Caju. Com o anúncio da compra da Caju pelo iFood agora em 20/10, vários Heads de RH de médio porte no Rio estão mapeando um Plano B seguro para não ficarem reféns de fusão de sistemas. Aqui na Swile (WorkTech francesa B-Corp com +85 mil empresas no Brasil), operamos com cartão Mastercard único (8 carteiras), Apple/Google Pay (X-Pay), Swile Shop (+1.000 lojas) e Taxa Zero. Topa um papo rápido de 15 min nesta quinta para ter esse comparativo na manga?"
+      },
+      "Flash": {
+        badge: "Vulnerabilidade: Cross-sell pago de softwares que o RH já tem",
+        model: "Multibenefícios Mastercard/Visa + HR Tech (Nota 4,6/5 • 374K avaliações)",
+        pros: "App bem avaliado e expansão para despesas, folha e recrutamento.",
+        cons: "Investiu R$ 400M para virar um ERP de RH, tentando vender 7 a 8 módulos pagos para empresas que já usam Gupy/Sólides/TOTVS; reclamações de suporte robotizado e cobrança de 2ª via em operações de campo.",
+        winArg: "Desarmar o 'tudo-em-um' pago: mostrar que a Swile foca 100% em entregar o melhor cartão Mastercard + engajamento real (Swile Shop, Surpreenda e recursos sociais) com Taxa Zero real.",
+        script: "Olá, [Nome]! Parabéns pela estrutura de Gente & Gestão na [Empresa] aqui no Rio. Vi que vocês já utilizam cartão flexível da Flash, mas tenho conversado com vários RHs de médio porte que buscam fugir da cobrança de módulos extras de software e querem elevar o poder de compra real dos colaboradores. Na Swile, além das 8 carteiras em 1 único Mastercard a Taxa Zero, seu time ganha o Swile Shop (+1.000 lojas parceiras) e pontos no Mastercard Surpreenda sem custar R$ 1 a mais na folha. Faz sentido 15 min no Meet esta semana para compararmos?"
+      },
+      "iFood Benefícios": {
+        badge: "Vulnerabilidade: Percepção de 'Vale-Delivery' e Fusão Caju",
+        model: "Multibenefícios Elo/Visa (Nota 4,5/5 • 189K avaliações)",
+        pros: "Integração nativa com o app iFood de delivery e cashback em restaurantes.",
+        cons: "Foco excessivo em comida/delivery; menor maturidade nas carteiras de Mobilidade/Combustível, Saúde, Educação e Home Office para operações mistas (campo + escritório).",
+        winArg: "Mostrar que o cartão Swile é Mastercard em arranjo aberto (cadastra normalmente no app do iFood!), mas entrega 8 carteiras completas com X-Pay (reconhecimento facial no Apple/Google Pay).",
+        script: "Olá, [Nome]! Vi que a [Empresa] está crescendo forte no RJ e hoje oferece iFood Benefícios. No delivery eles são ótimos, mas ouvimos de muitas empresas com times mistos (campo + escritório) que os colaboradores sentem falta de usar Mobilidade/Combustível, Farmácia, Educação e Home Office com a mesma facilidade. Como o cartão da Swile é Mastercard em arranjo aberto, seu time continua usando no app do iFood normalmente, mas ganha 8 carteiras completas, Apple/Google Pay nativo e descontos em +1.000 lojas no Swile Shop. Topa 15 min para eu te mostrar na tela?"
+      },
+      "Alelo": {
+        badge: "Gatilho Crítico: Fim do Monopólio de Maquininhas em Nov/2026",
+        model: "Tradicional Bandeira Elo (Nota 4,4/5 • 1,2M avaliações)",
+        pros: "Marca tradicional controlada por Bradesco/BB e rede antiga.",
+        cons: "Cartões físicos separados (VA, VR, Natal), bandeira Elo com menor aceitação em apps digitais, instabilidade do app 'Meu Alelo' nos dias de pagamento e incompatibilidade com Apple Pay em várias linhas.",
+        winArg: "Usar a Interoperabilidade Plena do PAT (nov/2026): toda maquininha agora aceita qualquer bandeira, somada aos +4 milhões de estabelecimentos Mastercard da Swile em 1 único cartão.",
+        script: "Olá, [Nome]! Acompanho a operação da [Empresa] aqui no Rio e vi que hoje vocês operam com a Alelo. Como agora em novembro de 2026 entra em vigor a interoperabilidade total do PAT (qualquer maquininha passa a aceitar todas as bandeiras), caiu aquela barreira antiga que obrigava o RH a gerenciar cartões Elo separados para VA e VR. Temos ajudado empresas do porte de vocês no RJ a unificar tudo em 1 único cartão Mastercard da Swile, 100% blindado por trava de CNAE no PAT, com Apple/Google Pay e Taxa Zero. Você teria 15 min na terça ou quarta para eu te mostrar o nosso Dash RH?"
+      },
+      "Pluxee (ex-Sodexo)": {
+        badge: "Vulnerabilidade: Rebranding Confuso e Cartões Separados",
+        model: "Tradicional Bandeira Elo (Nota 4,2/5 • 1,3M avaliações)",
+        pros: "Herança corporativa global da Sodexo.",
+        cons: "Menor nota consolidada (4,2/5); transição de marca Sodexo para Pluxee gerou confusão; opera predominantemente com cartões separados sem autonomia de saldo entre categorias.",
+        winArg: "Contrastar a herança francesa tradicional (Sodexo/Pluxee) com a inovação francesa nativa digital (Swile): 8 carteiras em 1 só Mastercard, NPS +65 e Prêmio Reclame Aqui / Smart Customer.",
+        script: "Olá, [Nome]! Vi pelas vagas da [Empresa] no Rio que vocês utilizam Pluxee (ex-Sodexo). Enquanto a Pluxee manteve o modelo tradicional de cartões separados na bandeira Elo, a Swile já nasceu 100% digital na França como a WorkTech líder em experiência do colaborador — unificando até 8 categorias (VA, VR, Mobilidade, Home Office, Educação e Premiação) em 1 único cartão Mastercard a Taxa Zero, com pagamento por aproximação no celular (X-Pay). Vale 15 minutos na sua agenda esta semana para conhecer?"
+      },
+      "Ticket": {
+        badge: "Vulnerabilidade: Taxas Administrativas e Sem Carteira Premiação",
+        model: "Tradicional Elo / VR (Nota 4,1–4,2/5 • 1,6M avaliações)",
+        pros: "Presença histórica no varejo e indústria tradicional.",
+        cons: "Cobrança frequente de taxas administrativas, de emissão ou 2ª via no Middle Market; obriga o DP a contratar fornecedores separados para pagar premiações de metas comerciais.",
+        winArg: "Unificar VA/VR (blindados no PAT) + Carteira de Premiação de Metas/Assiduidade no mesmo Swile Card Mastercard, com emissão virtual instantânea no Dia 1 e Taxa Zero.",
+        script: "Olá, [Nome]! Tudo bem? Vi que a [Empresa] tem uma operação super dinâmica no Rio e hoje trabalha com vale tradicional. Um dos maiores ganhos que temos gerado para RHs e DPs do setor de vocês no RJ é eliminar a gestão de cartões separados (alimentação de um lado, premiação/bônus de outro) e zerar taxas de emissão. Com a Swile, seu colaborador recebe tudo em 1 único cartão Mastercard (já ativo no Apple/Google Pay no dia 1 da contratação) a Taxa Zero. Topa um bate-papo de 15 min?"
+      }
+    };
+
+    const OBJECTIONS_DATA = [
+      {
+        title: "1. 'Já usamos Caju e o time gosta muito.'",
+        cause: "Inércia de mudança; o RH ainda não calculou o impacto da compra da Caju pelo iFood (20/10/2026).",
+        response: "A Caju construiu uma interface bacana! Mas com o anúncio da compra da Caju pelo iFood agora no dia 20/10/2026, muitos RHs de médio porte no RJ estão nos procurando para não ficarem reféns de uma fusão de sistemas e mudança de atendimento. Se eu te mostrar como manter a mesma flexibilidade, mas ganhando bandeira Mastercard com Surpreenda, Swile Shop (+1.000 lojas) e a estabilidade de um grupo global B-Corp a Taxa Zero, vale 15 minutos na sua agenda?"
+      },
+      {
+        title: "2. 'Meu Jurídico / CFO tem medo de benefício flexível dar multa no PAT.'",
+        cause: "Receio legítimo após o MTE notificar 115 empresas em setembro de 2026 por desvios no PAT.",
+        response: "Seu CFO está certíssimo em ser rigoroso — inclusive o MTE notificou 115 empresas em setembro por operadoras que misturavam saldo PAT com conta livre. Na Swile, o saldo de Alimentação e Refeição tem trava tecnológica automática de CNAE na maquininha: só passa em estabelecimentos de alimentação e jamais pode ser transferido para saldo livre ou sacado. As outras 6 carteiras rodam de forma segregada conforme a CLT. Posso enviar nosso Whitepaper Jurídico do PAT para o seu CFO validar?"
+      },
+      {
+        title: "3. 'Usamos Alelo / Pluxee / Ticket porque nossa equipe precisa de aceitação em todo lugar.'",
+        cause: "Mito antigo de rede credenciada fechada, superado pela interoperabilidade total de novembro de 2026.",
+        response: "Esse era o maior receio até o mês passado! Mas você acompanhou que agora em novembro de 2026 entra em vigor a interoperabilidade plena do PAT, obrigando toda maquininha a aceitar qualquer bandeira? Além disso, enquanto o arranjo fechado tradicional tinha cerca de 350 mil credenciados na bandeira Elo, o cartão da Swile é Mastercard e já passa em mais de 4 milhões de estabelecimentos. Seu time ganha 10x mais rede em 1 único cartão."
+      },
+      {
+        title: "4. 'Trocar o cartão de 500 funcionários vai dar um trabalho enorme para o meu DP.'",
+        cause: "Medo de atraso logístico de plástico e fila de colaboradores reclamando no RH.",
+        response: "Se você tivesse que esperar plástico chegar para 500 pessoas usarem, eu também não trocaria! É por isso que a Swile tem o X-Pay: assim que você sobe a planilha no Dash RH, o cartão virtual já fica ativo no celular do colaborador com Apple Pay, Google Pay e Samsung Pay no mesmo dia, com reconhecimento facial, enquanto nossa logística entrega os físicos por unidade/obra. Fazemos a implantação assistida com seu DP em menos de 48 horas."
+      },
+      {
+        title: "5. 'Já usamos Flash e funciona bem para nós.'",
+        cause: "Percepção de comoditização entre cartões flexíveis.",
+        response: "A Flash ajudou a abrir o mercado flexível. Só por curiosidade: vocês usam só o cartão deles ou contrataram os módulos pagos de RH e Recrutamento? Pergunto porque a Flash virou uma vendedora de múltiplos softwares pagos, enquanto a Swile foca 100% em entregar o cartão Mastercard mais completo do mundo, com Swile Shop (+1.000 lojas com até 50% de desconto), Mastercard Surpreenda e Taxa Zero real. O que você melhoraria hoje no suporte ou nos benefícios extras do seu time?"
+      },
+      {
+        title: "6. 'Temos contrato vigente com fidelidade / multa.'",
+        cause: "Cortina de fumaça ou cláusula antiga pré-Lei 14.442/22.",
+        response: "Perfeito, respeitamos 100% a governança de vocês. Só para eu registrar no nosso radar: desde a Lei 14.442/22 e o Decreto de 2026, cláusulas de fidelidade atreladas a rebate ou taxa negativa no PAT perderam validade jurídica. Quando vence formalmente o aniversário do contrato de vocês? Vamos fazer um diagnóstico de 15 min agora para já deixar a proposta homologada no Compras antes da renovação automática?"
+      }
+    ];
+
+    const SQL_SCHEMA_TEXT = `-- SWILE OS CRM — MIDDLE MARKET RJ (SUPABASE POSTGRESQL SCHEMA)
+create extension if not exists "pgcrypto";
+
+create table if not exists public.crm_accounts (
+  id uuid primary key default gen_random_uuid(),
+  code text unique not null,
+  company_name text not null,
+  website text,
+  sector text not null,
+  polo_rj text not null,
+  neighborhood text,
+  address text,
+  phone text,
+  email_rh text,
+  decision_maker_name text,
+  employees_count integer not null default 100,
+  active_card_users integer not null default 100,
+  avg_monthly_ticket numeric(12,2) not null default 800.00,
+  estimated_monthly_tpv numeric(14,2) generated always as (active_card_users * avg_monthly_ticket) stored,
+  estimated_annual_tpv numeric(14,2) generated always as (active_card_users * avg_monthly_ticket * 12) stored,
+  current_provider text not null default 'A Validar',
+  current_model text not null default 'Tradicional',
+  status text not null default 'Lead Mapeado',
+  priority_icp text not null default 'Alta',
+  interest_level text not null default 'Morno',
+  rh_pains text,
+  user_complaints text,
+  swile_trigger_2026 text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.crm_opportunities (
+  id uuid primary key default gen_random_uuid(),
+  account_id uuid not null references public.crm_accounts(id) on delete cascade,
+  stage_weight integer not null default 1, -- 1=SQL, 2=Discovery, 3=Demo, 4=Proposta, 5=Fechado
+  probability integer not null default 40,
+  close_date date,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.crm_follow_ups (
+  id uuid primary key default gen_random_uuid(),
+  account_id uuid not null references public.crm_accounts(id) on delete cascade,
+  action_title text not null,
+  due_date date not null,
+  channel text not null default 'WhatsApp',
+  status text not null default 'Pendente',
+  priority text not null default 'Alta',
+  created_at timestamptz not null default now()
+);
+
+alter table public.crm_accounts enable row level security;
+alter table public.crm_opportunities enable row level security;
+alter table public.crm_follow_ups enable row level security;
+
+create policy "Public access crm_accounts" on public.crm_accounts for all using (true) with check (true);
+create policy "Public access crm_opportunities" on public.crm_opportunities for all using (true) with check (true);
+create policy "Public access crm_follow_ups" on public.crm_follow_ups for all using (true) with check (true);`;
+
+    // 2. STATE MANAGEMENT (WITH SAFE LOCALSTORAGE + SUPABASE CLIENT)
+    let state = {
+      accounts: [],
+      opportunities: [],
+      followups: [],
+      supabaseUrl: "https://yjomvwnxqinbmoqyeyre.supabase.co",
+      supabaseKey: "sb_publishable_aCmPJrOjlt_PSQQGH9WtNA_xTxD2oiJ",
+      supabaseConnected: false
+    };
+
+    let supabaseClient = null;
+    let chartProvidersInstance = null;
+    let chartPolosInstance = null;
+
+    function loadInitialState() {
+      let saved = null;
+      try {
+        const raw = localStorage.getItem("swile_os_crm_rj_v1");
+        if (raw) saved = JSON.parse(raw);
+      } catch (e) {
+        saved = null;
+      }
+
+      if (saved && Array.isArray(saved.accounts) && saved.accounts.length > 0) {
+        state.accounts = saved.accounts;
+        state.opportunities = saved.opportunities || INITIAL_OPPORTUNITIES;
+        state.followups = saved.followups || INITIAL_FOLLOWUPS;
+        state.supabaseUrl = saved.supabaseUrl || "https://yjomvwnxqinbmoqyeyre.supabase.co";
+        state.supabaseKey = saved.supabaseKey || "sb_publishable_aCmPJrOjlt_PSQQGH9WtNA_xTxD2oiJ";
+      } else {
+        state.accounts = JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
+        state.opportunities = JSON.parse(JSON.stringify(INITIAL_OPPORTUNITIES));
+        state.followups = JSON.parse(JSON.stringify(INITIAL_FOLLOWUPS));
+      }
+
+      const sqlBox = document.getElementById("sqlSchemaTextarea");
+      if (sqlBox) sqlBox.value = SQL_SCHEMA_TEXT;
+
+      if (state.supabaseUrl) document.getElementById("inputSupabaseUrl").value = state.supabaseUrl;
+      if (state.supabaseKey) document.getElementById("inputSupabaseKey").value = state.supabaseKey;
+    }
+
+    function persistState() {
+      try {
+        localStorage.setItem("swile_os_crm_rj_v1", JSON.stringify(state));
+      } catch (e) {
+        // Ignore storage quota or iframe restrictions
+      }
+    }
+
+    function showToast(msg, icon) {
+      const box = document.getElementById("toastContainer");
+      const msgEl = document.getElementById("toastMessage");
+      const iconEl = document.getElementById("toastIcon");
+      if (!box || !msgEl || !iconEl) return;
+      iconEl.textContent = icon || "✅";
+      msgEl.textContent = msg;
+      box.classList.remove("hidden");
+      setTimeout(function () {
+        box.classList.add("hidden");
+      }, 3400);
+    }
+
+    function copyTextSafe(text, feedbackMsg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          showToast(feedbackMsg || "Copiado para a área de transferência!", "📋");
+        }).catch(function () {
+          fallbackCopy(text, feedbackMsg);
+        });
+      } else {
+        fallbackCopy(text, feedbackMsg);
+      }
+    }
+
+    function fallbackCopy(text, feedbackMsg) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+        showToast(feedbackMsg || "Copiado para a área de transferência!", "📋");
+      } catch (e) {
+        showToast("Não foi possível copiar automaticamente.", "⚠️");
+      }
+      document.body.removeChild(ta);
+    }
+
+    // 3. BUSINESS LOGIC FORMULAS (EVOLVED FROM NOTION FIELDS OS CRM)
+    function computeMonthlyTpv(acc) {
+      return (Number(acc.active_card_users) || 0) * (Number(acc.avg_monthly_ticket) || 0);
+    }
+
+    function getAccountMaxStageWeight(accountId) {
+      let maxW = 0;
+      for (let i = 0; i < state.opportunities.length; i++) {
+        const o = state.opportunities[i];
+        if (o.account_id === accountId && o.stage_weight > maxW) {
+          maxW = o.stage_weight;
+        }
+      }
+      return maxW;
+    }
+
+    function computeCommercialScore(acc) {
+      let score = 0;
+      if (acc.priority_icp === "Alta") score += 22;
+      else if (acc.priority_icp === "Média") score += 14;
+      else score += 6;
+
+      const lives = Number(acc.active_card_users) || 0;
+      if (lives >= 450) score += 22;
+      else if (lives >= 250) score += 16;
+      else score += 10;
+
+      if (acc.interest_level === "Quente") score += 22;
+      else if (acc.interest_level === "Morno") score += 14;
+      else score += 6;
+
+      if (acc.current_provider === "Caju" || acc.current_provider === "Pluxee (ex-Sodexo)" || acc.current_provider === "Alelo") {
+        score += 16;
+      } else {
+        score += 10;
+      }
+
+      const maxStage = getAccountMaxStageWeight(acc.id);
+      score += maxStage * 4;
+
+      return Math.min(100, Math.max(0, score));
+    }
+
+    function computeNextBestAction(acc) {
+      for (let i = 0; i < state.followups.length; i++) {
+        const f = state.followups[i];
+        if (f.account_id === acc.id && f.status === "Pendente") {
+          return "📅 " + f.channel + " (" + f.due_date + "): " + f.action_title;
+        }
+      }
+      if (acc.status === "Fechado ✅") return "🚀 Acionar Onboarding & Ativação X-Pay";
+      if (acc.current_provider === "Caju") return "🎯 Atacar c/ Gatilho Fusão iFood+Caju (20/10)";
+      if (acc.current_provider === "Alelo" || acc.current_provider === "Pluxee (ex-Sodexo)" || acc.current_provider === "Ticket") {
+        return "⚖️ Abordar c/ Interoperabilidade PAT (Nov/26)";
+      }
+      return "💬 Iniciar Cadência Dia 0 (LinkedIn + WhatsApp)";
+    }
+
+    function formatCurrencyBRL(val) {
+      return "R$ " + Math.round(Number(val) || 0).toLocaleString("pt-BR");
+    }
+
+    // 4. TAB SWITCHING
+    function switchTab(tabKey) {
+      const views = ["cockpit", "accounts", "pipeline", "followups", "playbook", "supabase"];
+      for (let i = 0; i < views.length; i++) {
+        const k = views[i];
+        const sec = document.getElementById("view-" + k);
+        const btn = document.getElementById("tabBtn-" + k);
+        if (sec) {
+          if (k === tabKey) sec.classList.remove("hidden");
+          else sec.classList.add("hidden");
+        }
+        if (btn) {
+          if (k === tabKey) {
+            btn.className = "tab-nav-btn rounded-lg px-3.5 py-2 transition bg-fuchsia-600 text-white";
+          } else {
+            btn.className = "tab-nav-btn rounded-lg px-3.5 py-2 transition text-slate-300 hover:bg-slate-800";
+          }
+        }
+      }
+      refreshAllViews();
+    }
+
+    // 5. RENDER FUNCTIONS
+    function refreshAllViews() {
+      renderCockpit();
+      renderAccountsTable();
+      renderKanbanBoard();
+      renderFollowupsTab();
+      renderBattlecardDetail();
+      renderObjectionsList();
+      updateCoachPromptPreview();
+      persistState();
+    }
+
+    function renderCockpit() {
+      const totalAcc = state.accounts.length;
+      let highPrio = 0;
+      let hotCount = 0;
+      let totalLives = 0;
+      let totalMonthlyTpv = 0;
+
+      for (let i = 0; i < state.accounts.length; i++) {
+        const a = state.accounts[i];
+        if (a.priority_icp === "Alta") highPrio++;
+        if (a.interest_level === "Quente") hotCount++;
+        totalLives += Number(a.active_card_users) || 0;
+        totalMonthlyTpv += computeMonthlyTpv(a);
+      }
+
+      const avgTicket = totalLives > 0 ? Math.round(totalMonthlyTpv / totalLives) : 0;
+
+      let weightedForecast = 0;
+      for (let i = 0; i < state.opportunities.length; i++) {
+        const opp = state.opportunities[i];
+        const acc = state.accounts.find(function (x) { return x.id === opp.account_id; });
+        if (acc) {
+          const tpv = computeMonthlyTpv(acc);
+          weightedForecast += tpv * ((Number(opp.probability) || 0) / 100);
+        }
+      }
+
+      document.getElementById("kpiTotalAccounts").textContent = String(totalAcc);
+      document.getElementById("kpiHotAccountsSub").textContent = highPrio + " prioridade alta • " + hotCount + " quentes";
+      document.getElementById("kpiTotalLives").textContent = totalLives.toLocaleString("pt-BR");
+      document.getElementById("kpiAvgTicketSub").textContent = "Ticket médio: " + formatCurrencyBRL(avgTicket) + " / vida";
+      document.getElementById("kpiMonthlyTpv").textContent = formatCurrencyBRL(totalMonthlyTpv);
+      document.getElementById("kpiAnnualTpvSub").textContent = "Anualizado: " + formatCurrencyBRL(totalMonthlyTpv * 12) + " / ano";
+      document.getElementById("kpiWeightedForecast").textContent = formatCurrencyBRL(weightedForecast);
+      document.getElementById("kpiActiveOppsSub").textContent = state.opportunities.length + " oportunidades ativas no funil";
+
+      const tabAccBtn = document.getElementById("tabBtn-accounts");
+      if (tabAccBtn && !tabAccBtn.className.includes("bg-fuchsia-600")) {
+        tabAccBtn.textContent = "🏢 CRM — Contas (" + totalAcc + ")";
+      }
+
+      // Render Cockpit Follow-ups
+      const fuContainer = document.getElementById("cockpitFollowupsList");
+      const pendingFus = state.followups.filter(function (f) { return f.status === "Pendente"; });
+      if (pendingFus.length === 0) {
+        fuContainer.innerHTML = '<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 text-center text-xs text-slate-400">🎉 Todos os follow-ups de hoje foram concluídos!</div>';
+      } else {
+        let html = "";
+        for (let i = 0; i < pendingFus.length; i++) {
+          const f = pendingFus[i];
+          const acc = state.accounts.find(function (x) { return x.id === f.account_id; });
+          const compName = acc ? acc.company_name : "Conta";
+          const prov = acc ? acc.current_provider : "";
+          html += '<div class="flex items-start justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-3">' +
+            '<div class="space-y-1">' +
+              '<div class="flex items-center gap-2">' +
+                '<span class="font-bold text-white text-xs">' + compName + '</span>' +
+                '<span class="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-fuchsia-300">' + prov + '</span>' +
+                '<span class="text-[10px] text-slate-400">' + f.channel + ' • ' + f.due_date + '</span>' +
+              '</div>' +
+              '<p class="text-xs text-slate-300">' + f.action_title + '</p>' +
+            '</div>' +
+            '<button type="button" onclick="completeFollowup(\'' + f.id + '\')" class="shrink-0 rounded-lg bg-emerald-600/20 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-600/30 transition">✓ Concluir</button>' +
+          '</div>';
+        }
+        fuContainer.innerHTML = html;
+      }
+
+      // Render Top Accounts by Score
+      const topContainer = document.getElementById("cockpitTopAccountsList");
+      const sortedAccs = state.accounts.slice().sort(function (a, b) {
+        return computeCommercialScore(b) - computeCommercialScore(a);
+      }).slice(0, 6);
+
+      let topHtml = "";
+      for (let i = 0; i < sortedAccs.length; i++) {
+        const a = sortedAccs[i];
+        const sc = computeCommercialScore(a);
+        const tpv = computeMonthlyTpv(a);
+        topHtml += '<div class="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-3">' +
+          '<div class="space-y-0.5">' +
+            '<div class="flex items-center gap-2">' +
+              '<span class="font-bold text-white text-xs">' + a.company_name + '</span>' +
+              '<span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] text-amber-300 font-semibold">Cartão: ' + a.current_provider + '</span>' +
+            '</div>' +
+            '<p class="text-[11px] text-slate-400">' + a.polo_rj + ' • ' + a.active_card_users + ' vidas • TPV: ' + formatCurrencyBRL(tpv) + '/mês</p>' +
+          '</div>' +
+          '<div class="flex items-center gap-2">' +
+            '<span class="rounded-lg bg-fuchsia-500/20 border border-fuchsia-500/40 px-2.5 py-1 text-xs font-extrabold text-fuchsia-300">' + sc + ' pts</span>' +
+            '<button type="button" onclick="openAccountModal(\'' + a.id + '\')" class="rounded-lg bg-slate-800 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-700">Raio-X</button>' +
+          '</div>' +
+        '</div>';
+      }
+      topContainer.innerHTML = topHtml;
+
+      renderCockpitCharts();
+    }
+
+    function renderCockpitCharts() {
+      const provOrder = ["Caju", "Flash", "iFood Benefícios", "Alelo", "Pluxee (ex-Sodexo)", "VR Benefícios", "Ticket"];
+      const livesByProv = provOrder.map(function (p) {
+        return state.accounts
+          .filter(function (a) { return a.current_provider === p; })
+          .reduce(function (sum, a) { return sum + (Number(a.active_card_users) || 0); }, 0);
+      });
+
+      const ctx1 = document.getElementById("chartProviders");
+      if (ctx1 && typeof Chart !== "undefined") {
+        if (chartProvidersInstance) chartProvidersInstance.destroy();
+        chartProvidersInstance = new Chart(ctx1, {
+          type: "bar",
+          data: {
+            labels: ["Caju", "Flash", "iFood", "Alelo", "Pluxee", "VR", "Ticket"],
+            datasets: [{
+              label: "Vidas Ativas no RJ",
+              data: livesByProv,
+              backgroundColor: ["#ec4899", "#8b5cf6", "#f43f5e", "#10b981", "#3b82f6", "#f59e0b", "#06b6d4"],
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: "#94a3b8", font: { size: 11 } }, grid: { display: false } },
+              y: { ticks: { color: "#94a3b8", font: { size: 11 } }, grid: { color: "rgba(148,163,184,0.1)" } }
+            }
+          }
+        });
+      }
+
+      const polosOrder = [
+        "Centro / Porto Maravilha",
+        "Zona Sul / Barra",
+        "Barra da Tijuca / Recreio",
+        "Zona Norte / Del Castilho",
+        "Niterói / Região Metropolitana",
+        "Zona Oeste - Campo Grande"
+      ];
+      const tpvByPolo = polosOrder.map(function (p) {
+        return state.accounts
+          .filter(function (a) { return a.polo_rj === p; })
+          .reduce(function (sum, a) { return sum + computeMonthlyTpv(a); }, 0);
+      });
+
+      const ctx2 = document.getElementById("chartPolos");
+      if (ctx2 && typeof Chart !== "undefined") {
+        if (chartPolosInstance) chartPolosInstance.destroy();
+        chartPolosInstance = new Chart(ctx2, {
+          type: "bar",
+          data: {
+            labels: ["Centro/Porto", "Zona Sul/Barra", "Barra da Tijuca", "Zona Norte", "Niterói", "Campo Grande"],
+            datasets: [{
+              label: "TPV Mensal (R$)",
+              data: tpvByPolo,
+              backgroundColor: "#a855f7",
+              borderRadius: 6
+            }]
+          },
+          options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { color: "rgba(148,163,184,0.1)" } },
+              y: { ticks: { color: "#cbd5e1", font: { size: 11 } }, grid: { display: false } }
+            }
+          }
+        });
+      }
+    }
+
+    function renderAccountsTable() {
+      const tbody = document.getElementById("accountsTableBody");
+      if (!tbody) return;
+
+      const q = (document.getElementById("searchAccounts").value || "").toLowerCase();
+      const provFilter = document.getElementById("filterProvider").value;
+      const poloFilter = document.getElementById("filterPolo").value;
+      const prioFilter = document.getElementById("filterPriority").value;
+
+      const filtered = state.accounts.filter(function (a) {
+        if (provFilter !== "ALL" && a.current_provider !== provFilter) return false;
+        if (poloFilter !== "ALL" && a.polo_rj !== poloFilter) return false;
+        if (prioFilter !== "ALL" && a.priority_icp !== prioFilter) return false;
+        if (q) {
+          const hay = (a.company_name + " " + a.sector + " " + a.neighborhood + " " + a.decision_maker_name + " " + a.rh_pains + " " + a.current_provider).toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      let html = "";
+      for (let i = 0; i < filtered.length; i++) {
+        const a = filtered[i];
+        const tpv = computeMonthlyTpv(a);
+        const sc = computeCommercialScore(a);
+        const nextAct = computeNextBestAction(a);
+        const prioBadge = a.priority_icp === "Alta"
+          ? '<span class="rounded bg-rose-500/20 border border-rose-500/40 px-2 py-0.5 text-[10px] font-bold text-rose-300">🔴 Alta</span>'
+          : '<span class="rounded bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 text-[10px] font-bold text-amber-300">🟡 Média</span>';
+
+        html += '<tr class="hover:bg-slate-800/50 transition">' +
+          '<td class="py-3 px-3">' +
+            '<div class="font-bold text-white flex items-center gap-1.5">' +
+              '<span>' + a.company_name + '</span>' +
+              prioBadge +
+            '</div>' +
+            '<div class="text-[11px] text-slate-400">' + a.sector + '</div>' +
+          '</td>' +
+          '<td class="py-3 px-3">' +
+            '<div class="font-medium text-slate-200">' + a.polo_rj + '</div>' +
+            '<div class="text-[11px] text-slate-400">' + a.neighborhood + '</div>' +
+          '</td>' +
+          '<td class="py-3 px-3">' +
+            '<div class="font-medium text-slate-200">' + a.decision_maker_name + '</div>' +
+            '<div class="text-[11px] text-slate-400">' + a.phone + '</div>' +
+          '</td>' +
+          '<td class="py-3 px-3 text-right font-bold text-white">' + Number(a.active_card_users).toLocaleString("pt-BR") + '</td>' +
+          '<td class="py-3 px-3 text-right">' +
+            '<div class="font-bold text-emerald-400">' + formatCurrencyBRL(tpv) + '</div>' +
+            '<div class="text-[10px] text-slate-400">Ticket: R$ ' + a.avg_monthly_ticket + '</div>' +
+          '</td>' +
+          '<td class="py-3 px-3">' +
+            '<span class="rounded-md bg-slate-800 border border-slate-700 px-2 py-1 text-[11px] font-semibold text-fuchsia-300">' + a.current_provider + '</span>' +
+          '</td>' +
+          '<td class="py-3 px-3 text-center">' +
+            '<span class="inline-block rounded-lg bg-violet-500/20 border border-violet-500/40 px-2.5 py-1 font-extrabold text-violet-300">' + sc + '</span>' +
+          '</td>' +
+          '<td class="py-3 px-3 max-w-xs">' +
+            '<p class="text-[11px] text-slate-300 line-clamp-2">' + nextAct + '</p>' +
+          '</td>' +
+          '<td class="py-3 px-3 text-right whitespace-nowrap">' +
+            '<button type="button" onclick="openAccountModal(\'' + a.id + '\')" class="rounded-lg swile-gradient px-2.5 py-1 text-[11px] font-semibold text-white hover:opacity-90">Raio-X 360°</button>' +
+          '</td>' +
+        '</tr>';
+      }
+
+      if (!html) {
+        html = '<tr><td colspan="9" class="py-6 text-center text-slate-400">Nenhuma conta encontrada para os filtros selecionados.</td></tr>';
+      }
+      tbody.innerHTML = html;
+    }
+
+    function renderKanbanBoard() {
+      const container = document.getElementById("kanbanBoardContainer");
+      if (!container) return;
+
+      const stages = [
+        { weight: 1, name: "1. Qualificado (SQL)", color: "border-slate-600" },
+        { weight: 2, name: "2. Discovery & Vidas", color: "border-violet-500" },
+        { weight: 3, name: "3. Demo Dash RH & App", color: "border-fuchsia-500" },
+        { weight: 4, name: "4. Proposta & Simulação PAT", color: "border-amber-500" },
+        { weight: 5, name: "Fechado ✅ (Cliente Swile)", color: "border-emerald-500" }
+      ];
+
+      let html = "";
+      for (let s = 0; s < stages.length; s++) {
+        const st = stages[s];
+        const stageOpps = state.opportunities.filter(function (o) { return Number(o.stage_weight) === st.weight; });
+        let stageTpv = 0;
+        for (let j = 0; j < stageOpps.length; j++) {
+          const acc = state.accounts.find(function (a) { return a.id === stageOpps[j].account_id; });
+          if (acc) stageTpv += computeMonthlyTpv(acc);
+        }
+
+        html += '<div class="card-surface rounded-2xl p-3 border-t-4 ' + st.color + ' flex flex-col justify-between space-y-3">' +
+          '<div>' +
+            '<div class="flex items-center justify-between mb-1">' +
+              '<h3 class="text-xs font-bold text-white">' + st.name + '</h3>' +
+              '<span class="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300">' + stageOpps.length + '</span>' +
+            '</div>' +
+            '<p class="text-[11px] font-semibold text-emerald-400 mb-3">TPV: ' + formatCurrencyBRL(stageTpv) + '/mês</p>' +
+            '<div class="space-y-2.5">';
+
+        for (let k = 0; k < stageOpps.length; k++) {
+          const opp = stageOpps[k];
+          const acc = state.accounts.find(function (a) { return a.id === opp.account_id; });
+          if (!acc) continue;
+          const tpv = computeMonthlyTpv(acc);
+          const weighted = tpv * ((Number(opp.probability) || 0) / 100);
+
+          html += '<div class="rounded-xl border border-slate-700/80 bg-slate-900/90 p-3 space-y-2 shadow">' +
+            '<div class="flex items-start justify-between gap-1">' +
+              '<button type="button" onclick="openAccountModal(\'' + acc.id + '\')" class="text-left font-bold text-xs text-white hover:text-fuchsia-300">' + acc.company_name + '</button>' +
+              '<span class="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-fuchsia-300">' + acc.current_provider + '</span>' +
+            '</div>' +
+            '<div class="text-[11px] text-slate-300">' +
+              '<div>👥 <strong>' + acc.active_card_users + ' vidas</strong> • TPV: ' + formatCurrencyBRL(tpv) + '</div>' +
+              '<div class="text-slate-400">Prob: ' + opp.probability + '% • Forecast: ' + formatCurrencyBRL(weighted) + '</div>' +
+            '</div>' +
+            '<div class="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px]">' +
+              (st.weight > 1
+                ? '<button type="button" onclick="moveOpportunityStage(\'' + opp.id + '\', -1)" class="rounded bg-slate-800 px-2 py-0.5 text-slate-300 hover:bg-slate-700">← Voltar</button>'
+                : '<span></span>') +
+              (st.weight < 5
+                ? '<button type="button" onclick="moveOpportunityStage(\'' + opp.id + '\', 1)" class="rounded bg-fuchsia-600/30 border border-fuchsia-500/40 px-2 py-0.5 font-semibold text-fuchsia-200 hover:bg-fuchsia-600/50">Avançar →</button>'
+                : '<span class="text-emerald-400 font-bold">🎉 Ganho!</span>') +
+            '</div>' +
+          '</div>';
+        }
+
+        html += '</div></div></div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    function moveOpportunityStage(oppId, delta) {
+      const opp = state.opportunities.find(function (o) { return o.id === oppId; });
+      if (!opp) return;
+      const nextW = Math.min(5, Math.max(1, Number(opp.stage_weight) + delta));
+      opp.stage_weight = nextW;
+      const probs = { 1: 30, 2: 50, 3: 65, 4: 80, 5: 100 };
+      opp.probability = probs[nextW] || opp.probability;
+
+      const acc = state.accounts.find(function (a) { return a.id === opp.account_id; });
+      if (acc) {
+        if (nextW === 5) acc.status = "Fechado ✅";
+        else if (nextW === 4) acc.status = "Proposta & Simulação PAT";
+        else if (nextW === 3) acc.status = "Demo / Diagnóstico Agendado";
+        else if (nextW === 2) acc.status = "Discovery RH/DP";
+      }
+
+      refreshAllViews();
+      showToast("Estágio atualizado no Kanban e sincronizado com o CRM!", "📊");
+    }
+
+    function renderFollowupsTab() {
+      const listEl = document.getElementById("followupsFullList");
+      const statusFilter = document.getElementById("filterFollowupStatus").value;
+      if (!listEl) return;
+
+      const items = state.followups.filter(function (f) {
+        if (statusFilter !== "ALL" && f.status !== statusFilter) return false;
+        return true;
+      });
+
+      let html = "";
+      for (let i = 0; i < items.length; i++) {
+        const f = items[i];
+        const acc = state.accounts.find(function (a) { return a.id === f.account_id; });
+        const compName = acc ? acc.company_name : "Conta";
+        const isDone = f.status === "Concluído";
+
+        html += '<div class="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/90 p-3 text-xs">' +
+          '<div class="space-y-1">' +
+            '<div class="flex items-center gap-2">' +
+              '<span class="font-bold text-white">' + compName + '</span>' +
+              '<span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] text-fuchsia-300">' + f.channel + '</span>' +
+              '<span class="text-[11px] text-slate-400">Data: ' + f.due_date + '</span>' +
+            '</div>' +
+            '<p class="' + (isDone ? 'line-through text-slate-500' : 'text-slate-200') + '">' + f.action_title + '</p>' +
+          '</div>' +
+          '<div>' +
+            (isDone
+              ? '<span class="rounded bg-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-300">✅ Concluído</span>'
+              : '<button type="button" onclick="completeFollowup(\'' + f.id + '\')" class="rounded-lg bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white hover:bg-emerald-500">Concluir</button>') +
+          '</div>' +
+        '</div>';
+      }
+      listEl.innerHTML = html || '<p class="text-xs text-slate-400">Nenhum follow-up neste filtro.</p>';
+
+      // Render Routes RJ
+      const routesEl = document.getElementById("routesRjList");
+      if (routesEl) {
+        let rHtml = "";
+        for (let i = 0; i < ROUTES_RJ.length; i++) {
+          const r = ROUTES_RJ[i];
+          rHtml += '<div class="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-2 text-xs">' +
+            '<div class="flex items-center justify-between">' +
+              '<span class="font-bold text-white">' + r.name + '</span>' +
+              '<span class="rounded bg-violet-500/20 px-2 py-0.5 text-[10px] font-semibold text-violet-300">' + r.km + '</span>' +
+            '</div>' +
+            '<p class="text-[11px] text-slate-400">' + r.shift + '</p>' +
+            '<ul class="list-disc list-inside space-y-0.5 text-[11px] text-slate-300">' +
+              r.accounts.map(function (c) { return '<li>' + c + '</li>'; }).join("") +
+            '</ul>' +
+          '</div>';
+        }
+        routesEl.innerHTML = rHtml;
+      }
+    }
+
+    function completeFollowup(fuId) {
+      const f = state.followups.find(function (x) { return x.id === fuId; });
+      if (f) {
+        f.status = "Concluído";
+        refreshAllViews();
+        showToast("Follow-up marcado como concluído!", "✅");
+      }
+    }
+
+    function renderBattlecardDetail() {
+      const sel = document.getElementById("battlecardSelect");
+      const box = document.getElementById("battlecardDetailBox");
+      if (!sel || !box) return;
+      const key = sel.value;
+      const data = BATTLECARDS_DATA[key] || BATTLECARDS_DATA["Caju"];
+
+      box.innerHTML =
+        '<div class="rounded-xl border border-fuchsia-500/30 bg-fuchsia-950/20 p-3 space-y-1.5">' +
+          '<span class="inline-block rounded bg-fuchsia-600 px-2 py-0.5 text-[10px] font-bold text-white">' + data.badge + '</span>' +
+          '<p class="font-bold text-white">' + data.model + '</p>' +
+        '</div>' +
+        '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">' +
+          '<div class="rounded-xl border border-slate-800 bg-slate-900 p-3">' +
+            '<p class="font-bold text-emerald-400 mb-1">👍 Pontos Fortes do Concorrente</p>' +
+            '<p class="text-slate-300">' + data.pros + '</p>' +
+          '</div>' +
+          '<div class="rounded-xl border border-slate-800 bg-slate-900 p-3">' +
+            '<p class="font-bold text-rose-400 mb-1">⚠️ Dores do RH & Reclamações</p>' +
+            '<p class="text-slate-300">' + data.cons + '</p>' +
+          '</div>' +
+        '</div>' +
+        '<div class="rounded-xl border border-violet-500/30 bg-violet-950/20 p-3">' +
+          '<p class="font-bold text-violet-300 mb-1">🎯 Como a Swile Vence no Middle Market RJ</p>' +
+          '<p class="text-slate-200">' + data.winArg + '</p>' +
+        '</div>' +
+        '<div class="rounded-xl border border-slate-700 bg-slate-950 p-3 space-y-2">' +
+          '<div class="flex items-center justify-between">' +
+            '<span class="font-bold text-white">💬 Script Pronto (WhatsApp / LinkedIn)</span>' +
+            '<button type="button" onclick="copyCurrentBattlecardScript()" class="rounded-lg swile-gradient px-3 py-1 text-[11px] font-semibold text-white">📋 Copiar Script</button>' +
+          '</div>' +
+          '<p id="currentBattlecardScriptText" class="text-slate-300 italic leading-relaxed">' + data.script + '</p>' +
+        '</div>';
+    }
+
+    function copyCurrentBattlecardScript() {
+      const sel = document.getElementById("battlecardSelect");
+      const key = sel ? sel.value : "Caju";
+      const data = BATTLECARDS_DATA[key] || BATTLECARDS_DATA["Caju"];
+      copyTextSafe(data.script, "Script contra " + key + " copiado!");
+    }
+
+    function renderObjectionsList() {
+      const container = document.getElementById("objectionsListContainer");
+      if (!container) return;
+      let html = "";
+      for (let i = 0; i < OBJECTIONS_DATA.length; i++) {
+        const ob = OBJECTIONS_DATA[i];
+        html += '<div class="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-1.5 text-xs">' +
+          '<div class="flex items-center justify-between gap-2">' +
+            '<span class="font-bold text-amber-300">' + ob.title + '</span>' +
+            '<button type="button" onclick="copyObjectionResponse(' + i + ')" class="shrink-0 rounded bg-slate-800 border border-slate-700 px-2.5 py-1 text-[11px] font-semibold text-fuchsia-300 hover:bg-slate-700">📋 Copiar Resposta</button>' +
+          '</div>' +
+          '<p class="text-[11px] text-slate-400"><strong>Causa Real:</strong> ' + ob.cause + '</p>' +
+          '<p class="text-slate-200">' + ob.response + '</p>' +
+        '</div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function copyObjectionResponse(idx) {
+      const ob = OBJECTIONS_DATA[idx];
+      if (ob) copyTextSafe(ob.response, "Resposta de contorno copiada!");
+    }
+
+    function updateCoachPromptPreview() {
+      const persona = document.getElementById("coachPersonaSelect").value;
+      const notes = document.getElementById("coachCallNotes").value;
+      const out = document.getElementById("coachPromptOutput");
+      if (!out) return;
+
+      out.value =
+        "Você é meu Diretor Comercial e Coach de Vendas B2B para a vaga de Sales Executive Middle Market da Swile Brasil no Rio de Janeiro.\n" +
+        "Uso o Método CHAVE (Conexão, Hipótese, Ancoragem, Virada, Extensão). Persona na conversa: [" + persona + "].\n" +
+        "Analise minha conversa abaixo etapa por etapa (nota 0-10 para Conexão, Hipótese, Ancoragem, Virada e Contorno de Objeção), diga se usei corretamente os gatilhos de Out/Nov 2026 (Compra da Caju pelo iFood em 20/10/2026 ou Interoperabilidade do PAT em Nov/2026 + X-Pay + Swile Shop + Taxa Zero) e reescreva a pergunta de isolamento e fechamento ideal:\n\n" +
+        "Resumo da Conversa: \"" + notes + "\"";
+    }
+
+    function copyCoachPrompt() {
+      const out = document.getElementById("coachPromptOutput");
+      if (out) copyTextSafe(out.value, "Prompt do Coach IA copiado!");
+    }
+
+    function copySqlSchemaText() {
+      copyTextSafe(SQL_SCHEMA_TEXT, "Schema SQL do Supabase copiado!");
+    }
+
+    // 6. MODALS (CREATE / EDIT ACCOUNT, FOLLOW-UP, OPPORTUNITY)
+    function openAccountModal(accountId) {
+      const modal = document.getElementById("accountModal");
+      if (!modal) return;
+
+      const acc = accountId ? state.accounts.find(function (a) { return a.id === accountId; }) : null;
+      document.getElementById("accountModalTitle").textContent = acc
+        ? "Raio-X 360° — " + acc.company_name + " (" + acc.active_card_users + " vidas)"
+        : "Cadastrar Nova Conta Middle Market RJ";
+
+      document.getElementById("accFormId").value = acc ? acc.id : "";
+      document.getElementById("accFormCompany").value = acc ? acc.company_name : "";
+      document.getElementById("accFormSector").value = acc ? acc.sector : "Tecnologia / Serviços B2B";
+      document.getElementById("accFormPolo").value = acc ? acc.polo_rj : "Centro / Porto Maravilha";
+      document.getElementById("accFormProvider").value = acc ? acc.current_provider : "Caju";
+      document.getElementById("accFormLives").value = acc ? acc.active_card_users : 250;
+      document.getElementById("accFormTicket").value = acc ? acc.avg_monthly_ticket : 900;
+      document.getElementById("accFormDecisor").value = acc ? acc.decision_maker_name : "Head de Pessoas & Cultura";
+      document.getElementById("accFormPhone").value = acc ? acc.phone : "+55 21 ";
+      document.getElementById("accFormEmail").value = acc ? acc.email_rh : "";
+      document.getElementById("accFormPriority").value = acc ? acc.priority_icp : "Alta";
+      document.getElementById("accFormInterest").value = acc ? acc.interest_level : "Quente";
+      document.getElementById("accFormStatus").value = acc ? acc.status : "Lead Mapeado";
+      document.getElementById("accFormAddress").value = acc ? acc.address : "Rio de Janeiro - RJ";
+      document.getElementById("accFormWebsite").value = acc ? acc.website : "https://";
+      document.getElementById("accFormRhPains").value = acc ? acc.rh_pains : "";
+      document.getElementById("accFormUserPains").value = acc ? acc.user_complaints : "";
+      document.getElementById("accFormTrigger").value = acc ? acc.swile_trigger_2026 : "";
+
+      modal.classList.remove("hidden");
+    }
+
+    function closeAccountModal() {
+      document.getElementById("accountModal").classList.add("hidden");
+    }
+
+    function saveAccountFromModal() {
+      const id = document.getElementById("accFormId").value;
+      const comp = (document.getElementById("accFormCompany").value || "").trim();
+      if (!comp) {
+        showToast("Informe o nome da empresa.", "⚠️");
+        return;
+      }
+
+      const payload = {
+        id: id || ("acc-" + Date.now()),
+        code: id ? undefined : ("LD-" + (state.accounts.length + 1)),
+        company_name: comp,
+        sector: document.getElementById("accFormSector").value,
+        polo_rj: document.getElementById("accFormPolo").value,
+        neighborhood: document.getElementById("accFormPolo").value.split("/")[0].trim(),
+        current_provider: document.getElementById("accFormProvider").value,
+        current_model: "Mapeado no CRM",
+        active_card_users: Number(document.getElementById("accFormLives").value) || 100,
+        employees_count: Number(document.getElementById("accFormLives").value) || 100,
+        avg_monthly_ticket: Number(document.getElementById("accFormTicket").value) || 850,
+        decision_maker_name: document.getElementById("accFormDecisor").value,
+        phone: document.getElementById("accFormPhone").value,
+        email_rh: document.getElementById("accFormEmail").value,
+        priority_icp: document.getElementById("accFormPriority").value,
+        interest_level: document.getElementById("accFormInterest").value,
+        status: document.getElementById("accFormStatus").value,
+        address: document.getElementById("accFormAddress").value,
+        website: document.getElementById("accFormWebsite").value,
+        rh_pains: document.getElementById("accFormRhPains").value,
+        user_complaints: document.getElementById("accFormUserPains").value,
+        swile_trigger_2026: document.getElementById("accFormTrigger").value
+      };
+
+      if (id) {
+        const idx = state.accounts.findIndex(function (a) { return a.id === id; });
+        if (idx >= 0) {
+          payload.code = state.accounts[idx].code;
+          state.accounts[idx] = payload;
+        }
+      } else {
+        state.accounts.unshift(payload);
+      }
+
+      closeAccountModal();
+      refreshAllViews();
+      showToast("Conta salva e recalculada no CRM!", "💾");
+    }
+
+    function copyPersonalizedPitchFromModal() {
+      const comp = document.getElementById("accFormCompany").value || "sua empresa";
+      const prov = document.getElementById("accFormProvider").value || "atual";
+      const lives = document.getElementById("accFormLives").value || "200";
+      const trig = document.getElementById("accFormTrigger").value || "";
+
+      const pitch =
+        "Olá! Tudo bem? Vi a operação da " + comp + " aqui no Rio (~" + lives + " vidas) e notei que hoje vocês operam com " + prov + ". " +
+        (prov === "Caju"
+          ? "Com a compra da Caju pelo iFood anunciada agora em 20/10/2026, temos apoiado vários RHs de médio porte no RJ a migrarem para a Swile para garantir independência global (B-Corp), bandeira Mastercard (+4M locais), Apple/Google Pay (X-Pay) e Swile Shop (+1.000 lojas) a Taxa Zero. "
+          : "Com a interoperabilidade total do PAT agora em novembro de 2026, temos ajudado empresas do porte da " + comp + " no RJ a unificar até 8 carteiras (VA, VR, Mobilidade, Saúde, Home Office e Premiação) em 1 único cartão Mastercard da Swile com Apple/Google Pay nativo e Taxa Zero. ") +
+        (trig ? ("Nosso foco específico para vocês: " + trig + " ") : "") +
+        "Topa um papo de 15 min nesta quinta-feira para compararmos?";
+
+      copyTextSafe(pitch, "Pitch personalizado para " + comp + " copiado!");
+    }
+
+    function populateAccountDropdown(selectId) {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      sel.innerHTML = state.accounts.map(function (a) {
+        return '<option value="' + a.id + '">' + a.company_name + ' (' + a.current_provider + ' • ' + a.active_card_users + ' vidas)</option>';
+      }).join("");
+    }
+
+    function openFollowupModal() {
+      populateAccountDropdown("fuAccountSelect");
+      document.getElementById("fuTitleInput").value = "";
+      document.getElementById("followupModal").classList.remove("hidden");
+    }
+
+    function closeFollowupModal() {
+      document.getElementById("followupModal").classList.add("hidden");
+    }
+
+    function saveFollowupFromModal() {
+      const accId = document.getElementById("fuAccountSelect").value;
+      const title = (document.getElementById("fuTitleInput").value || "").trim();
+      const due = document.getElementById("fuDateInput").value || "2026-10-30";
+      const chan = document.getElementById("fuChannelSelect").value;
+
+      if (!title) {
+        showToast("Descreva a ação do follow-up.", "⚠️");
+        return;
+      }
+
+      state.followups.unshift({
+        id: "fu-" + Date.now(),
+        account_id: accId,
+        action_title: title,
+        due_date: due,
+        channel: chan,
+        status: "Pendente",
+        priority: "Alta"
+      });
+
+      closeFollowupModal();
+      refreshAllViews();
+      showToast("Novo follow-up agendado como Próxima Ação!", "📅");
+    }
+
+    function openOpportunityModal() {
+      populateAccountDropdown("oppAccountSelect");
+      document.getElementById("opportunityModal").classList.remove("hidden");
+    }
+
+    function closeOpportunityModal() {
+      document.getElementById("opportunityModal").classList.add("hidden");
+    }
+
+    function saveOpportunityFromModal() {
+      const accId = document.getElementById("oppAccountSelect").value;
+      const stageW = Number(document.getElementById("oppStageSelect").value) || 1;
+      const prob = Number(document.getElementById("oppProbInput").value) || 40;
+      const closeDate = document.getElementById("oppCloseDateInput").value || "2026-11-25";
+
+      state.opportunities.push({
+        id: "opp-" + Date.now(),
+        account_id: accId,
+        stage_weight: stageW,
+        probability: prob,
+        close_date: closeDate
+      });
+
+      closeOpportunityModal();
+      refreshAllViews();
+      showToast("Oportunidade adicionada ao Kanban!", "📊");
+    }
+
+    // 7. SUPABASE LIVE CONNECTION & CSV EXPORT
+    async function connectAndSyncSupabase() {
+      const rawUrl = (document.getElementById("inputSupabaseUrl").value || "").trim();
+      const url = rawUrl.replace(/\/rest\/v1\/?$/, "");
+      const key = (document.getElementById("inputSupabaseKey").value || "").trim();
+      if (!url || !key) {
+        showToast("Preencha a Supabase URL e a Anon Key primeiro.", "⚠️");
+        return;
+      }
+
+      state.supabaseUrl = url;
+      state.supabaseKey = key;
+      persistState();
+
+      try {
+        if (typeof window.supabase === "undefined") {
+          showToast("SDK Supabase não carregado; mantendo modo local.", "⚠️");
+          return;
+        }
+        supabaseClient = window.supabase.createClient(url, key);
+        const { data, error } = await supabaseClient.from("crm_accounts").select("*").order("created_at", { ascending: true });
+        if (error) {
+          showToast("Conectado ao projeto! Rode o SQL Schema no Supabase para criar a tabela crm_accounts.", "⚡");
+          return;
+        }
+        if (Array.isArray(data) && data.length > 0) {
+          state.accounts = data.map(function (row, idx) {
+            return {
+              id: row.id || ("acc-sb-" + idx),
+              code: row.code || ("LD-" + (idx + 1)),
+              company_name: row.company_name,
+              website: row.website || "",
+              sector: row.sector || "",
+              polo_rj: row.polo_rj || "Centro / Porto Maravilha",
+              neighborhood: row.neighborhood || "",
+              address: row.address || "",
+              phone: row.phone || "",
+              email_rh: row.email_rh || "",
+              decision_maker_name: row.decision_maker_name || "",
+              employees_count: Number(row.employees_count) || 100,
+              active_card_users: Number(row.active_card_users) || 100,
+              avg_monthly_ticket: Number(row.avg_monthly_ticket) || 850,
+              current_provider: row.current_provider || "Caju",
+              current_model: row.current_model || "",
+              status: row.status || "Lead Mapeado",
+              priority_icp: row.priority_icp || "Alta",
+              interest_level: row.interest_level || "Quente",
+              rh_pains: row.rh_pains || "",
+              user_complaints: row.user_complaints || "",
+              swile_trigger_2026: row.swile_trigger_2026 || ""
+            };
+          });
+        }
+        state.supabaseConnected = true;
+        document.getElementById("dbStatusLabel").textContent = "Supabase Cloud Conectado";
+        document.getElementById("supabaseConnBadge").textContent = "Status: Sincronizado c/ Supabase";
+        refreshAllViews();
+        showToast("Sincronizado com seu banco PostgreSQL no Supabase!", "🚀");
+      } catch (err) {
+        showToast("Erro de rede ao conectar ao Supabase; modo local mantido.", "⚠️");
+      }
+    }
+
+    async function pushLocalSeedToSupabase() {
+      const rawUrl = (document.getElementById("inputSupabaseUrl").value || "").trim();
+      const url = rawUrl.replace(/\/rest\/v1\/?$/, "");
+      const key = (document.getElementById("inputSupabaseKey").value || "").trim();
+      if (!url || !key) {
+        showToast("Insira sua Supabase URL e Anon Key para enviar os dados.", "⚠️");
+        return;
+      }
+      try {
+        supabaseClient = window.supabase.createClient(url, key);
+        const rows = state.accounts.map(function (a, i) {
+          return {
+            code: a.code || ("LD-" + (i + 1)),
+            company_name: a.company_name,
+            website: a.website,
+            sector: a.sector,
+            polo_rj: a.polo_rj,
+            neighborhood: a.neighborhood,
+            address: a.address,
+            phone: a.phone,
+            email_rh: a.email_rh,
+            decision_maker_name: a.decision_maker_name,
+            employees_count: Number(a.employees_count) || 100,
+            active_card_users: Number(a.active_card_users) || 100,
+            avg_monthly_ticket: Number(a.avg_monthly_ticket) || 850,
+            current_provider: a.current_provider,
+            current_model: a.current_model,
+            status: a.status,
+            priority_icp: a.priority_icp,
+            interest_level: a.interest_level,
+            rh_pains: a.rh_pains,
+            user_complaints: a.user_complaints,
+            swile_trigger_2026: a.swile_trigger_2026
+          };
+        });
+        const { error } = await supabaseClient.from("crm_accounts").upsert(rows, { onConflict: "code" });
+        if (error) {
+          showToast("Execute primeiro o SQL Schema no SQL Editor do Supabase.", "⚠️");
+          return;
+        }
+        showToast("15 contas do RJ enviadas para o seu banco Supabase!", "✅");
+      } catch (e) {
+        showToast("Falha ao enviar seed para o Supabase.", "⚠️");
+      }
+    }
+
+    function disconnectSupabase() {
+      state.supabaseConnected = false;
+      supabaseClient = null;
+      document.getElementById("dbStatusLabel").textContent = "Modo Local + Supabase Ready";
+      document.getElementById("supabaseConnBadge").textContent = "Status: Cache Local Ativo";
+      showToast("Alternado para armazenamento local.", "ℹ️");
+    }
+
+    function exportCrmCsv() {
+      const headers = [
+        "Codigo", "Empresa", "Setor", "Polo_RJ", "Endereco", "Telefone", "Email_RH",
+        "Decisor", "Vidas_Ativas", "Ticket_Medio", "TPV_Mensal", "Cartao_Atual",
+        "Prioridade_ICP", "Score_ICP", "Dores_RH", "Reclamacoes_Usuarios", "Gatilho_Swile_2026"
+      ];
+      const rows = [headers.join(";")];
+      for (let i = 0; i < state.accounts.length; i++) {
+        const a = state.accounts[i];
+        const line = [
+          a.code,
+          a.company_name,
+          a.sector,
+          a.polo_rj,
+          a.address,
+          a.phone,
+          a.email_rh,
+          a.decision_maker_name,
+          a.active_card_users,
+          a.avg_monthly_ticket,
+          computeMonthlyTpv(a),
+          a.current_provider,
+          a.priority_icp,
+          computeCommercialScore(a),
+          (a.rh_pains || "").replace(/;/g, ","),
+          (a.user_complaints || "").replace(/;/g, ","),
+          (a.swile_trigger_2026 || "").replace(/;/g, ",")
+        ];
+        rows.push(line.join(";"));
+      }
+      const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "swile_os_crm_leads_rj.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("CSV exportado com sucesso!", "⬇");
+    }
+
+    window.addEventListener("DOMContentLoaded", function () {
+      loadInitialState();
+      refreshAllViews();
+    });
+  </script>
+</body>
+</html>

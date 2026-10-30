@@ -120,6 +120,15 @@ As preferências e os modelos ficam no `localStorage` deste navegador (não vão
 - **Exclusões** pedem confirmação numa janela do próprio app. Excluir a conta apaga junto oportunidades, follow-ups e notas.
 - **Banco sem login:** o topo mostra "Local · entre para sincronizar" em âmbar, sem acusar erro.
 
+## Fase 3: pipeline automático, copiloto de call e home office
+
+- **Pipeline automático** (`autoAdvancePipelineFromAccount`): o card anda sozinho quando você muda o status da conta (cria a oportunidade se faltar), marca interesse Quente (1 → Discovery), registra ligação/WhatsApp/e-mail numa conta já qualificada (1 → Discovery), registra reunião (→ Demo), salva a simulação PAT (→ Proposta) ou aplica uma transcrição. Fora a mudança manual de status, ele só avança, nunca recua. Perdido: oportunidade a 0% e recontato em 90 dias. Fechado: ganho e follow-up de onboarding.
+- **Copiloto de call** (ficha da conta): transcrição por voz em pt-BR (Chrome/Edge) e análise local por palavras-sinal: temperatura, score, 3 destaques, contorno de objeção e WhatsApp pós-call. "Aplicar no lead" grava transcrição e resumo no histórico, atualiza o interesse e move o card. **A gravação só capta o seu microfone**: em call do Meet, cole a transcrição do Meet/Gemini/Tactiq.
+- **Gemini opcional** (Integrações): com chave do Google AI Studio, a análise vai para o Gemini e volta em JSON; se falhar, usa a análise local. A chave fica no `localStorage` deste navegador, fora do backup e do Supabase, e fica exposta a quem usar o computador.
+- **Home office**: na ficha, Ligar, chamada WhatsApp, Google Meet (abre a sala e copia o convite) e convite no Google Agenda com o decisor. Resultados de 1 clique: Atendeu, Pediu proposta, Caixa postal, Sem interesse. A Agenda tem os modos Home Office (fila remota do dia) e Campo (rotas).
+- **Playbook em sub-abas**: CHAVE & Objeções, Battlecards & Matriz (notas marcadas como não verificadas), Gatilhos Regulatórios 2026 (com fonte e "Copiar gancho") e Raio-X Swile Brasil.
+- **Dados da Fattu e da Future**: informados pelo Michel e não verificados. Só substituem os valores provisórios antigos; não sobrescrevem algo editado.
+
 ## Sincronização com o Supabase
 
 - **Leitura:** ao conectar, contas, oportunidades e follow-ups são carregados do banco. O banco é a fonte da verdade.

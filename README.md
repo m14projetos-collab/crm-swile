@@ -44,7 +44,7 @@ Se as tabelas existirem mas estiverem vazias, o app envia as 15 contas sozinho n
 
 ### 3. Usar
 Abra o site. A URL e a chave pública já vêm preenchidas e o app conecta sozinho. O status aparece no topo e na aba
-**⚡ Supabase & GitHub** (conectado / tabelas pendentes / erro). Sem banco, tudo funciona no cache local do navegador.
+**Banco e login** (conectado / tabelas pendentes / erro). Sem banco, tudo funciona no cache local do navegador.
 
 ## Segurança — leia antes de cadastrar dados reais
 
@@ -78,7 +78,29 @@ Para voltar ao modo demo, rode a migration principal de novo.
 | Próxima ação vem só de `crm_follow_ups` (pendente mais próximo) | view `v_crm_accounts_360` + app |
 | Funil 1–5 (prob. 30/50/65/80/100%); avançar no Kanban atualiza oportunidade e status da conta | app → Supabase |
 | Score ICP 0–100: prioridade (22/14), vidas (≥450: 22, ≥250: 16, senão 10), interesse (22/14/6), operadora vulnerável Caju/Pluxee/Alelo (16, senão 10), estágio × 4 | view + app (mesma fórmula) |
-| Rotas Field RJ agrupam contas por polo lendo `crm_accounts` (sem duplicar endereço) | app |
+| Rotas Field RJ agrupam contas por polo lendo `crm_accounts` (sem duplicar endereço); "Abrir rota" monta o trajeto no Google Maps | app |
+| Conta nova já nasce com oportunidade (estágio 1) e primeiro contato agendado (opcional, marcado por padrão) | app → Supabase |
+| Oportunidade aberta sem follow-up pendente aparece em "Negócios sem próximo passo" e no card do Kanban | app |
+| "Feito" em 1 clique: conclui e agenda o próximo contato (+1/+2/+5/+7 dias úteis, sem resposta, outro) | app → Supabase |
+| Perda exige motivo (`loss_category`/`loss_details`) e pode agendar recontato em 90 dias; perdidas podem ser reabertas | app → Supabase |
+| Modelos de WhatsApp/e-mail com "avança para": ao enviar, a conta e a oportunidade aberta sobem de etapa (nunca descem) | app → Supabase |
+
+## Integrações gratuitas (aba Integrações)
+
+Tudo por link, sem OAuth e sem custo: usa o WhatsApp, o e-mail e a agenda já logados no aparelho.
+
+- **WhatsApp** (`wa.me`) e **ligação** (`tel:`) em cada conta, follow-up, card e na busca rápida. Modelos editáveis com
+  `{nome}`, `{empresa}`, `{operadora}`, `{vidas}`, `{bairro}`, `{vendedor}`, `{link_agenda}`, `{link_proposta}`.
+  Número fixo avisa que só abre se tiver WhatsApp Business.
+- **E-mail**: abre rascunho no Gmail, Outlook.com, Outlook 365 ou no app do aparelho, com destinatário extraído do campo de e-mail.
+- **Agenda**: Google Agenda, Outlook ou arquivo `.ics` (iPhone/Android) por follow-up, ou a semana inteira de uma vez.
+- **Mapas**: Google Maps ou Waze; pesquisa rápida (Google, LinkedIn, vagas na Gupy, notícias, Reclame Aqui da operadora atual, Meet).
+- **Webhook** para Make, n8n, Zapier ou Pipedream: `account.created`, `followup.completed`, `deal.won`, `deal.lost`
+  (POST `text/plain` com JSON, enviado em modo `no-cors`; só aceita https público).
+- **Planilhas**: importar CSV (vírgula ou ponto e vírgula; ignora empresas que já existem), exportar CSV e backup JSON.
+- Busca rápida com **Ctrl+K** (ou `/`), **N** nova conta, **F** agendar ação, **Esc** fecha.
+
+As preferências e os modelos ficam no `localStorage` deste navegador (não vão para o banco).
 
 ## Sincronização com o Supabase
 

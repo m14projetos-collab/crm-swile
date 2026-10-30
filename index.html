@@ -522,13 +522,14 @@
 
           <div class="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 space-y-2 text-xs">
             <p class="font-bold text-white">🔐 Login (necessário só no Modo Seguro)</p>
-            <p class="text-slate-400">Depois de rodar <code class="text-fuchsia-300">supabase/security/secure_rls_authenticated.sql</code>, apenas usuários logados leem e gravam no banco. Crie seu usuário em Authentication &gt; Users no painel do Supabase.</p>
+            <p class="text-slate-400">No Modo Seguro (<code class="text-fuchsia-300">supabase/security/secure_rls_authenticated.sql</code>), só os e-mails liberados no SQL leem e gravam no banco. Primeira vez? Digite e-mail e senha e clique em <strong>Criar login</strong>; depois use <strong>Entrar</strong>.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <input id="inputAuthEmail" type="email" autocomplete="username" placeholder="seu@email.com" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" />
-              <input id="inputAuthPassword" type="password" autocomplete="current-password" placeholder="senha" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" />
+              <input id="inputAuthPassword" type="password" autocomplete="current-password" placeholder="senha (mín. 6 caracteres)" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" />
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <button id="btnAuthLogin" type="button" onclick="loginSupabase()" class="rounded-lg bg-violet-600 hover:bg-violet-500 px-3.5 py-1.5 text-xs font-semibold text-white transition">Entrar</button>
+              <button id="btnAuthSignup" type="button" onclick="signupSupabase()" class="rounded-lg border border-violet-500/50 bg-violet-500/10 hover:bg-violet-500/20 px-3.5 py-1.5 text-xs font-semibold text-violet-200 transition">Criar login</button>
               <button id="btnAuthLogout" type="button" onclick="logoutSupabase()" class="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs text-slate-300 transition">Sair</button>
               <span id="authStatusLabel" class="text-[11px] text-slate-400">Não logado (modo demo/anon)</span>
             </div>
@@ -2441,6 +2442,26 @@
         return { user: json.user };
       },
 
+      signUp: async function (email, password) {
+        const redirectTo = window.location.origin + window.location.pathname;
+        if (this.client) {
+          const res = await this.client.auth.signUp({ email: email, password: password, options: { emailRedirectTo: redirectTo } });
+          if (res.error) return { error: res.error };
+          const sess = res.data ? res.data.session : null;
+          this.accessToken = sess ? sess.access_token : null;
+          return { user: res.data ? res.data.user : null, session: sess };
+        }
+        const resp = await fetch(this.url + "/auth/v1/signup?redirect_to=" + encodeURIComponent(redirectTo), {
+          method: "POST",
+          headers: { apikey: this.key, "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email, password: password })
+        });
+        const json = await resp.json().catch(function () { return {}; });
+        if (!resp.ok) return { error: { message: json.error_description || json.msg || json.message || ("HTTP " + resp.status) } };
+        this.accessToken = json.access_token || null;
+        return { user: json.user || json, session: json.access_token ? json : null };
+      },
+
       signOut: async function () {
         this.accessToken = null;
         if (this.client) {
@@ -2568,7 +2589,10 @@
               switchTab("supabase");
             }
           } else {
-            setDbStatus("error", "<p class='font-bold text-rose-300'>Erro do Supabase:</p><p>" + esc(remote.error.message) + "</p><p class='text-slate-500'>Se você ativou o Modo Seguro, faça login abaixo.</p>");
+            const permDenied = /permission denied|row-level security|JWT|401|42501/i.test((remote.error.message || "") + " " + (remote.error.code || "") + " " + (remote.error.status || ""));
+            setDbStatus("error", permDenied
+              ? "<p class='font-bold text-amber-300'>🔐 Modo Seguro ativo: faça login abaixo para ver os dados.</p>"
+              : "<p class='font-bold text-rose-300'>Erro do Supabase:</p><p>" + esc(remote.error.message) + "</p><p class='text-slate-500'>Se você ativou o Modo Seguro, faça login abaixo.</p>");
             if (!silent) showToast("Supabase: " + remote.error.message, "⚠️");
           }
           return;
@@ -2628,7 +2652,9 @@
           if (isMissingTableError(accRes.error)) {
             showToast("Execute primeiro o SQL no SQL Editor do Supabase.", "⚠️");
           } else {
-            showToast("Supabase recusou o envio: " + accRes.error.message, "⚠️");
+            showToast(/row-level security|permission denied/i.test(accRes.error.message || "")
+              ? "Sem permissão: faça login com um e-mail liberado no SQL do Modo Seguro."
+              : "Supabase recusou o envio: " + accRes.error.message, "⚠️");
             setDbStatus("error", "<p class='font-bold text-rose-300'>Envio recusado:</p><p>" + esc(accRes.error.message) + "</p><p class='text-slate-500'>No Modo Seguro é preciso fazer login antes.</p>");
           }
           return false;
@@ -2680,7 +2706,7 @@
       try {
         const res = await db.signIn(email, password);
         if (res.error) {
-          showToast("Login recusado: " + res.error.message, "⚠️");
+          showToast("Login recusado: " + translateAuthError(res.error.message), "⚠️");
           return;
         }
         document.getElementById("inputAuthPassword").value = "";
@@ -2692,9 +2718,58 @@
       }
     }
 
+    async function signupSupabase() {
+      const email = (document.getElementById("inputAuthEmail").value || "").trim();
+      const password = document.getElementById("inputAuthPassword").value || "";
+      if (!email || password.length < 6) {
+        showToast("Informe um e-mail e uma senha com pelo menos 6 caracteres.", "⚠️");
+        return;
+      }
+      const cfg = readSupabaseInputs();
+      db.init(cfg.url, cfg.key);
+      try {
+        const res = await db.signUp(email, password);
+        if (res.error) {
+          showToast("Cadastro recusado: " + translateAuthError(res.error.message), "⚠️");
+          return;
+        }
+        document.getElementById("inputAuthPassword").value = "";
+        if (res.session) {
+          setAuthLabel(res.user);
+          showToast("Login criado e conectado!", "🔐");
+          await connectAndSyncSupabase({ silent: false });
+        } else {
+          setDbStatus("local",
+            "<p class='font-bold text-violet-300'>Login criado. Confirme o e-mail.</p>" +
+            "<p>Enviamos um link para <strong>" + esc(email) + "</strong>. Clique nele e depois volte aqui e use <strong>Entrar</strong>.</p>");
+          showToast("Login criado! Confirme pelo link enviado ao seu e-mail e depois clique em Entrar.", "📧");
+        }
+      } catch (e) {
+        showToast("Falha de rede ao criar o login.", "⚠️");
+      }
+    }
+
+    function translateAuthError(msg) {
+      const m = String(msg || "");
+      if (/invalid login credentials/i.test(m)) return "e-mail ou senha incorretos.";
+      if (/email not confirmed/i.test(m)) return "e-mail ainda não confirmado (clique no link enviado).";
+      if (/already registered|already exists/i.test(m)) return "este e-mail já tem login; use Entrar.";
+      if (/signups not allowed|signup is disabled/i.test(m)) return "novos cadastros estão desativados no Supabase.";
+      if (/password/i.test(m)) return "senha inválida (mínimo de 6 caracteres).";
+      return m;
+    }
+
     async function logoutSupabase() {
       await db.signOut();
       setAuthLabel(null);
+      // Limpa os dados do banco guardados neste navegador (útil em computador compartilhado)
+      state.supabaseConnected = false;
+      state.accounts = JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
+      state.opportunities = JSON.parse(JSON.stringify(INITIAL_OPPORTUNITIES));
+      state.followups = JSON.parse(JSON.stringify(INITIAL_FOLLOWUPS));
+      persistState();
+      refreshAllViews();
+      setDbStatus("local", "Sessão encerrada. Os dados do banco foram removidos deste navegador.");
       showToast("Sessão encerrada.", "ℹ️");
     }
 

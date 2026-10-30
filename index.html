@@ -529,6 +529,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <button id="btnAuthLogin" type="button" onclick="loginSupabase()" class="rounded-lg bg-violet-600 hover:bg-violet-500 px-3.5 py-1.5 text-xs font-semibold text-white transition">Entrar</button>
+              <button id="btnAuthResend" type="button" onclick="resendConfirmationEmail()" class="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs text-slate-300 transition">Reenviar confirmação</button>
               <button id="btnAuthSignup" type="button" onclick="signupSupabase()" class="rounded-lg border border-violet-500/50 bg-violet-500/10 hover:bg-violet-500/20 px-3.5 py-1.5 text-xs font-semibold text-violet-200 transition">Criar login</button>
               <button id="btnAuthLogout" type="button" onclick="logoutSupabase()" class="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs text-slate-300 transition">Sair</button>
               <span id="authStatusLabel" class="text-[11px] text-slate-400">Não logado (modo demo/anon)</span>
@@ -2469,9 +2470,35 @@
         }
       },
 
+      resendConfirmation: async function (email) {
+        const redirectTo = window.location.origin + window.location.pathname;
+        if (this.client && this.client.auth.resend) {
+          const res = await this.client.auth.resend({ type: "signup", email: email, options: { emailRedirectTo: redirectTo } });
+          return { error: res.error || null };
+        }
+        const resp = await fetch(this.url + "/auth/v1/resend?redirect_to=" + encodeURIComponent(redirectTo), {
+          method: "POST",
+          headers: { apikey: this.key, "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "signup", email: email })
+        });
+        const json = await resp.json().catch(function () { return {}; });
+        return { error: resp.ok ? null : { message: json.msg || json.error_description || ("HTTP " + resp.status) } };
+      },
+
       restoreSession: async function () {
+        // Volta do link de confirmação sem SDK: token no hash da URL
+        if (!this.client && AUTH_RETURN && AUTH_RETURN.access_token) {
+          this.accessToken = AUTH_RETURN.access_token;
+          return { email: AUTH_RETURN.email || "" };
+        }
         if (!this.client) return null;
         try {
+          // Fluxo PKCE: o link volta com ?code=...
+          if (AUTH_RETURN && AUTH_RETURN.code && this.client.auth.exchangeCodeForSession) {
+            const code = AUTH_RETURN.code;
+            AUTH_RETURN.code = null;
+            await this.client.auth.exchangeCodeForSession(code).catch(function () { return null; });
+          }
           const res = await this.client.auth.getSession();
           const sess = res && res.data ? res.data.session : null;
           this.accessToken = sess ? sess.access_token : null;
@@ -2482,13 +2509,47 @@
       }
     };
 
+    // Lê o retorno do link de confirmação de e-mail (#access_token=... ou #error=...) antes do SDK
+    const AUTH_RETURN = (function () {
+      try {
+        const out = {};
+        const hash = new URLSearchParams((window.location.hash || "").replace(/^#/, ""));
+        const query = new URLSearchParams(window.location.search || "");
+        ["access_token", "refresh_token", "type", "error", "error_code", "error_description"].forEach(function (k) {
+          if (hash.get(k)) out[k] = hash.get(k);
+          else if (query.get(k)) out[k] = query.get(k);
+        });
+        if (query.get("code")) out.code = query.get("code");
+        if (out.access_token) {
+          try {
+            const payload = JSON.parse(atob(out.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+            out.email = payload.email || "";
+          } catch (e) { /* ignore */ }
+        }
+        return Object.keys(out).length ? out : null;
+      } catch (e) {
+        return null;
+      }
+    })();
+
+    function explainAuthReturnError(ret) {
+      const code = (ret.error_code || ret.error || "").toLowerCase();
+      if (code.indexOf("otp_expired") >= 0 || /expired|invalid/i.test(ret.error_description || "")) {
+        return "O link de confirmação expirou ou já foi usado (alguns provedores de e-mail abrem o link sozinhos para checar segurança). Tente <strong>Entrar</strong>: se disser que o e-mail não foi confirmado, clique em <strong>Reenviar confirmação</strong> e use o link novo em até 1 hora.";
+      }
+      return "O Supabase retornou: " + esc(ret.error_description || ret.error || "erro desconhecido") + ".";
+    }
+
     function isMissingTableError(err) {
       if (!err) return false;
       return err.code === "PGRST205" || err.code === "42P01" || err.status === 404 ||
         /does not exist|could not find the table/i.test(err.message || "");
     }
 
+    let authNoticeHtml = "";
+
     function setDbStatus(kind, html) {
+      if (authNoticeHtml) html = authNoticeHtml + (html ? "<hr class='my-2 border-slate-800'>" + html : "");
       const labels = {
         connected: ["Supabase Cloud Conectado", "Status: Sincronizado c/ Supabase", "border-emerald-500/50"],
         missing: ["Modo Local • Tabelas pendentes", "Status: Tabelas não encontradas", "border-amber-500/50"],
@@ -2710,6 +2771,7 @@
           return;
         }
         document.getElementById("inputAuthPassword").value = "";
+        authNoticeHtml = "";
         setAuthLabel(res.user);
         showToast("Login feito. Sincronizando…", "🔐");
         await connectAndSyncSupabase({ silent: false });
@@ -2749,10 +2811,31 @@
       }
     }
 
+    async function resendConfirmationEmail() {
+      const email = (document.getElementById("inputAuthEmail").value || "").trim();
+      if (!email) {
+        showToast("Digite o e-mail para reenviar a confirmação.", "⚠️");
+        return;
+      }
+      const cfg = readSupabaseInputs();
+      db.init(cfg.url, cfg.key);
+      try {
+        const res = await db.resendConfirmation(email);
+        if (res.error) {
+          showToast("Não foi possível reenviar: " + translateAuthError(res.error.message), "⚠️");
+          return;
+        }
+        showToast("Novo link enviado para " + email + ". Use em até 1 hora.", "📧");
+      } catch (e) {
+        showToast("Falha de rede ao reenviar a confirmação.", "⚠️");
+      }
+    }
+
     function translateAuthError(msg) {
       const m = String(msg || "");
       if (/invalid login credentials/i.test(m)) return "e-mail ou senha incorretos.";
-      if (/email not confirmed/i.test(m)) return "e-mail ainda não confirmado (clique no link enviado).";
+      if (/email not confirmed/i.test(m)) return "e-mail ainda não confirmado. Clique em \"Reenviar confirmação\" e use o link novo.";
+      if (/rate limit|too many|security purposes/i.test(m)) return "muitas tentativas seguidas; aguarde alguns minutos (o Supabase limita e-mails por hora).";
       if (/already registered|already exists/i.test(m)) return "este e-mail já tem login; use Entrar.";
       if (/signups not allowed|signup is disabled/i.test(m)) return "novos cadastros estão desativados no Supabase.";
       if (/password/i.test(m)) return "senha inválida (mínimo de 6 caracteres).";
@@ -2825,9 +2908,22 @@
     window.addEventListener("DOMContentLoaded", function () {
       loadInitialState();
       refreshAllViews();
+      if (AUTH_RETURN && (AUTH_RETURN.error || AUTH_RETURN.error_code)) {
+        switchTab("supabase");
+        authNoticeHtml = "<p class='font-bold text-amber-300'>Problema no link do e-mail</p><p>" + explainAuthReturnError(AUTH_RETURN) + "</p>";
+        setDbStatus("local", "");
+      } else if (AUTH_RETURN && (AUTH_RETURN.access_token || AUTH_RETURN.code)) {
+        switchTab("supabase");
+        showToast("E-mail confirmado! Entrando…", "✅");
+      }
+      // Limpa tokens/erros da barra de endereço depois de lidos
+      if (AUTH_RETURN && window.history && window.history.replaceState && !(AUTH_RETURN.access_token && window.supabase)) {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
       // Pré-configuração zero-click: tenta conectar sozinho ao abrir
-      if (state.autoConnect && state.supabaseUrl && state.supabaseKey) {
-        connectAndSyncSupabase({ silent: true });
+      const cameFromEmail = AUTH_RETURN && (AUTH_RETURN.access_token || AUTH_RETURN.code);
+      if ((state.autoConnect || cameFromEmail) && state.supabaseUrl && state.supabaseKey) {
+        connectAndSyncSupabase({ silent: !cameFromEmail });
       }
     });
   </script>

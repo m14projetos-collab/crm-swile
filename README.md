@@ -111,6 +111,15 @@ As preferências e os modelos ficam no `localStorage` deste navegador (não vão
 - **Excel:** botão "Excel" gera um `.xlsx` com as abas Resumo, Contas, Oportunidades e Follow-ups (SheetJS, carregado só na hora do clique). Sem internet, cai para CSV.
 - **Enviar resumo:** texto pronto com os números, por WhatsApp ou e-mail.
 
+## Produtividade
+
+- **Pipeline:** arraste o card para outra coluna (os botões Voltar/Avançar continuam). Etapa, probabilidade, status da conta e forecast se atualizam juntos.
+- **Contas:** clique no cabeçalho (Empresa, Polo, Vidas, TPV/mês, Cartão atual, Score) para ordenar; clique de novo para inverter. Filtros de polo, cartão e prioridade combinam com a busca.
+- **Ficha da conta:** campo "Registrar nota ou interação" (Nota, WhatsApp, Ligação, Reunião, E-mail, Visita) com data e hora. WhatsApp, Ligar e E-mail feitos pelo CRM entram no histórico sozinhos. As notas ficam no navegador e vão no backup JSON (ainda não há tabela no Supabase para elas).
+- **Celular e telas menores que 1024px:** botão ☰ abre o menu lateral completo.
+- **Exclusões** pedem confirmação numa janela do próprio app. Excluir a conta apaga junto oportunidades, follow-ups e notas.
+- **Banco sem login:** o topo mostra "Local · entre para sincronizar" em âmbar, sem acusar erro.
+
 ## Sincronização com o Supabase
 
 - **Leitura:** ao conectar, contas, oportunidades e follow-ups são carregados do banco. O banco é a fonte da verdade.

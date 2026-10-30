@@ -817,8 +817,8 @@
           </div>
 
           <div class="seg no-print" role="group" aria-label="Seções do relatório">
-            <button type="button" data-rtab="case" onclick="setReportTab('case')">Metas, Tendência &amp; Simulador (Case)</button>
-            <button type="button" data-rtab="funnel" onclick="setReportTab('funnel')">Funil Salesforce &amp; KPIs (Questões 3 e 5)</button>
+            <button type="button" data-rtab="case" onclick="setReportTab('case')">Metas, Tendência &amp; Simulador</button>
+            <button type="button" data-rtab="funnel" onclick="setReportTab('funnel')">Funil Salesforce &amp; KPIs do Case</button>
             <button type="button" data-rtab="carteira" onclick="setReportTab('carteira')">Carteira &amp; Operadoras</button>
           </div>
 
@@ -862,9 +862,9 @@
               </tr></thead><tbody id="caseFunnelTable"></tbody></table></div>
             </div>
             <div class="card p-4 avoid-break">
-              <h3 class="card-title">Questão 3 · KPIs de rotina</h3>
+              <h3 class="card-title">Questão 3 · 8 KPIs de esforço, funil e resultado</h3>
               <p class="card-sub">Meta do case ao lado do que o CRM registrou neste mês. "Sem dados" quando o CRM ainda não tem o necessário para calcular.</p>
-              <div id="caseKpiGrid" class="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-3"></div>
+              <div id="caseKpiGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3"></div>
             </div>
           </div>
 
@@ -1054,6 +1054,52 @@
                 <button type="button" class="btn btn-sm" onclick="exportBackupJson()"><svg class="ico"><use href="#i-download"/></svg>Backup completo (JSON)</button>
               </div>
               <div id="csvImportResult"></div>
+            </div>
+
+            <div id="sfConnector" class="card p-4 space-y-4 text-xs lg:col-span-2">
+              <div class="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h3 class="card-title flex items-center gap-2"><svg class="ico"><use href="#i-db"/></svg>Conector Salesforce CRM (Data Loader CSV &amp; REST API v60.0)</h3>
+                  <p class="mt-1" style="color:var(--muted)">Arquivos e JSON gerados neste navegador, a partir dos dados do CRM. O app não se conecta ao Salesforce: importe os CSVs pelo Data Import Wizard ou Data Loader, ou envie o JSON pelo webhook para uma automação que tenha acesso à sua org.</p>
+                </div>
+                <span class="chip" style="color:#fcd34d">Gerado localmente</span>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <p class="label">Exportar (UTF-8 com BOM, decimal 0.00 sem R$, datas AAAA-MM-DD)</p>
+                  <div class="flex flex-wrap gap-2">
+                    <button id="btnSfAccounts" type="button" class="btn btn-sm" onclick="exportSfAccountsCsv()"><svg class="ico"><use href="#i-download"/></svg>Baixar CSV Accounts &amp; Contacts (Import Wizard)</button>
+                    <button id="btnSfOpps" type="button" class="btn btn-sm" onclick="exportSfOpportunitiesCsv()"><svg class="ico"><use href="#i-download"/></svg>Baixar CSV Opportunities (6 fases)</button>
+                  </div>
+                  <p style="color:var(--faint)">Na sua org, crie antes o campo External_ID__c (marcado como ID externo) em Account e Opportunity, e os campos Swile_Avg_Benefit__c, Current_Competitor__c e Cluster_RJ__c. NumberOfEmployees na Opportunity precisa ser mapeado para um campo personalizado (ex.: Vidas__c). O contato só sai preenchido quando o decisor tem nome de pessoa.</p>
+
+                  <p class="label pt-2">Importar CSV do Salesforce</p>
+                  <label class="btn btn-sm cursor-pointer"><svg class="ico"><use href="#i-upload"/></svg>Escolher CSV (Accounts ou Opportunities)<input id="sfImportInput" type="file" accept=".csv,text/csv" class="sr-only" onchange="previewSfImport(this)" /></label>
+                  <p style="color:var(--faint)">Regra do case: linhas com menos de 200 vidas (ou sem NumberOfEmployees) ficam bloqueadas. Nada é gravado antes de você confirmar.</p>
+                  <div id="sfImportPreview"></div>
+                </div>
+
+                <div class="space-y-2">
+                  <p class="label">Inspetor de payload REST API v60.0</p>
+                  <div class="flex flex-wrap gap-2">
+                    <label for="sfPayloadAccount" class="sr-only">Conta</label>
+                    <select id="sfPayloadAccount" class="input h-8 w-auto max-w-[14rem] text-[12px]" onchange="renderSfPayload()"></select>
+                    <div class="seg" role="group" aria-label="Tipo de chamada">
+                      <button type="button" data-sfkind="opp" onclick="setSfPayloadKind('opp')">Opportunity</button>
+                      <button type="button" data-sfkind="tree" onclick="setSfPayloadKind('tree')">Account (tree)</button>
+                      <button type="button" data-sfkind="task" onclick="setSfPayloadKind('task')">Task</button>
+                    </div>
+                  </div>
+                  <p id="sfPayloadEndpoint" class="font-mono text-[11px] break-all" style="color:#c4b5fd"></p>
+                  <pre id="sfPayloadJson" class="rounded-lg p-3 overflow-auto max-h-72 whitespace-pre-wrap break-words text-[11px] leading-relaxed" style="background:var(--surface-2);color:#c3c8d4"></pre>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" class="btn btn-sm" onclick="copySfPayload()"><svg class="ico"><use href="#i-copy"/></svg>Copiar JSON sObjects</button>
+                    <button type="button" class="btn btn-sm" onclick="sendSfPayloadWebhook()"><svg class="ico"><use href="#i-link"/></svg>Enviar pelo webhook</button>
+                    <span id="sfPayloadStatus" style="color:var(--faint)"></span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -3014,6 +3060,9 @@
         activities: acts.length + fuDone.length,
         activitiesPerDay: (acts.length + fuDone.length) / bd,
         meetingsPerDay: meetings / bd,
+        meetingsWeek: (state.interactions || []).filter(function (i) { return /Reunião|Visita/.test(i.type || "") && (Date.now() - new Date(i.at).getTime()) <= 7 * 86400000; }).length,
+        connectionsPerDay: acts.filter(function (i) { return /Ligação atendida|pediu proposta|sem interesse/i.test(i.text || "") || (/Reunião|Visita/.test(i.type || "") && !i.auto); }).length / bd,
+        wonMonthCount: wonMonth.length,
         winRate: won.length + lost.length ? won.length / (won.length + lost.length) : null,
         avgTicket: won.length ? sumTpv(won) / won.length : null,
         avgCycle: cycles.length ? cycles.reduce(function (a, b) { return a + b; }, 0) / cycles.length : null,
@@ -3047,7 +3096,7 @@
       { key: "guanabara", name: "Supermercados Guanabara (Matriz RJ)", polo: "Zona Oeste - Campo Grande", sector: "Varejo alimentar", address: "Estrada da Água Branca, 3400 - Realengo, Rio de Janeiro - RJ, 21720-161", phone: "", channel: "supermercadosguanabara.gupy.io | supermercadosguanabara.com.br", website: "https://www.supermercadosguanabara.com.br/", lives: 580, ticket: 740, provider: "Ticket",
         decisor: "Superintendência de RH & DP", decisorSrc: { kind: "user" }, livesNote: "núcleo administrativo" },
       { key: "granado", name: "Granado Pharmácias (Sede RJ)", polo: "Centro / Porto Maravilha", sector: "Indústria & varejo cosmético", address: "Rua Primeiro de Março, 14 - Centro, Rio de Janeiro - RJ", phone: "", channel: "granado.gupy.io | granado.com.br", website: "https://www.granado.com.br/", lives: 450, ticket: 850, provider: "Ticket",
-        decisor: "Diretoria de RH & CFO (diretoria: Sissi Freeman)", decisorSrc: { kind: "user" } },
+        decisor: "Diretoria de RH & CFO (Diretora de Marketing e Vendas: Sissi Freeman)", decisorSrc: { kind: "ok", label: "Sissi Freeman confirmada: ABRAMARK, mai/2025", url: "https://abramark.com.br/abramark/5-perguntas/5-perguntas-para-sissi-freeman-diretora-de-marketing-e-vendas-da-granado/" } },
       { key: "frescatto", name: "Frescatto Company (RJ)", polo: "Niterói / Região Metropolitana", sector: "Indústria de alimentos", address: "Rod. Washington Luiz - Duque de Caxias / Porto Maravilha, RJ", phone: "", channel: "frescatto.com.br", website: "https://www.frescatto.com.br/", lives: 380, ticket: 780, provider: "Alelo",
         decisor: "Diretoria de Gente & Operações (CEO: Thiago De Luca)", decisorSrc: { kind: "ok", label: "CEO confirmado: Brazil Journal", url: "https://braziljournal.com/frescatto-prime-o-ma-do-salmao-com-a-lagosta" } },
       { key: "zonasul", name: "Supermercados Zona Sul (Sede e Logística RJ)", polo: "Zona Sul / Barra", sector: "Varejo alimentar", address: "Av. Brasil, 13150 - Penha / Botafogo, RJ", phone: "", channel: "zonasul.com.br", website: "https://www.zonasul.com.br/", lives: 620, ticket: 820, provider: "Ticket",
@@ -3679,9 +3728,9 @@
         ] },
       { q: "Q3", title: "KPIs de esforço, meio de funil e resultado", demo: "reports-funnel",
         body: [
-          "Esforço: 55 atividades por dia útil e 4 a 5 reuniões por dia.",
+          "Esforço: 55 atividades por dia útil, 10 a 12 conexões com decisores por dia e 8 a 10 reuniões por semana.",
           "Meio de funil: cobertura de 4x a meta (R$ 2,4 mi em Negociando + Contrato enviado) e ciclo médio de 32 dias.",
-          "Resultado: win rate de 28% e ticket médio perto de R$ 210 mil por mês.",
+          "Resultado: win rate de 28%, ticket médio perto de R$ 210 mil por mês e positivação de 3 a 4 contas por mês.",
           "No app, cada meta aparece ao lado do número real do CRM, para a conversa ser sobre dados e não sobre impressão."
         ] },
       { q: "Q4", title: "Como virar os 2 concorrentes dominantes no RJ", demo: "playbook-matrix", dynamic: "competitors",
@@ -3753,7 +3802,7 @@
         }
         return '<div class="card p-4 space-y-2 text-xs">' +
           '<div class="flex items-start justify-between gap-2"><h3 class="card-title"><span class="num" style="color:#c4b5fd">' + c.q + '</span> · ' + esc(c.title) + '</h3>' +
-          '<button type="button" class="btn btn-ghost btn-sm shrink-0" onclick="demoCase(\'' + c.demo + '\')">Demonstrar no app →</button></div>' +
+          '<button type="button" class="btn btn-ghost btn-sm shrink-0" onclick="demoCase(\'' + c.demo + '\')">Demonstrar na prática →</button></div>' +
           '<ul class="space-y-1.5" style="color:#c3c8d4">' + c.body.map(function (b) { return '<li class="flex gap-2"><span style="color:var(--faint)">•</span><span>' + esc(b) + '</span></li>'; }).join("") + '</ul>' +
           extra + '</div>';
       }).join("");
@@ -5726,8 +5775,306 @@
       showToast("Chave apagada. O copiloto volta para a análise local.", "🗑️");
     }
 
+    // =====================================================================
+    // CONECTOR SALESFORCE: CSV no padrão Data Loader / Import Wizard e payloads REST v60.0.
+    // Tudo é gerado no navegador; não há chamada à API do Salesforce.
+    // =====================================================================
+    const SF_API = "/services/data/v60.0";
+    const SF_STAGE_NAMES = { 0: "Perdida", 1: "Não contactado", 2: "Qualificando", 3: "Em contato", 4: "Negociando", 5: "Contrato enviado", 6: "Contrato assinado" };
+    let sfPayloadKind = "opp";
+    let sfImportPlan = null;
+
+    function sfMoney(v) { return (Math.round((Number(v) || 0) * 100) / 100).toFixed(2); }
+    function sfDate(iso) { const d = String(iso || "").slice(0, 10); return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : ""; }
+    function sfCsvCell(v) {
+      const t = String(v === null || v === undefined ? "" : v);
+      return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+    }
+    function sfCsv(headers, rows) {
+      return "﻿" + [headers.join(",")].concat(rows.map(function (r) { return r.map(sfCsvCell).join(","); })).join("\r\n") + "\r\n";
+    }
+    function sfDownload(name, text) {
+      const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    }
+
+    // Separa o decisor em nome de pessoa + cargo, quando der
+    function sfSplitDecisor(text) {
+      const t = String(text || "").trim();
+      const roleWords = /diretor|diretoria|ger[eê]n|superint|\brh\b|people|cfo|ceo|head|equipe|financ|compras|institucional|lideran|partner|rewards/i;
+      const isPerson = function (n) { return /^[A-ZÀ-Ý][A-Za-zÀ-ÿ'’.-]+( [A-Za-zÀ-ÿ'’.-]+){1,4}$/.test(n) && !roleWords.test(n); };
+      const split = function (n, title) { const parts = n.split(" "); return { first: parts.slice(0, -1).join(" "), last: parts.slice(-1)[0], title: title || "" }; };
+      let m = t.match(/^([^()]+?)\s*\(([^)]*)\)\s*$/);
+      if (m && isPerson(m[1].trim())) return split(m[1].trim(), m[2].trim());
+      if (m && m[2].indexOf(":") >= 0) {
+        const inner = m[2].split(":");
+        const name = inner.slice(1).join(":").trim();
+        if (isPerson(name)) return split(name, inner[0].trim());
+      }
+      if (isPerson(t)) return split(t, "");
+      return { first: "", last: "", title: t };
+    }
+
+    function sfNextStep(accId) {
+      const fu = state.followups.filter(function (f) { return f.account_id === accId && f.status === "Pendente"; })
+        .sort(function (a, b) { return String(a.due_date).localeCompare(String(b.due_date)); })[0];
+      return fu ? fu.action_title + (fu.due_date ? " (" + fu.due_date + ")" : "") : "";
+    }
+    function sfLatestOpp(accId) {
+      return state.opportunities.filter(function (o) { return o.account_id === accId; }).slice(-1)[0] || null;
+    }
+
+    function exportSfAccountsCsv() {
+      const headers = ["External_ID__c", "Account Name", "Account Number", "Industry", "Phone", "Website", "Billing Street", "Billing City", "Billing State/Province", "Billing Country",
+        "NumberOfEmployees", "Swile_Avg_Benefit__c", "Current_Competitor__c", "Cluster_RJ__c", "Contact First Name", "Contact Last Name", "Contact Title", "Contact Email", "Contact Phone"];
+      const rows = state.accounts.map(function (a) {
+        const c = sfSplitDecisor(a.decision_maker_name);
+        return [a.id, a.company_name, a.code, a.sector, a.phone, a.website, a.address, "Rio de Janeiro", "RJ", "Brasil",
+          Number(a.active_card_users) || 0, sfMoney(a.avg_monthly_ticket), a.current_provider, a.polo_rj,
+          c.first, c.last, c.title, extractEmails(a.email_rh)[0] || "", c.last ? a.phone : ""];
+      });
+      sfDownload("salesforce-accounts-contacts-" + todayIso() + ".csv", sfCsv(headers, rows));
+      showToast(rows.length + " conta(s) no CSV do Salesforce.", "📄");
+    }
+
+    function exportSfOpportunitiesCsv() {
+      const headers = ["External_ID__c", "Opportunity_Name", "Account_Name", "NumberOfEmployees", "Swile_Avg_Benefit__c", "Amount", "StageName", "Probability", "CloseDate", "NextStep", "Current_Competitor__c", "Cluster_RJ__c", "LeadSource"];
+      const rows = state.opportunities.map(function (o) {
+        const a = findAccount(o.account_id) || {};
+        const w = Number(o.stage_weight) || 0;
+        return [o.id, o.title || ("Swile — " + (a.company_name || "Conta")), a.company_name || "", Number(a.active_card_users) || 0, sfMoney(a.avg_monthly_ticket),
+          sfMoney(computeMonthlyTpv(a)), SF_STAGE_NAMES[w] || "", Number(o.probability) || STAGE_PROBS[w] || 0, sfDate(o.closed_date || o.close_date),
+          sfNextStep(a.id), a.current_provider || "", a.polo_rj || "", "Outbound"];
+      });
+      sfDownload("salesforce-opportunities-" + todayIso() + ".csv", sfCsv(headers, rows));
+      showToast(rows.length + " oportunidade(s) no CSV do Salesforce.", "📄");
+    }
+
+    // ---------- Importação do CSV do Salesforce (com trava de 200 vidas)
+    const SF_IMPORT_MAP = {
+      company_name: ["account name", "account_name", "name", "accountname"],
+      active_card_users: ["numberofemployees", "number of employees", "employees"],
+      avg_monthly_ticket: ["swile_avg_benefit__c"],
+      current_provider: ["current_competitor__c"],
+      polo_rj: ["cluster_rj__c"],
+      sector: ["industry"],
+      phone: ["phone", "contact phone"],
+      website: ["website"],
+      address: ["billing street", "billingstreet"],
+      code: ["account number", "accountnumber"],
+      contact_first: ["contact first name", "firstname"],
+      contact_last: ["contact last name", "lastname"],
+      contact_title: ["contact title", "title"],
+      email_rh: ["contact email", "email"],
+      stage: ["stagename", "stage"]
+    };
+    function sfNum(v) {
+      let t = String(v || "").replace(/[^\d,.-]/g, "");
+      // O separador que aparece por último é o decimal (1,100.00 ou 1.100,00)
+      if (t.indexOf(",") >= 0 && t.indexOf(".") >= 0) t = t.lastIndexOf(",") > t.lastIndexOf(".") ? t.replace(/\./g, "").replace(",", ".") : t.replace(/,/g, "");
+      else if (t.indexOf(",") >= 0) t = t.replace(",", ".");
+      return Number(t);
+    }
+    function planSfImport(rows) {
+      if (rows.length < 2) return { error: "O arquivo precisa de cabeçalho e pelo menos uma linha." };
+      const fields = rows[0].map(function (h) {
+        const n = String(h || "").replace(/^﻿/, "").trim().toLowerCase();
+        for (const f in SF_IMPORT_MAP) if (SF_IMPORT_MAP[f].indexOf(n) >= 0) return f;
+        return null;
+      });
+      if (fields.indexOf("company_name") < 0) return { error: "Não achei a coluna Account Name (ou Account_Name) no cabeçalho." };
+      const existing = {};
+      state.accounts.forEach(function (a) { existing[normalizeText(a.company_name).trim()] = true; });
+      const polos = ["Centro / Porto Maravilha", "Barra da Tijuca / Recreio", "Zona Sul / Barra", "Zona Norte / Del Castilho", "Niterói / Região Metropolitana", "Zona Oeste - Campo Grande"];
+      const stageByName = {};
+      Object.keys(SF_STAGE_NAMES).forEach(function (k) { stageByName[normalizeText(SF_STAGE_NAMES[k])] = Number(k); });
+      const items = [];
+      for (let r = 1; r < rows.length; r++) {
+        const rec = {};
+        fields.forEach(function (f, i) { if (f && rows[r][i] !== undefined && String(rows[r][i]).trim()) rec[f] = String(rows[r][i]).trim(); });
+        if (!rec.company_name) continue;
+        const lives = Math.round(sfNum(rec.active_card_users)) || 0;
+        const key = normalizeText(rec.company_name).trim();
+        let status = "ok", reason = "";
+        if (!lives) { status = "blocked"; reason = "sem nº de vidas"; }
+        else if (lives < CASE_MIN_LIVES) { status = "blocked"; reason = "abaixo de 200 vidas"; }
+        else if (existing[key]) { status = "dup"; reason = "já está na carteira"; }
+        if (status === "ok") existing[key] = true;
+        const stageW = rec.stage ? stageByName[normalizeText(rec.stage)] : undefined;
+        const polo = polos.find(function (p) { return rec.polo_rj && normalizeText(p) === normalizeText(rec.polo_rj); });
+        const name = [rec.contact_first, rec.contact_last].filter(Boolean).join(" ");
+        items.push({ status: status, reason: reason, stageW: stageW, account: {
+          id: newUuid(), code: null, company_name: rec.company_name, sector: rec.sector || "A Validar",
+          polo_rj: polo || "Centro / Porto Maravilha", neighborhood: (polo || "Centro").split("/")[0].replace(/ - .*/, "").trim(),
+          address: rec.address || "", phone: rec.phone || "", email_rh: rec.email_rh || "", website: rec.website || "",
+          decision_maker_name: name ? name + (rec.contact_title ? " (" + rec.contact_title + ")" : "") : (rec.contact_title || ""),
+          employees_count: lives, active_card_users: lives, avg_monthly_ticket: sfNum(rec.avg_monthly_ticket) || 800,
+          current_provider: rec.current_provider || "A Validar", current_model: "Importado do Salesforce", status: "Lead Mapeado",
+          priority_icp: lives >= 500 ? "Alta" : "Média", interest_level: "Morno", rh_pains: "", user_complaints: "", swile_trigger_2026: ""
+        } });
+      }
+      return { items: items, ok: items.filter(function (i) { return i.status === "ok"; }) };
+    }
+
+    function previewSfImport(input) {
+      const file = input.files && input.files[0];
+      const box = document.getElementById("sfImportPreview");
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function () {
+        input.value = "";
+        const plan = planSfImport(parseCsv(String(reader.result || "")));
+        if (plan.error) { sfImportPlan = null; box.innerHTML = '<p class="text-amber-300">' + esc(plan.error) + '</p>'; return; }
+        sfImportPlan = plan;
+        renderSfImportPreview();
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    function renderSfImportPreview() {
+      const box = document.getElementById("sfImportPreview");
+      const plan = sfImportPlan;
+      if (!plan) { box.innerHTML = ""; return; }
+      const blocked = plan.items.filter(function (i) { return i.status === "blocked"; }).length;
+      const dup = plan.items.filter(function (i) { return i.status === "dup"; }).length;
+      const chip = function (i) {
+        if (i.status === "ok") return '<span class="chip chip-ok">importar</span>';
+        if (i.status === "dup") return '<span class="chip">' + esc(i.reason) + '</span>';
+        return '<span class="chip" style="color:#fca5a5">bloqueada: ' + esc(i.reason) + '</span>';
+      };
+      box.innerHTML = '<div class="rounded-lg border overflow-x-auto" style="border-color:var(--line)"><table class="w-full text-[11px]"><thead><tr class="text-left" style="color:var(--faint)"><th class="px-3 py-1.5 font-medium">Conta</th><th class="px-2 py-1.5 font-medium text-right">Vidas</th><th class="px-2 py-1.5 font-medium">Fase</th><th class="px-3 py-1.5 font-medium">Situação</th></tr></thead><tbody>' +
+        plan.items.slice(0, 5).map(function (i) {
+          return '<tr class="divider"><td class="px-3 py-1.5 text-slate-200">' + esc(i.account.company_name) + '</td><td class="px-2 py-1.5 text-right num">' + (i.account.active_card_users || "—") + '</td><td class="px-2 py-1.5">' + esc(i.stageW !== undefined ? SF_STAGE_NAMES[i.stageW] : "—") + '</td><td class="px-3 py-1.5">' + chip(i) + '</td></tr>';
+        }).join("") + '</tbody></table></div>' +
+        '<p class="mt-1.5" style="color:var(--muted)">Prévia das 5 primeiras de ' + plan.items.length + ' linha(s): ' + plan.ok.length + ' para importar, ' + blocked + ' bloqueada(s) pela regra de 200 vidas' + (dup ? ', ' + dup + ' já na carteira' : '') + '.</p>' +
+        '<div class="flex gap-2 mt-1.5">' + (plan.ok.length ? '<button id="btnSfConfirmImport" type="button" class="btn btn-primary btn-sm" onclick="confirmSfImport()">Importar ' + plan.ok.length + ' conta(s)</button>' : '') +
+        '<button type="button" class="btn btn-sm" onclick="sfImportPlan=null;renderSfImportPreview()">Cancelar</button></div>';
+    }
+
+    function confirmSfImport() {
+      const plan = sfImportPlan;
+      if (!plan || !plan.ok.length) return;
+      const accs = [], opps = [];
+      plan.ok.forEach(function (i) {
+        i.account.code = nextAccountCode();
+        state.accounts.push(i.account);
+        accs.push(i.account);
+        const w = i.stageW !== undefined ? i.stageW : 1;
+        const opp = { id: newUuid(), account_id: i.account.id, stage_weight: w, stage: STAGE_LABELS[w], probability: STAGE_PROBS[w], close_date: addDaysIso(45) };
+        if (w === STAGE_WON || w === 0) opp.closed_date = todayIso();
+        state.opportunities.push(opp);
+        opps.push(opp);
+      });
+      sfImportPlan = null;
+      persistState();
+      refreshAllViews();
+      document.getElementById("sfImportPreview").innerHTML = '<p class="text-emerald-300">' + accs.length + ' conta(s) importada(s) do Salesforce, cada uma com oportunidade na fase do arquivo (ou Não contactado).</p>';
+      showToast(accs.length + " conta(s) importada(s) do Salesforce.", "📥");
+      remoteWrite("Importação Salesforce", async function () {
+        const r = await db.upsert("crm_accounts", accs.map(accountToRow), "code");
+        if (r.error) return r;
+        (r.data || []).forEach(function (row) {
+          const local = state.accounts.find(function (a) { return a.code === row.code; });
+          if (local && row.id && local.id !== row.id) remapAccountId(local.id, row.id);
+        });
+        refreshAllViews();
+        return db.upsert("crm_opportunities", opps.map(opportunityToRow), "id");
+      });
+    }
+
+    // ---------- Inspetor de payload REST
+    function setSfPayloadKind(kind) { sfPayloadKind = kind; renderSfPayload(); }
+
+    function buildSfPayload(acc, kind) {
+      const opp = sfLatestOpp(acc.id);
+      const w = opp ? Number(opp.stage_weight) || 0 : 1;
+      const oppFields = {
+        Name: (opp && opp.title) || ("Swile — " + acc.company_name),
+        StageName: SF_STAGE_NAMES[w],
+        Probability: opp ? Number(opp.probability) || STAGE_PROBS[w] : STAGE_PROBS[1],
+        Amount: Number(sfMoney(computeMonthlyTpv(acc))),
+        CloseDate: sfDate(opp && (opp.closed_date || opp.close_date)) || addDaysIso(30),
+        NextStep: sfNextStep(acc.id) || null,
+        Swile_Avg_Benefit__c: Number(sfMoney(acc.avg_monthly_ticket)),
+        Current_Competitor__c: acc.current_provider || null,
+        Cluster_RJ__c: acc.polo_rj || null,
+        LeadSource: "Outbound"
+      };
+      if (kind === "opp") {
+        const oid = opp ? opp.id : "{criar oportunidade no CRM}";
+        return { method: "PATCH", path: SF_API + "/sobjects/Opportunity/External_ID__c/" + oid,
+          body: Object.assign({}, oppFields, { Account: { External_ID__c: acc.id } }) };
+      }
+      if (kind === "tree") {
+        const c = sfSplitDecisor(acc.decision_maker_name);
+        const rec = {
+          attributes: { type: "Account", referenceId: "acc1" },
+          Name: acc.company_name, AccountNumber: acc.code || null, Industry: acc.sector || null, Phone: acc.phone || null, Website: acc.website || null,
+          BillingStreet: acc.address || null, BillingCity: "Rio de Janeiro", BillingState: "RJ", BillingCountry: "Brasil",
+          NumberOfEmployees: Number(acc.active_card_users) || 0, External_ID__c: acc.id,
+          Swile_Avg_Benefit__c: oppFields.Swile_Avg_Benefit__c, Current_Competitor__c: oppFields.Current_Competitor__c, Cluster_RJ__c: oppFields.Cluster_RJ__c
+        };
+        if (c.last) rec.Contacts = { records: [{ attributes: { type: "Contact", referenceId: "con1" }, FirstName: c.first || null, LastName: c.last, Title: c.title || null, Email: extractEmails(acc.email_rh)[0] || null, Phone: acc.phone || null }] };
+        if (opp) rec.Opportunities = { records: [Object.assign({ attributes: { type: "Opportunity", referenceId: "opp1" }, External_ID__c: opp.id }, oppFields)] };
+        return { method: "POST", path: SF_API + "/composite/tree/Account", body: { records: [rec] } };
+      }
+      const fu = state.followups.filter(function (f) { return f.account_id === acc.id; })
+        .sort(function (a, b) { return (a.status === "Pendente" ? 0 : 1) - (b.status === "Pendente" ? 0 : 1) || String(a.due_date).localeCompare(String(b.due_date)); })[0];
+      const last = (state.interactions || []).filter(function (i) { return i.account_id === acc.id; }).slice(-1)[0];
+      return { method: "POST", path: SF_API + "/sobjects/Task", body: {
+        Subject: fu ? fu.action_title : (last ? last.type + ": " + String(last.text).slice(0, 80) : "Primeiro contato"),
+        ActivityDate: sfDate(fu ? fu.due_date : (last ? last.at : todayIso())) || todayIso(),
+        Status: fu && fu.status === "Pendente" ? "Not Started" : "Completed",
+        Priority: fu && fu.priority === "Alta" ? "High" : "Normal",
+        Type: fu ? (/whats|liga|telef/i.test(fu.channel || "") ? "Call" : /mail/i.test(fu.channel || "") ? "Email" : "Other") : "Other",
+        What: opp ? { attributes: { type: "Opportunity" }, External_ID__c: opp.id } : { attributes: { type: "Account" }, External_ID__c: acc.id },
+        Description: last ? String(last.text).slice(0, 500) : null
+      } };
+    }
+
+    function renderSfPayload() {
+      const sel = document.getElementById("sfPayloadAccount");
+      if (!sel) return;
+      const prev = sel.value;
+      sel.innerHTML = state.accounts.map(function (a) { return '<option value="' + esc(a.id) + '">' + esc(a.company_name) + '</option>'; }).join("");
+      if (prev && state.accounts.some(function (a) { return a.id === prev; })) sel.value = prev;
+      document.querySelectorAll("[data-sfkind]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-sfkind") === sfPayloadKind)); });
+      const acc = findAccount(sel.value);
+      if (!acc) { document.getElementById("sfPayloadJson").textContent = "Cadastre uma conta para ver o payload."; return; }
+      const p = buildSfPayload(acc, sfPayloadKind);
+      document.getElementById("sfPayloadEndpoint").textContent = p.method + " " + p.path;
+      document.getElementById("sfPayloadJson").textContent = JSON.stringify(p.body, null, 2);
+    }
+
+    function copySfPayload() {
+      const acc = findAccount(document.getElementById("sfPayloadAccount").value);
+      if (!acc) return;
+      const p = buildSfPayload(acc, sfPayloadKind);
+      copyTextSafe(JSON.stringify(p.body, null, 2), "JSON sObjects copiado.");
+    }
+
+    function sendSfPayloadWebhook() {
+      const st = document.getElementById("sfPayloadStatus");
+      const url = (integ().webhook || {}).url;
+      if (!url || !isSafeWebhookUrl(url)) { st.textContent = "Configure a URL do webhook acima (https público)."; return; }
+      const acc = findAccount(document.getElementById("sfPayloadAccount").value);
+      if (!acc) return;
+      const p = buildSfPayload(acc, sfPayloadKind);
+      const payload = { event: "salesforce.payload", at: new Date().toISOString(), source: "swile-os-crm", data: { method: p.method, path: p.path, body: p.body } };
+      st.textContent = "Enviando…";
+      fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
+        .then(function () { st.textContent = "Enviado ao webhook. A automação é que chama o Salesforce."; })
+        .catch(function () { st.textContent = "Falhou (rede ou URL inválida)."; });
+    }
+
     function renderIntegrations() {
       const cfg = integ();
+      renderSfPayload();
       const gs = document.getElementById("geminiStatus");
       if (gs) { gs.textContent = geminiKey() ? "Gemini ativo · " + geminiModel() : "Análise local"; gs.className = geminiKey() ? "chip chip-ok" : "chip"; }
       const gm = document.getElementById("geminiModelInput");
@@ -6061,11 +6408,13 @@
       };
       document.getElementById("caseKpiGrid").innerHTML =
         tile("Atividades por dia útil", "55", num1(m.activitiesPerDay), m.activitiesPerDay >= 55) +
-        tile("Reuniões por dia", "4 a 5", num1(m.meetingsPerDay), m.meetingsPerDay >= 4) +
+        tile("Conexões decisórias por dia", "10 a 12", num1(m.connectionsPerDay) + " (ligações atendidas + reuniões registradas)", m.connectionsPerDay >= 10) +
+        tile("Reuniões por semana", "8 a 10", String(m.meetingsWeek) + " nos últimos 7 dias", m.meetingsWeek >= 8) +
         tile("Cobertura de pipeline", "4x", num1(m.coverage) + "x", m.coverage >= CASE_COVERAGE) +
-        tile("Ciclo de venda", "32 dias", m.avgCycle === null ? null : Math.round(m.avgCycle) + " dias", m.avgCycle !== null && m.avgCycle <= 32) +
+        tile("Ciclo médio", "32 dias", m.avgCycle === null ? null : Math.round(m.avgCycle) + " dias", m.avgCycle !== null && m.avgCycle <= 32) +
         tile("Win rate", "28%", pct(m.winRate), m.winRate !== null && m.winRate >= 0.28) +
-        tile("Ticket médio", "~R$ 210 mil", m.avgTicket === null ? null : fmtK(m.avgTicket), m.avgTicket !== null && m.avgTicket >= 210000);
+        tile("Ticket médio (GMV/mês)", "~R$ 210 mil", m.avgTicket === null ? null : fmtK(m.avgTicket), m.avgTicket !== null && m.avgTicket >= 210000) +
+        tile("Positivação", "3 a 4 contas/mês", m.wonMonthCount + " assinada(s) no mês", m.wonMonthCount >= 3);
     }
 
     function reportKpiHtml(label, value, sub) {

@@ -138,7 +138,12 @@ As preferências e os modelos ficam no `localStorage` deste navegador (não vão
   - A view SQL `crm_account_overview` ainda trata peso 5 como cliente ativo; ela não é usada pelo app.
 - **Contas › Abastecer Funil Semanal:** calculadora de gap e cobertura, catálogo de 10 empresas do RJ (cada campo mostra a origem: conferido com fonte, informado pelo usuário ou estimativa), busca pronta em Google/Gupy, LinkedIn e Econodata.
 - **Relatórios:** 3 sub-abas: Metas, Tendência & Simulador; Funil Salesforce & KPIs (Questões 3 e 5); Carteira & Operadoras. O PDF imprime as três.
-- **Playbook › Case RJ (7 Questões):** respostas Q1 a Q7, plano 30-60-90 e atalhos "Demonstrar no app".
+- **Playbook › Case RJ (7 Questões):** respostas Q1 a Q7, plano 30-60-90 e atalhos "Demonstrar na prática".
+- **Integrações › Conector Salesforce:** gera no navegador (sem conexão com o Salesforce):
+  - CSV Accounts & Contacts (Import Wizard) e CSV Opportunities nas colunas `External_ID__c,Opportunity_Name,Account_Name,NumberOfEmployees,Swile_Avg_Benefit__c,Amount,StageName,Probability,CloseDate,NextStep,Current_Competitor__c,Cluster_RJ__c,LeadSource`, em UTF-8 com BOM, decimal `0.00` e datas ISO;
+  - importação de CSV do Salesforce com prévia das 5 primeiras linhas e trava de 200 vidas;
+  - inspetor de payload REST v60.0 (PATCH Opportunity por External_ID__c, composite/tree Account, Task), com cópia e envio opcional pelo webhook.
+  - Pré-requisito na org: campo `External_ID__c` (ID externo) em Account e Opportunity e os campos personalizados citados.
 
 ## Sincronização com o Supabase
 

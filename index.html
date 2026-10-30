@@ -179,6 +179,11 @@
     }
     .fade-in { animation: fadeIn .18s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .live-dot::before { content: ""; display: inline-block; width: .5rem; height: .5rem; margin-right: .35rem; border-radius: 9999px; background: #ef4444; vertical-align: middle; animation: livePulse 1.2s ease-in-out infinite; }
+    @keyframes livePulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
+    .seg { display: inline-flex; border: 1px solid var(--line); border-radius: .6rem; padding: 2px; gap: 2px; }
+    .seg button { padding: .3rem .7rem; border-radius: .45rem; font-size: 12px; color: var(--muted); }
+    .seg button[aria-pressed="true"] { background: rgba(124,58,237,.25); color: #fff; }
   </style>
 </head>
 <body class="min-h-screen selection:bg-violet-600 selection:text-white">
@@ -217,6 +222,8 @@
     <symbol id="i-search2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
     <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></symbol>
     <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
   </svg>
 
@@ -531,7 +538,11 @@
               <h2 class="text-lg font-semibold text-white tracking-tight">Agenda e rotas</h2>
               <p class="text-sm" style="color:var(--muted)">Toda próxima ação nasce e termina aqui. Ao concluir, o CRM pede o próximo passo.</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="seg" role="group" aria-label="Modo de trabalho">
+                <button id="btnModeHome" type="button" aria-pressed="true" onclick="setAgendaMode('home')">🏠 Home Office</button>
+                <button id="btnModeField" type="button" aria-pressed="false" onclick="setAgendaMode('field')">🚗 Campo</button>
+              </div>
               <label for="filterFollowupStatus" class="sr-only">Status</label>
               <select id="filterFollowupStatus" onchange="renderFollowupsTab()" class="input w-auto">
                 <option value="Pendente">Pendentes</option>
@@ -546,7 +557,16 @@
             <div class="lg:col-span-7 card overflow-hidden">
               <div id="followupsFullList"></div>
             </div>
-            <div class="lg:col-span-5 card overflow-hidden">
+            <div id="homeQueueCard" class="lg:col-span-5 card overflow-hidden">
+              <div class="card-head pb-3">
+                <div>
+                  <h3 class="card-title">Fila remota de hoje</h3>
+                  <p class="card-sub">Ligações e vídeos de hoje e atrasados. Depois da ligação, marque o resultado na ficha da conta.</p>
+                </div>
+              </div>
+              <div id="homeQueueList"></div>
+            </div>
+            <div id="fieldRoutesCard" class="hidden lg:col-span-5 card overflow-hidden">
               <div class="card-head pb-3">
                 <div>
                   <h3 class="card-title">Rotas de campo</h3>
@@ -566,6 +586,15 @@
             <h2 class="text-lg font-semibold text-white tracking-tight">Playbook</h2>
             <p class="text-sm" style="color:var(--muted)">Método CHAVE, battlecards por concorrente, objeções e coach de IA.</p>
           </div>
+
+          <div class="seg flex-wrap" role="group" aria-label="Seções do Playbook">
+            <button id="pbBtn-chave" type="button" aria-pressed="true" onclick="setPlaybookTab('chave')">CHAVE &amp; Objeções</button>
+            <button id="pbBtn-matrix" type="button" aria-pressed="false" onclick="setPlaybookTab('matrix')">Battlecards &amp; Matriz</button>
+            <button id="pbBtn-triggers" type="button" aria-pressed="false" onclick="setPlaybookTab('triggers')">Gatilhos Regulatórios 2026</button>
+            <button id="pbBtn-xray" type="button" aria-pressed="false" onclick="setPlaybookTab('xray')">Raio-X Swile Brasil</button>
+          </div>
+
+          <div id="pbTab-chave" class="space-y-4">
 
           <div class="card p-4">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3"><h3 class="card-title">Método CHAVE · Middle Market RJ</h3><span class="rounded-full border px-3 py-1 text-[11px] font-medium" style="background:rgba(217,70,239,.12);border-color:rgba(217,70,239,.3);color:#f0abfc">Conexão · Hipótese · Ancoragem · Virada · Extensão</span></div>
@@ -652,6 +681,38 @@
               </div>
             </div>
             <textarea id="coachPromptOutput" readonly rows="5" class="input font-mono text-[11px]" style="color:#aab2c3"></textarea>
+          </div>
+          </div>
+
+          <!-- Sub-aba: Battlecards & Matriz -->
+          <div id="pbTab-matrix" class="hidden space-y-4">
+            <div class="card overflow-hidden">
+              <div class="card-head pb-3">
+                <div>
+                  <h3 class="card-title">Matriz competitiva</h3>
+                  <p class="card-sub">Notas e bandeiras como vieram no documento de referência. <b style="color:#fcd34d">Fonte e data das notas não verificadas</b>: confira na loja de apps ou no Reclame Aqui antes de citar ao cliente.</p>
+                </div>
+              </div>
+              <div class="overflow-x-auto custom-scroll">
+                <table class="w-full text-xs">
+                  <thead><tr style="color:var(--muted)" class="text-left">
+                    <th class="px-4 py-2 font-medium">Fornecedor</th><th class="px-3 py-2 font-medium">Bandeira</th><th class="px-3 py-2 font-medium">Nota informada</th><th class="px-4 py-2 font-medium">Como usar na conversa</th>
+                  </tr></thead>
+                  <tbody id="pbMatrixBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-aba: Gatilhos regulatórios 2026 -->
+          <div id="pbTab-triggers" class="hidden space-y-3">
+            <p class="text-xs" style="color:var(--muted)">Cada gatilho tem a fonte usada na checagem. Copie o gancho e adapte ao lead antes de enviar.</p>
+            <div id="pbTriggersList" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
+          </div>
+
+          <!-- Sub-aba: Raio-X Swile Brasil -->
+          <div id="pbTab-xray" class="hidden space-y-3">
+            <div id="pbXrayList" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
           </div>
         </section>
 
@@ -758,6 +819,23 @@
                   <label for="linkProposal" class="label">Proposta / apresentação padrão</label>
                   <input id="linkProposal" type="url" class="input" placeholder="https://drive.google.com/…" oninput="saveIntegrations()" />
                 </div>
+              </div>
+            </div>
+
+            <div class="card p-4 space-y-3 text-xs lg:col-span-2">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="card-title flex items-center gap-2"><svg class="ico"><use href="#i-spark"/></svg>Copiloto de call · Gemini (opcional)</h3>
+                <span id="geminiStatus" class="chip">Análise local</span>
+              </div>
+              <p style="color:var(--muted)">Sem chave, o copiloto usa a análise local (palavras-sinal, grátis e sem rede). Com uma chave do Google AI Studio, a transcrição vai para o Gemini e a resposta volta em JSON; se falhar, o CRM usa a análise local.</p>
+              <p class="rounded-lg p-2.5" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fde68a">Atenção: a chave fica guardada neste navegador, sem criptografia. Quem usar este computador ou rodar um script nesta página pode lê-la. Use uma chave só para isto, com limite de uso, e apague quando não precisar. Ela não entra no backup JSON nem vai para o Supabase. A transcrição enviada ao Gemini sai do seu navegador para o Google.</p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+                <div class="sm:col-span-2"><label for="geminiKeyInput" class="label">Chave da API Gemini</label><input id="geminiKeyInput" type="password" autocomplete="off" class="input" placeholder="Cole a chave do AI Studio" /></div>
+                <div><label for="geminiModelInput" class="label">Modelo</label><input id="geminiModelInput" type="text" class="input" value="gemini-2.5-flash" /></div>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveGeminiKey()"><svg class="ico"><use href="#i-check"/></svg>Salvar chave</button>
+                <button type="button" class="btn btn-sm" onclick="clearGeminiKey()"><svg class="ico"><use href="#i-trash"/></svg>Apagar chave</button>
               </div>
             </div>
 
@@ -1123,6 +1201,35 @@
         <aside class="lg:col-span-4 space-y-3">
           <div id="accSnapshot" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line);background:var(--surface-2)"></div>
           <div id="accComposer" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line)"></div>
+          <div id="accHomeOffice" class="hidden rounded-xl border p-3.5 text-xs space-y-2.5" style="border-color:var(--line)">
+            <div class="flex items-center justify-between gap-2">
+              <p class="font-medium text-white">Home office: contato remoto</p>
+              <span class="chip">1 clique</span>
+            </div>
+            <div id="accHoButtons" class="flex flex-wrap gap-1.5"></div>
+            <div>
+              <p class="label mb-1">Resultado da ligação</p>
+              <div id="accOutcomes" class="grid grid-cols-2 gap-1.5"></div>
+            </div>
+          </div>
+          <details id="accCopilot" class="hidden rounded-xl border text-xs" style="border-color:var(--line)">
+            <summary class="flex items-center justify-between gap-2 px-3.5 py-2.5 cursor-pointer">
+              <span class="font-medium text-white">Copiloto de call</span>
+              <span id="copilotLive" class="hidden live-dot text-[11px] font-semibold" style="color:#f87171">Ouvindo</span>
+            </summary>
+            <div class="px-3.5 pb-3.5 space-y-2.5">
+              <p class="text-[11px] leading-relaxed" style="color:var(--faint)">A gravação usa só o <b>seu microfone</b>: em call do Meet ou WhatsApp a voz do cliente não entra. Para a conversa completa, cole aqui a transcrição do Meet, Gemini ou Tactiq.</p>
+              <p id="copilotNoSpeech" class="hidden text-[11px]" style="color:#fcd34d">Este navegador não transcreve voz. Use Chrome ou Edge, ou cole a transcrição.</p>
+              <label for="copilotTranscript" class="sr-only">Transcrição</label>
+              <textarea id="copilotTranscript" rows="5" class="input text-[12px]" placeholder="Grave sua voz ou cole a transcrição da call…"></textarea>
+              <p id="copilotInterim" class="italic min-h-[1em]" style="color:var(--muted)"></p>
+              <div class="flex flex-wrap gap-1.5">
+                <button id="btnCopilotMic" type="button" class="btn btn-sm" onclick="toggleCopilotListening()"><svg class="ico"><use href="#i-mic"/></svg>Gravar minha voz</button>
+                <button id="btnCopilotAnalyze" type="button" class="btn btn-primary btn-sm" onclick="runCopilotAnalysis()"><svg class="ico"><use href="#i-spark"/></svg>Analisar</button>
+              </div>
+              <div id="copilotResult" class="hidden rounded-lg p-3 space-y-2" style="background:var(--surface-2)"></div>
+            </div>
+          </details>
           <details id="accPatSim" class="hidden rounded-xl border text-xs" style="border-color:var(--line)">
             <summary class="flex items-center justify-between gap-2 px-3.5 py-2.5 cursor-pointer">
               <span class="font-medium text-white">Simulador PAT e economia</span>
@@ -1518,7 +1625,7 @@
         sector: "Tecnologia da Informação & Redes",
         polo_rj: "Centro / Porto Maravilha",
         neighborhood: "Centro",
-        address: "Centro Empresarial Rio de Janeiro - RJ",
+        address: "Av. Rio Branco / Centro Empresarial Rio de Janeiro - RJ (Matriz RJ: Rua Afrânio Melo Franco, 333 - Petrópolis/RJ)",
         phone: "+55 21 3500-0000",
         email_rh: "futurevagas.vagas.solides.com.br",
         decision_maker_name: "Gerente de Talentos & Pessoas (RH)",
@@ -1542,9 +1649,9 @@
         sector: "Distribuição & Suprimentos Visuais",
         polo_rj: "Zona Norte / Del Castilho",
         neighborhood: "Região Metropolitana RJ",
-        address: "Unidade Logística e Comercial Rio de Janeiro - RJ",
-        phone: "+55 21 3000-0000",
-        email_rh: "fattu.gupy.io | DHO Fattu",
+        address: "Rua Aguiar Moreira, 295 - Bonsucesso / Rua Buenos Aires, 68 (17º andar) - Centro, Rio de Janeiro - RJ",
+        phone: "+55 21 3900-8200",
+        email_rh: "contato@fattu.com.br | fattu.gupy.io",
         decision_maker_name: "Coordenadora de DHO",
         employees_count: 290,
         active_card_users: 280,
@@ -1761,7 +1868,7 @@
         pros: "Interface moderna, boa penetração em startups/PMEs e módulos Caju Despesas/Ciclos.",
         cons: "Comprada pelo iFood Benefícios em 20/10/2026 (em análise no CADE e BC), gerando incerteza no RH sobre mudança de plataforma e perda do suporte dedicado; bloqueios preventivos pontuais na rede Visa.",
         winArg: "Posicionar a Swile como a WorkTech global independente (certificada B-Corp), com bandeira Mastercard (+4M locais), programa Mastercard Surpreenda e Swile Shop (+1.000 lojas com até 50% OFF).",
-        script: "Olá, [Nome]! Vi pelas vagas da [Empresa] no RJ que vocês cuidam muito bem da experiência do time e hoje operam com a Caju. Com o anúncio da compra da Caju pelo iFood agora em 20/10, vários Heads de RH de médio porte no Rio estão mapeando um Plano B seguro para não ficarem reféns de fusão de sistemas. Aqui na Swile (WorkTech francesa B-Corp com +85 mil empresas no Brasil), operamos com cartão Mastercard único (8 carteiras), Apple/Google Pay (X-Pay), Swile Shop (+1.000 lojas) e Taxa Zero. Topa um papo rápido de 15 min nesta quinta para ter esse comparativo na manga?"
+        script: "Olá, [Nome]! Vi pelas vagas da [Empresa] no RJ que vocês cuidam muito bem da experiência do time e hoje operam com a Caju. Com o anúncio da compra da Caju pelo iFood agora em 20/10, vários Heads de RH de médio porte no Rio estão mapeando um Plano B seguro para não ficarem reféns de fusão de sistemas. Aqui na Swile (WorkTech francesa presente em mais de 85 mil empresas no mundo), operamos com cartão Mastercard único (8 carteiras), Apple/Google Pay (X-Pay), Swile Shop (+1.000 lojas) e Taxa Zero. Topa um papo rápido de 15 min nesta quinta para ter esse comparativo na manga?"
       },
       "Flash": {
         badge: "Vulnerabilidade: Cross-sell pago de softwares que o RH já tem",
@@ -1814,7 +1921,7 @@
       {
         title: "2. 'Meu Jurídico / CFO tem medo de benefício flexível dar multa no PAT.'",
         cause: "Receio legítimo após o MTE notificar 115 empresas em setembro de 2026 por desvios no PAT.",
-        response: "Seu CFO está certíssimo em ser rigoroso — inclusive o MTE notificou 115 empresas em setembro por operadoras que misturavam saldo PAT com conta livre. Na Swile, o saldo de Alimentação e Refeição tem trava tecnológica automática de CNAE na maquininha: só passa em estabelecimentos de alimentação e jamais pode ser transferido para saldo livre ou sacado. As outras 6 carteiras rodam de forma segregada conforme a CLT. Posso enviar nosso Whitepaper Jurídico do PAT para o seu CFO validar?"
+        response: "Seu CFO está certíssimo em ser rigoroso — inclusive em agosto de 2026 o MTE notificou 115 entidades do PAT (operadoras, facilitadoras e estabelecimentos) por irregularidades. Na Swile, o saldo de Alimentação e Refeição tem trava tecnológica automática de CNAE na maquininha: só passa em estabelecimentos de alimentação e jamais pode ser transferido para saldo livre ou sacado. As outras 6 carteiras rodam de forma segregada conforme a CLT. Posso enviar nosso Whitepaper Jurídico do PAT para o seu CFO validar?"
       },
       {
         title: "3. 'Usamos Alelo / Pluxee / Ticket porque nossa equipe precisa de aceitação em todo lugar.'",
@@ -2541,6 +2648,633 @@
       return true;
     }
 
+    // =====================================================================
+    // FASE 3 · PIPELINE AUTOMÁTICO
+    // Gatilhos: conta salva (status/interesse), interação registrada, transcrição aplicada,
+    // simulação PAT salva e desfechos rápidos de ligação. Só avança (nunca recua), exceto
+    // quando a pessoa muda o status da conta à mão: aí o card segue o status escolhido.
+    // =====================================================================
+    function openOppOf(accId) {
+      return state.opportunities.find(function (o) { const w = Number(o.stage_weight); return o.account_id === accId && w >= 1 && w <= 4; }) || null;
+    }
+
+    function autoFollowupData(acc, title, days, channel, notes) {
+      return { id: newUuid(), account_id: acc.id, action_title: title, due_date: addDaysIso(days), channel: channel || "WhatsApp", status: "Pendente", priority: "Alta", notes: notes || "" };
+    }
+
+    /**
+     * Move o card da conta conforme o gatilho. info: { prevStatus, prevInterest, type, stage, defer }
+     * Retorna { stage, opp, created, followups } ou null quando nada mudou.
+     * Com info.defer = true não grava no Supabase (quem chamou grava junto com a conta).
+     */
+    function autoAdvancePipelineFromAccount(acc, trigger, info) {
+      if (!acc) return null;
+      info = info || {};
+      const cur = openOppOf(acc.id);
+      const curW = cur ? Number(cur.stage_weight) : 0;
+      let target = null;
+      let exact = false;
+
+      if (trigger === "status") {
+        if (info.prevStatus !== acc.status) {
+          if (acc.status === "Perdido ❌") target = 0;
+          else if (acc.status === "Fechado ✅") target = 5;
+          else if (STATUS_TO_STAGE[acc.status]) { target = STATUS_TO_STAGE[acc.status]; exact = true; }
+          if (exact && cur && curW === target) { target = null; exact = false; }
+        }
+        // Lead esquentou: sai do 1 e vai para Discovery
+        if (target === null && acc.interest_level === "Quente" && info.prevInterest !== "Quente" && curW === 1) target = 2;
+      } else if (trigger === "interaction") {
+        // Só conta já qualificada: o 1º toque num lead frio continua sendo prospecção
+        if (/^(Ligação|WhatsApp|E-mail)$/.test(info.type || "") && curW === 1 && (STATUS_RANK[acc.status] || 0) >= 2) target = 2;
+        else if (/^(Reunião|Visita)$/.test(info.type || "") && (curW >= 1 || (STATUS_RANK[acc.status] || 0) >= 2)) target = 3;
+      } else if (trigger === "pat") {
+        target = 4;
+      } else if (trigger === "transcript" || trigger === "outcome") {
+        target = info.stage === undefined ? null : info.stage;
+      }
+      if (target === null) return null;
+
+      const res = { stage: target, opp: cur, created: false, followups: [] };
+
+      // Perda: oportunidade a 0% + recontato em 90 dias
+      if (target === 0) {
+        if (acc.status === "Perdido ❌" && !cur && trigger === "status") return null;
+        acc.status = "Perdido ❌";
+        if (cur) {
+          cur.stage_weight = 0; cur.stage = STAGE_LABELS[0]; cur.probability = 0;
+          cur.closed_date = todayIso();
+          cur.loss_category = cur.loss_category || "Sem prioridade agora";
+          cur.loss_details = cur.loss_details || "Marcado automaticamente (" + (info.reason || "sem interesse") + ")";
+        }
+        const hasRecontact = state.followups.some(function (f) { return f.account_id === acc.id && f.status === "Pendente" && /Recontato/.test(f.action_title || ""); });
+        if (!hasRecontact) res.followups.push(autoFollowupData(acc, "Recontato pós-perda (90 dias)", 90, "LinkedIn", "Gerado pelo pipeline automático"));
+      } else {
+        let opp = cur;
+        if (!opp) {
+          // Sem oportunidade aberta: cria uma (só se a conta não estiver fechada/perdida por outro card)
+          const anyWon = state.opportunities.some(function (o) { return o.account_id === acc.id && Number(o.stage_weight) === 5; });
+          if (anyWon && target < 5) return null;
+          opp = { id: newUuid(), account_id: acc.id, stage_weight: 1, stage: STAGE_LABELS[1], probability: STAGE_PROBS[1], close_date: addDaysIso(30) };
+          state.opportunities.push(opp);
+          res.created = true;
+        }
+        const w = Number(opp.stage_weight);
+        if (!res.created && (exact ? w === target : w >= target)) {
+          // Já está na etapa (ou adiante): só alinha o status da conta quando foi mudança manual
+          return null;
+        }
+        opp.stage_weight = target;
+        opp.stage = STAGE_LABELS[target];
+        opp.probability = exact ? STAGE_PROBS[target] : Math.max(Number(opp.probability) || 0, STAGE_PROBS[target]);
+        opp.closed_date = target === 5 ? todayIso() : null;
+        res.opp = opp;
+        applyStageToAccount(acc, target);
+        if (target === 5) {
+          res.followups.push(autoFollowupData(acc, "Kickoff de onboarding e ativação do X-Pay", 2, "Visita Presencial", "Gerado pelo pipeline automático"));
+        }
+      }
+
+      res.followups.forEach(function (f) { state.followups.unshift(f); });
+      persistState();
+      refreshAllViews();
+      if (!info.defer) writeAutoAdvance(acc, res);
+      if (target === 5) emitEvent("deal.won", { account: accountPayload(acc), opportunity: opportunityToRow(res.opp) });
+      if (target === 0 && res.opp) emitEvent("deal.lost", { account: accountPayload(acc), opportunity: opportunityToRow(res.opp) });
+      showToast("Pipeline atualizado automaticamente: " + acc.company_name + " → " + STAGE_LABELS[target] + (res.followups.length && target === 0 ? " (recontato em 90 dias)" : ""), "⚡");
+      return res;
+    }
+
+    function writeAutoAdvance(acc, res) {
+      remoteWrite("Pipeline", async function () {
+        if (res.opp) {
+          const r1 = await db.upsert("crm_opportunities", [opportunityToRow(res.opp)], "id");
+          if (r1.error) return r1;
+        }
+        const r2 = await db.update("crm_accounts", acc.id, { status: acc.status, interest_level: acc.interest_level });
+        if (r2.error || !res.followups.length) return r2;
+        return db.upsert("crm_follow_ups", res.followups.map(followupToRow), "id");
+      });
+    }
+
+    // Dados de contato informados pelo Michel (out/2026). NÃO verificados de forma independente:
+    // só substituem os valores provisórios antigos, nunca algo que você já editou.
+    const LEAD_DATA_PATCH = [
+      {
+        code: "LD-09", match: /fattu/i,
+        placeholders: { phone: ["", "+55 21 3000-0000"], email_rh: ["", "fattu.gupy.io | DHO Fattu"], address: ["", "Unidade Logística e Comercial Rio de Janeiro - RJ"] },
+        data: {
+          phone: "+55 21 3900-8200",
+          email_rh: "contato@fattu.com.br | fattu.gupy.io",
+          address: "Rua Aguiar Moreira, 295 - Bonsucesso / Rua Buenos Aires, 68 (17º andar) - Centro, Rio de Janeiro - RJ"
+        }
+      },
+      {
+        code: "LD-08", match: /future/i,
+        placeholders: { address: ["", "Centro Empresarial Rio de Janeiro - RJ"], website: ["", "https://futurevagas.vagas.solides.com.br/"] },
+        data: {
+          address: "Av. Rio Branco / Centro Empresarial Rio de Janeiro - RJ (Matriz RJ: Rua Afrânio Melo Franco, 333 - Petrópolis/RJ)",
+          website: "https://futurevagas.vagas.solides.com.br/"
+        }
+      }
+    ];
+    function applyLeadDataPatch() {
+      LEAD_DATA_PATCH.forEach(function (p) {
+        const acc = state.accounts.find(function (a) { return a.code === p.code && p.match.test(a.company_name || ""); });
+        if (!acc) return;
+        const changed = {};
+        Object.keys(p.data).forEach(function (k) {
+          const ph = p.placeholders[k] || [""];
+          const v = acc[k] === undefined || acc[k] === null ? "" : String(acc[k]);
+          if (v !== p.data[k] && ph.indexOf(v) >= 0) { acc[k] = p.data[k]; changed[k] = p.data[k]; }
+        });
+        if (!Object.keys(changed).length) return;
+        persistState();
+        logInteraction(acc.id, "Nota", "Dados de contato atualizados com informações passadas pelo Michel (não verificadas de forma independente): " + Object.keys(changed).join(", ") + ".", true, true);
+        remoteWrite("Dados do lead", function () { return db.update("crm_accounts", acc.id, changed); });
+      });
+    }
+
+    // =====================================================================
+    // FASE 3 · COPILOTO DE CALL (transcrição + análise)
+    // A transcrição do navegador só capta o SEU microfone. Em call do Meet, a voz do
+    // cliente não entra: cole a transcrição do Meet/Gemini/Tactiq no campo de texto.
+    // =====================================================================
+    const COPILOT_SIGNALS = {
+      hot: ["proposta", "orçamento", "orcamento", "quanto custa", "qual o valor", "contrato", "implantação", "implantacao", "quando começa", "quando comeca", "gostei", "faz sentido", "interessante", "vamos avançar", "vamos avancar", "pode mandar", "pode enviar", "simulação", "simulacao", "trocar de fornecedor", "migrar", "próximo passo", "proximo passo", "diretoria", "aprovar", "reunião com", "reuniao com"],
+      warm: ["vou pensar", "talvez", "depois", "analisar", "avaliar", "conversar com", "próximo mês", "proximo mes", "me liga", "retorno", "vou ver", "não sei", "nao sei", "agora não", "agora nao"],
+      lost: ["sem interesse", "não temos interesse", "nao temos interesse", "não tenho interesse", "nao tenho interesse", "acabamos de renovar", "contrato vigente", "não é prioridade", "nao e prioridade", "estamos satisfeitos", "não ligue", "nao ligue", "tire meu contato", "não quero", "nao quero"],
+      proposal: ["manda a proposta", "mande a proposta", "envia a proposta", "envie a proposta", "pode mandar a proposta", "quero uma proposta", "faz uma proposta", "manda uma simulação", "manda uma simulacao", "orçamento", "orcamento"]
+    };
+    const COPILOT_COMPETITORS = [
+      { re: /caju/i, name: "Caju", rebuttal: "A compra da Caju pelo iFood foi anunciada em 20/10/2026 e ainda depende de CADE e Banco Central. Pergunte: \"Como o RH está se preparando se regras, app ou taxas mudarem na integração?\" e ofereça a simulação como Plano B sem compromisso." },
+      { re: /ifood/i, name: "iFood Benefícios", rebuttal: "Com a compra da Caju (anunciada em 20/10/2026, pendente de CADE/BC), o iFood passa a ter duas plataformas para integrar. Pergunte como o RH avalia o risco de mudança no meio do contrato e mostre a simulação lado a lado." },
+      { re: /flash/i, name: "Flash", rebuttal: "Não ataque a Flash. Pergunte o que o time mais usa e onde ainda há atrito (aceitação, suporte, carteiras). Ancore no valor total da troca com a simulação PAT antes de falar de condição." },
+      { re: /alelo/i, name: "Alelo", rebuttal: "Pergunte como estão as reclamações de aceitação e a experiência no app. Com o Decreto 12.712/2025 (teto de MDR 3,6% e repasse em 15 dias), vale revisar o contrato: ofereça a simulação." },
+      { re: /pluxee|sodexo/i, name: "Pluxee", rebuttal: "Explore a experiência do colaborador depois do rebranding e a falta de carteira digital, se o lead citar. Ofereça a simulação PAT para comparar o custo total." },
+      { re: /ticket|\bvr\b/i, name: "Ticket / VR", rebuttal: "Pergunte quanto o DP gasta com 2ª via e chamados no fechamento. Mostre o cartão único com carteiras e a simulação PAT antes de falar de taxa." }
+    ];
+    const COPILOT_OBJECTIONS = [
+      { re: /taxa|preço|preco|caro|custo/i, rebuttal: "Preço: faça a pessoa quantificar o custo atual (taxa, horas do DP, 2ª via) antes de mostrar condição. Use o Simulador PAT da ficha." },
+      { re: /contrato|multa|renovamos|renovar/i, rebuttal: "Contrato vigente: pergunte a data de vencimento, registre no CRM e agende o recontato 60 a 90 dias antes. Ofereça a simulação para chegar pronto." },
+      { re: /satisfeit|funciona bem|não temos problema|nao temos problema/i, rebuttal: "Satisfeito hoje: pergunte o que o time reclama no fechamento do mês e o que mudaria se houvesse unificação em um cartão só." }
+    ];
+
+    let copilotLast = null;
+    let copilotRec = null;
+    let copilotListening = false;
+
+    function copilotNorm(t) { return String(t || "").toLowerCase(); }
+    function copilotCount(text, list) {
+      let n = 0;
+      list.forEach(function (w) { if (text.indexOf(w) >= 0) n++; });
+      return n;
+    }
+
+    /** Análise local, sem rede. Determinística: mesmos sinais, mesmo resultado. */
+    function analyzeTranscriptLocal(transcript, acc) {
+      const raw = String(transcript || "");
+      const t = copilotNorm(raw);
+      const hot = copilotCount(t, COPILOT_SIGNALS.hot);
+      const warm = copilotCount(t, COPILOT_SIGNALS.warm);
+      const lost = copilotCount(t, COPILOT_SIGNALS.lost);
+      const proposal = copilotCount(t, COPILOT_SIGNALS.proposal) > 0;
+      let score = 50 + hot * 8 - warm * 5 - lost * 25 + (proposal ? 10 : 0);
+      score = Math.max(0, Math.min(100, score));
+      let temperature;
+      if (lost > 0 && hot < 2 && !proposal) temperature = "Perdido";
+      else if (score >= 70) temperature = "Quente";
+      else if (score >= 45) temperature = "Morno";
+      else temperature = "Frio";
+
+      // Destaques: as 3 frases com mais sinais (proposta e perda pesam mais), na ordem da conversa
+      const sentences = raw.split(/(?<=[.!?])\s+|\n+/).map(function (s) { return s.trim(); }).filter(Boolean);
+      const highlights = sentences.map(function (s, i) {
+        const l = copilotNorm(s);
+        const w = copilotCount(l, COPILOT_SIGNALS.proposal) * 3 + copilotCount(l, COPILOT_SIGNALS.lost) * 3 +
+          copilotCount(l, COPILOT_SIGNALS.hot) * 2 + copilotCount(l, COPILOT_SIGNALS.warm) +
+          (COPILOT_COMPETITORS.some(function (c) { return c.re.test(s); }) ? 2 : 0);
+        return { s: s, i: i, w: w };
+      }).filter(function (x) { return x.w > 0; })
+        .sort(function (a, b) { return b.w - a.w || a.i - b.i; }).slice(0, 3)
+        .sort(function (a, b) { return a.i - b.i; }).map(function (x) { return x.s; });
+      while (highlights.length < 3 && sentences.length > highlights.length) {
+        const s = sentences.find(function (x) { return highlights.indexOf(x) < 0; });
+        if (!s) break;
+        highlights.push(s);
+      }
+
+      const comp = COPILOT_COMPETITORS.find(function (c) { return c.re.test(raw); });
+      const obj = COPILOT_OBJECTIONS.find(function (o) { return o.re.test(raw); });
+      const rebuttal = obj && (!comp || /taxa|preço|preco|caro|contrato|multa/i.test(raw)) ? obj.rebuttal : comp ? comp.rebuttal : (obj ? obj.rebuttal : "Nenhuma objeção clara na transcrição. Confirme o próximo passo com data e decisor.");
+
+      let nextStage = null;
+      if (temperature === "Perdido") nextStage = 0;
+      else if (proposal) nextStage = 4;
+      else if (temperature === "Quente") nextStage = 3;
+      else if (temperature === "Morno") nextStage = 2;
+
+      const nome = firstName(acc && acc.decision_maker_name);
+      const nextStep = nextStage === 4 ? "Vou te enviar a proposta com a simulação PAT ainda hoje."
+        : nextStage === 3 ? "Combinamos a demonstração do painel do RH e do app. Te mando o convite com o horário."
+        : nextStage === 0 ? "Fico à disposição. Se algo mudar no contrato atual, me chama por aqui."
+        : "Te mando um resumo e retomo em poucos dias para avançarmos.";
+      const whatsapp = "Oi" + (nome ? " " + nome : "") + ", obrigado pela conversa de hoje!" +
+        (highlights[0] ? " Anotei o principal: \"" + highlights[0].slice(0, 140).replace(/[.!?\s]+$/, "") + "\"." : "") +
+        " " + nextStep + (sellerSignature() ? "\n\n" + sellerSignature() : "");
+
+      return { temperature: temperature, score: score, highlights: highlights, rebuttal: rebuttal, whatsapp: whatsapp, next_stage: nextStage, competitor: comp ? comp.name : "", source: "local" };
+    }
+
+    function geminiKey() { try { return localStorage.getItem("swile_crm_gemini_key") || ""; } catch (e) { return ""; } }
+    function geminiModel() { try { return localStorage.getItem("swile_crm_gemini_model") || "gemini-2.5-flash"; } catch (e) { return "gemini-2.5-flash"; } }
+
+    async function analyzeTranscriptGemini(transcript, acc) {
+      const key = geminiKey();
+      if (!key) return null;
+      const prompt = "Você é um coach de vendas B2B de benefícios corporativos (Swile, Brasil). Analise a transcrição de call abaixo com o lead " +
+        (acc ? acc.company_name + " (fornecedor atual: " + (acc.current_provider || "não informado") + ")" : "") +
+        ". Responda SOMENTE em JSON com as chaves: temperature (Quente|Morno|Frio|Perdido), score (0-100), highlights (array com 3 frases curtas), " +
+        "rebuttal (contorno da principal objeção, em português, sem inventar números), whatsapp (mensagem curta de follow-up pós-call), " +
+        "next_stage (0=perdido, 2=discovery, 3=demo, 4=proposta, ou null).\n\nTranscrição:\n" + String(transcript).slice(0, 12000);
+      const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(geminiModel()) + ":generateContent";
+      const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 20000) : null;
+      try {
+        const r = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.2 } }),
+          signal: ctrl ? ctrl.signal : undefined
+        });
+        if (!r.ok) return null;
+        const j = await r.json();
+        const txt = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text;
+        const out = JSON.parse(String(txt || "").replace(/^```json\s*|```$/g, ""));
+        const temps = ["Quente", "Morno", "Frio", "Perdido"];
+        if (temps.indexOf(out.temperature) < 0) return null;
+        const ns = out.next_stage === null || out.next_stage === undefined ? null : Number(out.next_stage);
+        return {
+          temperature: out.temperature,
+          score: Math.max(0, Math.min(100, Number(out.score) || 0)),
+          highlights: (Array.isArray(out.highlights) ? out.highlights : []).slice(0, 3).map(String),
+          rebuttal: String(out.rebuttal || ""),
+          whatsapp: String(out.whatsapp || ""),
+          next_stage: [0, 2, 3, 4].indexOf(ns) >= 0 ? ns : null,
+          source: "gemini"
+        };
+      } catch (e) {
+        return null;
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    }
+
+    async function runCopilotAnalysis() {
+      const acc = findAccount(document.getElementById("accFormId").value);
+      const text = (document.getElementById("copilotTranscript").value || "").trim();
+      if (!text) { showToast("Grave ou cole a transcrição antes de analisar.", "⚠️"); return; }
+      const btn = document.getElementById("btnCopilotAnalyze");
+      btn.disabled = true;
+      let result = null;
+      if (geminiKey()) {
+        btn.textContent = "Analisando com Gemini…";
+        result = await analyzeTranscriptGemini(text, acc);
+        if (!result) showToast("Gemini não respondeu. Usei a análise local.", "ℹ️");
+      }
+      if (!result) result = analyzeTranscriptLocal(text, acc);
+      btn.disabled = false;
+      btn.innerHTML = icon("spark") + "Analisar";
+      copilotLast = result;
+      renderCopilotResult();
+    }
+
+    function renderCopilotResult() {
+      const box = document.getElementById("copilotResult");
+      const r = copilotLast;
+      if (!r) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+      const colors = { Quente: "#f87171", Morno: "#fbbf24", Frio: "#60a5fa", Perdido: "#94a3b8" };
+      const c = colors[r.temperature] || "#c4b5fd";
+      const ns = r.next_stage === null || r.next_stage === undefined ? "sem mudança" : STAGE_LABELS[r.next_stage];
+      box.innerHTML =
+        '<div class="flex flex-wrap items-center gap-2">' +
+          '<span class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '55">' + esc(r.temperature) + '</span>' +
+          '<span class="num text-white">Score ' + r.score + '/100</span>' +
+          '<span style="color:var(--faint)">· ' + (r.source === "gemini" ? "Gemini" : "análise local") + '</span>' +
+        '</div>' +
+        '<div class="h-1.5 rounded-full overflow-hidden" style="background:var(--surface-3,#1f2433)"><div style="height:100%;width:' + r.score + '%;background:' + c + '"></div></div>' +
+        (r.highlights.length ? '<div><p class="label mb-1">Destaques</p><ul class="space-y-1 list-disc pl-4" style="color:#c3c8d4">' + r.highlights.map(function (h) { return "<li>" + esc(h) + "</li>"; }).join("") + '</ul></div>' : "") +
+        '<div class="rounded-lg p-2.5" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3)"><p class="label mb-1" style="color:#fcd34d">Contorno sugerido</p><p style="color:#fde68a">' + esc(r.rebuttal) + '</p></div>' +
+        '<div><p class="label mb-1">WhatsApp pós-call</p><textarea id="copilotWa" rows="3" class="input text-[12px]">' + esc(r.whatsapp) + '</textarea></div>' +
+        '<p style="color:var(--muted)">Etapa sugerida: <b class="text-white">' + esc(ns) + '</b></p>' +
+        '<div class="flex flex-wrap gap-1.5">' +
+          '<button id="btnCopilotApply" type="button" class="btn btn-primary btn-sm" onclick="applyCopilotToLead()">' + icon("check") + 'Aplicar no lead</button>' +
+          '<button type="button" class="btn btn-sm" onclick="sendCopilotWhatsApp()">' + icon("chat") + 'Enviar WhatsApp</button>' +
+        '</div>';
+      box.classList.remove("hidden");
+    }
+
+    function sendCopilotWhatsApp() {
+      const acc = findAccount(document.getElementById("accFormId").value);
+      const el = document.getElementById("copilotWa");
+      if (!acc || !el) return;
+      sendWhatsApp(acc, el.value, null);
+    }
+
+    function applyCopilotToLead() {
+      const acc = findAccount(document.getElementById("accFormId").value);
+      const r = copilotLast;
+      if (!acc || !r) return;
+      const transcript = (document.getElementById("copilotTranscript").value || "").trim();
+      const summary = "Call analisada (" + (r.source === "gemini" ? "Gemini" : "local") + "): " + r.temperature + ", score " + r.score + "/100." +
+        (r.highlights.length ? " Destaques: " + r.highlights.join(" | ") + "." : "");
+      logInteraction(acc.id, "Ligação", summary + "\n\nTranscrição:\n" + transcript, false, true);
+      const prevInterest = acc.interest_level;
+      if (r.temperature === "Quente" || r.temperature === "Morno" || r.temperature === "Frio") acc.interest_level = r.temperature;
+      setSelectValue("accFormInterest", acc.interest_level);
+      let res = null;
+      if (r.next_stage !== null && r.next_stage !== undefined) res = autoAdvancePipelineFromAccount(acc, "transcript", { stage: r.next_stage, reason: "transcrição sem interesse" });
+      if (!res) {
+        persistState();
+        refreshAllViews();
+        if (prevInterest !== acc.interest_level) remoteWrite("Interesse", function () { return db.update("crm_accounts", acc.id, { interest_level: acc.interest_level }); });
+        showToast("Transcrição e resumo salvos no histórico.", "📝");
+      }
+      setSelectValue("accFormStatus", acc.status);
+      document.getElementById("copilotTranscript").value = "";
+      copilotLast = null;
+      renderCopilotResult();
+    }
+
+    function speechSupported() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+
+    function toggleCopilotListening() {
+      if (copilotListening) { stopCopilotListening(); return; }
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { showToast("Transcrição por voz não disponível neste navegador. Use Chrome ou Edge, ou cole a transcrição.", "⚠️"); return; }
+      const rec = new SR();
+      rec.lang = "pt-BR";
+      rec.continuous = true;
+      rec.interimResults = true;
+      const ta = document.getElementById("copilotTranscript");
+      const interimEl = document.getElementById("copilotInterim");
+      rec.onresult = function (ev) {
+        let interim = "";
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const txt = ev.results[i][0].transcript;
+          if (ev.results[i].isFinal) ta.value = (ta.value ? ta.value.replace(/\s*$/, " ") : "") + txt.trim() + ".";
+          else interim += txt;
+        }
+        interimEl.textContent = interim;
+      };
+      rec.onerror = function (ev) {
+        if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
+          showToast("Microfone bloqueado. Libere o acesso no navegador ou cole a transcrição.", "⚠️");
+          stopCopilotListening();
+        }
+      };
+      // O Chrome encerra sozinho após silêncio: reinicia enquanto o modo estiver ligado
+      rec.onend = function () { if (copilotListening) { try { rec.start(); } catch (e) { stopCopilotListening(); } } };
+      try { rec.start(); } catch (e) { showToast("Não consegui abrir o microfone.", "⚠️"); return; }
+      copilotRec = rec;
+      copilotListening = true;
+      updateCopilotMicUi();
+    }
+
+    function stopCopilotListening() {
+      copilotListening = false;
+      if (copilotRec) { try { copilotRec.stop(); } catch (e) { /* ignore */ } }
+      copilotRec = null;
+      const interimEl = document.getElementById("copilotInterim");
+      if (interimEl) interimEl.textContent = "";
+      updateCopilotMicUi();
+    }
+
+    function updateCopilotMicUi() {
+      const b = document.getElementById("btnCopilotMic");
+      const live = document.getElementById("copilotLive");
+      if (!b || !live) return;
+      b.innerHTML = copilotListening ? icon("x") + "Parar" : icon("mic") + "Gravar minha voz";
+      b.classList.toggle("btn-danger", copilotListening);
+      live.classList.toggle("hidden", !copilotListening);
+    }
+
+    function resetCopilot() {
+      if (copilotListening) stopCopilotListening();
+      copilotLast = null;
+      const ta = document.getElementById("copilotTranscript");
+      if (ta) ta.value = "";
+      renderCopilotResult();
+      const nos = document.getElementById("copilotNoSpeech");
+      if (nos) nos.classList.toggle("hidden", speechSupported());
+    }
+
+    // =====================================================================
+    // FASE 3 · HOME OFFICE (ligar, Meet, convite e desfechos rápidos)
+    // =====================================================================
+    const MEETING_TITLE = "Swile + {empresa} | Apresentação Multibenefícios & Simulação PAT";
+    function meetingAgenda(acc) {
+      return "Agenda (Método CHAVE, 30 min):\n" +
+        "1. Conexão: contexto da " + acc.company_name + " e do time de RH/DP\n" +
+        "2. Hipótese: 3 perguntas de diagnóstico (chamados, premiação, cartões separados)\n" +
+        "3. Ancoragem: simulação PAT e custo atual (" + (acc.current_provider || "fornecedor atual") + ")\n" +
+        "4. Virada: como seria a implantação\n" +
+        "5. Extensão: próximos passos e decisores\n\n" +
+        "Link do Google Meet: adicione pelo botão \"Adicionar videoconferência\" do evento.";
+    }
+
+    function scheduleMeetingInvite(accId) {
+      const acc = findAccount(accId);
+      if (!acc) return;
+      const title = MEETING_TITLE.replace("{empresa}", acc.company_name);
+      const guests = extractEmails(acc.email_rh);
+      let url = gcalUrl(title, addBusinessDaysIso(1), meetingAgenda(acc), "Google Meet");
+      if (guests.length) url += "&add=" + encodeURIComponent(guests.join(","));
+      else showToast("Conta sem e-mail do decisor: o convite abre sem convidado.", "ℹ️");
+      openExternal(url);
+      logInteraction(acc.id, "Reunião", "Convite de reunião aberto no Google Agenda: " + title, true, true);
+    }
+
+    function startMeet(accId) {
+      const acc = findAccount(accId);
+      if (!acc) return;
+      openExternal("https://meet.google.com/new");
+      const nome = firstName(acc.decision_maker_name);
+      const invite = "Oi" + (nome ? " " + nome : "") + "! Segue o link da nossa conversa sobre benefícios da " + acc.company_name + ": [cole aqui o link do Meet]" + (sellerSignature() ? "\n\n" + sellerSignature() : "");
+      copyTextSafe(invite, "Meet aberto. Convite copiado: cole o link da sala no lugar indicado.");
+      logInteraction(acc.id, "Reunião", "Sala do Google Meet iniciada", true, true);
+    }
+
+    function whatsappCall(accId) {
+      const acc = findAccount(accId);
+      if (!acc) return;
+      const d = phoneDigits(acc.phone);
+      if (!d) { showToast("Conta sem telefone para WhatsApp.", "⚠️"); return; }
+      openExternal("https://wa.me/" + d);
+      showToast("Conversa aberta. Toque no ícone de telefone do WhatsApp para ligar.", "📞");
+      logInteraction(acc.id, "Ligação", "Chamada via WhatsApp iniciada", true, true);
+    }
+
+    async function callOutcome(accId, kind) {
+      const acc = findAccount(accId);
+      if (!acc) return;
+      if (kind === "answered") {
+        logInteraction(acc.id, "Ligação", "Ligação atendida", false, true);
+        createFollowup({ account_id: acc.id, action_title: "Retorno pós-ligação: enviar resumo e confirmar demo", due_date: addDaysIso(3), channel: "WhatsApp" });
+        if (!autoAdvancePipelineFromAccount(acc, "outcome", { stage: 2 })) showToast("Ligação registrada. Retorno em 3 dias.", "📞");
+      } else if (kind === "proposal") {
+        logInteraction(acc.id, "Ligação", "Lead pediu proposta", false, true);
+        autoAdvancePipelineFromAccount(acc, "outcome", { stage: 4 }) || showToast("Ligação registrada.", "📞");
+        const sim = document.getElementById("accPatSim");
+        if (sim) {
+          sim.open = true;
+          sim.scrollIntoView({ behavior: "smooth", block: "start" });
+          setTimeout(function () { const f = document.getElementById("patLives"); if (f) f.focus(); }, 250);
+        }
+      } else if (kind === "voicemail") {
+        logInteraction(acc.id, "Ligação", "Caixa postal / não atendeu", false, true);
+        createFollowup({ account_id: acc.id, action_title: "Nova tentativa de ligação (caixa postal)", due_date: addDaysIso(2), channel: "Ligação", priority: "Média" });
+        showToast("Registrado. Nova tentativa em 2 dias.", "📵");
+      } else if (kind === "lost") {
+        const ok = await uiConfirm("Marcar " + acc.company_name + " como perdido (sem interesse) e agendar recontato em 90 dias?", { title: "Sem interesse", okLabel: "Marcar perdido", danger: true });
+        if (!ok) return;
+        logInteraction(acc.id, "Ligação", "Lead sem interesse", false, true);
+        autoAdvancePipelineFromAccount(acc, "outcome", { stage: 0, reason: "sem interesse na ligação" });
+      }
+      const st = document.getElementById("accFormStatus");
+      if (st && document.getElementById("accFormId").value === acc.id) setSelectValue("accFormStatus", acc.status);
+    }
+
+    function renderHomeOfficeHub(acc) {
+      const a = esc(acc.id);
+      const hasPhone = !!phoneDigits(acc.phone);
+      const b = function (fn, ic, label, title) { return '<button type="button" class="btn btn-sm" title="' + esc(title || label) + '" onclick="' + fn + '(\'' + a + '\')">' + icon(ic) + label + '</button>'; };
+      document.getElementById("accHoButtons").innerHTML =
+        (hasPhone ? '<button type="button" class="btn btn-sm" onclick="contactAccount(\'' + a + '\', \'tel\')">' + icon("phone") + 'Ligar</button>' : "") +
+        (hasPhone ? b("whatsappCall", "chat", "Chamada WhatsApp", "Abre a conversa; toque no telefone do WhatsApp para ligar") : "") +
+        b("startMeet", "video", "Iniciar Google Meet") +
+        b("scheduleMeetingInvite", "calplus", "Convite no Google Agenda");
+      const pill = function (kind, label, color) {
+        return '<button type="button" class="rounded-lg border px-2 py-1.5 text-[11px] font-medium text-left" style="border-color:' + color + '55;background:' + color + '14;color:' + color + '" onclick="callOutcome(\'' + a + '\', \'' + kind + '\')">' + label + '</button>';
+      };
+      document.getElementById("accOutcomes").innerHTML =
+        pill("answered", "✅ Atendeu · Discovery + retorno 3d", "#34d399") +
+        pill("proposal", "📄 Pediu proposta · simular PAT", "#c084fc") +
+        pill("voicemail", "📵 Caixa postal · tentar em 2d", "#fbbf24") +
+        pill("lost", "🚫 Sem interesse · recontato 90d", "#f87171");
+      document.getElementById("accHomeOffice").classList.remove("hidden");
+    }
+
+    // =====================================================================
+    // FASE 3 · PLAYBOOK EM SUB-ABAS
+    // =====================================================================
+    const PB_MATRIX = [
+      { name: "Swile", flag: "Mastercard", rating: "4,5", use: "Nossa proposta: cartão único com carteiras, app e X-Pay. Mostre a simulação PAT antes da condição." },
+      { name: "Caju", flag: "Visa", rating: "4,6", use: "Compra pelo iFood anunciada em 20/10/2026, ainda pendente de CADE e Banco Central. Explore a incerteza da integração, sem atacar o produto." },
+      { name: "Flash", flag: "não informada", rating: "4,6", use: "Concorrente forte em experiência. Pergunte onde ainda há atrito e ancore no valor total, não em preço." },
+      { name: "iFood Benefícios", flag: "não informada", rating: "4,5", use: "Agora terá duas plataformas para integrar (iFood + Caju). Pergunte como o RH avalia o risco de mudança no contrato." },
+      { name: "Alelo", flag: "Elo", rating: "4,4", use: "Explore aceitação e experiência no app. O Decreto 12.712/2025 é um bom motivo para revisar o contrato." },
+      { name: "Pluxee (ex-Sodexo)", flag: "Elo", rating: "4,2", use: "Explore a experiência após o rebranding e carteira digital, se o lead citar." },
+      { name: "Ticket", flag: "Elo", rating: "4,2", use: "Pergunte quanto o DP gasta com 2ª via e chamados no fechamento do mês." },
+      { name: "VR", flag: "não informada", rating: "4,1", use: "Mesmo roteiro do Ticket: custo operacional do DP e unificação de benefícios." }
+    ];
+    const PB_TRIGGERS = [
+      {
+        title: "Decreto 12.712/2025: novas regras do PAT", status: "ok",
+        facts: "Publicado em 11/11/2025. Teto de 3,6% na taxa cobrada dos estabelecimentos (MDR), repasse em até 15 dias e interoperabilidade entre bandeiras em até um ano (por volta de nov/2026).",
+        source: "O Povo, 12/11/2025",
+        hook: "Oi {nome}! Com o Decreto 12.712 (novas regras do PAT: teto de taxa e repasse em 15 dias), muitas empresas do Rio estão revisando o contrato de benefícios. Posso te mostrar em 15 minutos o que muda para a {empresa}?"
+      },
+      {
+        title: "iFood compra a Caju", status: "ok",
+        facts: "Anunciada em 20/10/2026. Ainda depende de aprovação do CADE e do Banco Central; valor não divulgado. A Caju tem cerca de 1,3 milhão de trabalhadores e 70 mil empresas; juntas, cerca de 3 milhões de usuários e 135 mil empresas.",
+        source: "O Povo, out/2026",
+        hook: "Oi {nome}! Vi que a compra da Caju pelo iFood ainda depende de CADE e Banco Central. Se a {empresa} usa Caju, vale ter um plano B mapeado caso app, regras ou taxas mudem. Posso te mandar uma simulação sem compromisso?"
+      },
+      {
+        title: "MTE notifica 115 entidades do PAT", status: "ok",
+        facts: "Em agosto de 2026 o Ministério do Trabalho notificou 115 entidades: 74 empresas de benefícios, 12 facilitadoras e 29 estabelecimentos. Atenção: não foram empresas empregadoras.",
+        source: "Mercado & Consumo, 21/08/2026",
+        hook: "Oi {nome}! Em agosto o MTE notificou 115 entidades do PAT por irregularidades. Vale conferir se o fornecedor de benefícios da {empresa} está em dia. Posso te mostrar como a Swile trata a conformidade?"
+      },
+      {
+        title: "SC COSIT nº 3/2026: incentivo fiscal do PAT", status: "ok",
+        facts: "A Receita afastou os limites do Decreto 10.854 no cálculo do incentivo. Só vale para empresas no Lucro Real: dedução de 15% do gasto com o PAT, limitada a 4% do IRPJ devido.",
+        source: "Solução de Consulta COSIT nº 3/2026; Lei 6.321/1976; RIR/2018 arts. 641 e 642",
+        hook: "Oi {nome}! Uma solução de consulta da Receita deste ano (COSIT 3/2026) mudou o cálculo do incentivo do PAT para empresas no Lucro Real. Posso fazer uma simulação rápida para a {empresa}?"
+      }
+    ];
+    const PB_XRAY = [
+      { title: "Liderança", status: "ok", text: "Loïc Soubeyrand é fundador e CEO global da Swile. Júlio Brito lidera a operação no Brasil.", source: "Imprensa (checado em out/2026)" },
+      { title: "Tamanho no mundo", status: "ok", text: "Mais de 85 mil empresas e 5,5 milhões de usuários. São números globais de 2024, não do Brasil.", source: "Dados públicos da Swile, 2024" },
+      { title: "Tamanho no Brasil", status: "partial", text: "700 mil usuários em set/2024 (Bloomberg Línea). Uma manchete do Times Brasil fala em mais de 800 mil usuários ativos; a data exata não foi confirmada.", source: "Bloomberg Línea, set/2024; Times Brasil" },
+      { title: "Não verificado: use com cuidado", status: "no", text: "Selo B-Corp, eNPS acima de 75, número exato de carteiras e trava por CNAE na maquininha. Confirme no material oficial da Swile antes de citar ao cliente.", source: "Sem fonte pública encontrada" }
+    ];
+    const PB_STATUS = {
+      ok: { label: "Verificado", css: "chip chip-ok" },
+      partial: { label: "Parcial", css: "chip", style: "color:#fcd34d" },
+      no: { label: "Não verificado", css: "chip", style: "color:#fca5a5" }
+    };
+
+    let playbookTab = "chave";
+    function setPlaybookTab(tab) {
+      playbookTab = tab;
+      ["chave", "matrix", "triggers", "xray"].forEach(function (t) {
+        const el = document.getElementById("pbTab-" + t);
+        if (el) el.classList.toggle("hidden", t !== tab);
+        const b = document.getElementById("pbBtn-" + t);
+        if (b) b.setAttribute("aria-pressed", t === tab ? "true" : "false");
+      });
+      renderPlaybookExtras();
+    }
+
+    function pbStatusChip(st) {
+      const s = PB_STATUS[st] || PB_STATUS.no;
+      return '<span class="' + s.css + '"' + (s.style ? ' style="' + s.style + '"' : "") + '>' + s.label + '</span>';
+    }
+
+    function renderPlaybookExtras() {
+      const mb = document.getElementById("pbMatrixBody");
+      if (mb) mb.innerHTML = PB_MATRIX.map(function (r) {
+        const us = r.name === "Swile";
+        return '<tr class="divider align-top"' + (us ? ' style="background:rgba(124,58,237,.08)"' : "") + '>' +
+          '<td class="px-4 py-2.5 font-medium text-white whitespace-nowrap">' + esc(r.name) + '</td>' +
+          '<td class="px-3 py-2.5 whitespace-nowrap" style="color:' + (r.flag === "não informada" ? "var(--faint)" : "#c3c8d4") + '">' + esc(r.flag) + '</td>' +
+          '<td class="px-3 py-2.5 whitespace-nowrap"><span class="num text-white">' + esc(r.rating) + '</span> <span class="chip" style="color:#fcd34d">não verificada</span></td>' +
+          '<td class="px-4 py-2.5" style="color:var(--muted);min-width:16rem">' + esc(r.use) + '</td></tr>';
+      }).join("");
+      const tl = document.getElementById("pbTriggersList");
+      if (tl) tl.innerHTML = PB_TRIGGERS.map(function (g, i) {
+        return '<div class="card p-4 space-y-2 text-xs">' +
+          '<div class="flex items-start justify-between gap-2"><h3 class="card-title">' + esc(g.title) + '</h3>' + pbStatusChip(g.status) + '</div>' +
+          '<p style="color:#c3c8d4">' + esc(g.facts) + '</p>' +
+          '<p style="color:var(--faint)">Fonte: ' + esc(g.source) + '</p>' +
+          '<div class="rounded-lg p-2.5" style="background:var(--surface-2)"><p style="color:var(--muted)">' + esc(g.hook) + '</p></div>' +
+          '<button type="button" class="btn btn-sm" onclick="copyTriggerHook(' + i + ')">' + icon("copy") + 'Copiar gancho p/ WhatsApp</button>' +
+        '</div>';
+      }).join("");
+      const xl = document.getElementById("pbXrayList");
+      if (xl) xl.innerHTML = PB_XRAY.map(function (x) {
+        return '<div class="card p-4 space-y-2 text-xs">' +
+          '<div class="flex items-start justify-between gap-2"><h3 class="card-title">' + esc(x.title) + '</h3>' + pbStatusChip(x.status) + '</div>' +
+          '<p style="color:#c3c8d4">' + esc(x.text) + '</p>' +
+          '<p style="color:var(--faint)">Fonte: ' + esc(x.source) + '</p></div>';
+      }).join("");
+    }
+
+    function copyTriggerHook(i) {
+      const g = PB_TRIGGERS[i];
+      if (!g) return;
+      copyTextSafe(g.hook, "Gancho copiado. Troque {nome} e {empresa} antes de enviar.");
+    }
+
+    // Agenda: modo Home Office (fila de ligações/vídeo do dia) ou Campo (rotas)
+    function agendaMode() { try { return localStorage.getItem("swile_crm_agenda_mode") || "home"; } catch (e) { return "home"; } }
+    function setAgendaMode(m) {
+      try { localStorage.setItem("swile_crm_agenda_mode", m); } catch (e) { /* ignore */ }
+      renderFollowupsTab();
+    }
+
     function sendWhatsApp(acc, text, tpl) {
       const d = phoneDigits(acc.phone);
       if (!d) {
@@ -2566,13 +3300,14 @@
 
     // Ponto único dos botões de contato. kind: wa | mail | tel | cal | gcal | ics | maps | linkedin | site
     // Registro de interações por conta (fica no navegador; entra no backup JSON)
-    function logInteraction(accountId, type, text, auto) {
+    function logInteraction(accountId, type, text, auto, skipAuto) {
       if (!accountId || !text) return null;
       if (!Array.isArray(state.interactions)) state.interactions = [];
       const it = { id: newUuid(), account_id: accountId, type: type || "Nota", text: String(text).slice(0, 2000), at: new Date().toISOString(), auto: !!auto, synced: false };
       state.interactions.push(it);
       persistState();
       pushInteraction(it);
+      if (!skipAuto) autoAdvancePipelineFromAccount(findAccount(accountId), "interaction", { type: it.type });
       const modal = document.getElementById("accountModal");
       if (modal && !modal.classList.contains("hidden") && document.getElementById("accFormId").value === accountId) renderAccountSidePanel(findAccount(accountId));
       return it;
@@ -2835,6 +3570,7 @@
       renderKanbanBoard();
       renderFollowupsTab();
       renderBattlecardDetail();
+      renderPlaybookExtras();
       renderObjectionsList();
       updateCoachPromptPreview();
       renderNavCounts();
@@ -3517,6 +4253,14 @@
       }
       listEl.innerHTML = html || '<div class="empty">Nenhum follow-up neste filtro.</div>';
 
+      // Modo Home Office (fila remota) ou Campo (rotas)
+      const mode = agendaMode();
+      document.getElementById("btnModeHome").setAttribute("aria-pressed", mode === "home" ? "true" : "false");
+      document.getElementById("btnModeField").setAttribute("aria-pressed", mode === "field" ? "true" : "false");
+      document.getElementById("homeQueueCard").classList.toggle("hidden", mode !== "home");
+      document.getElementById("fieldRoutesCard").classList.toggle("hidden", mode === "home");
+      renderHomeQueue();
+
       // Rotas de campo
       const routesEl = document.getElementById("routesRjList");
       if (routesEl) {
@@ -3542,6 +4286,33 @@
         }
         routesEl.innerHTML = rHtml;
       }
+    }
+
+    function renderHomeQueue() {
+      const el = document.getElementById("homeQueueList");
+      if (!el) return;
+      const today = todayIso();
+      const due = state.followups.filter(function (f) { return f.status === "Pendente" && String(f.due_date) <= today && findAccount(f.account_id); })
+        .sort(function (a, b) { return String(a.due_date).localeCompare(String(b.due_date)); });
+      const seen = {};
+      const rows = [];
+      due.forEach(function (f) { if (!seen[f.account_id]) { seen[f.account_id] = true; rows.push({ acc: findAccount(f.account_id), fu: f }); } });
+      el.innerHTML = rows.length ? rows.slice(0, 15).map(function (r) {
+        const a = esc(r.acc.id);
+        const late = String(r.fu.due_date) < today;
+        const hasPhone = !!phoneDigits(r.acc.phone);
+        return '<div class="px-4 py-3 divider first:border-t-0 space-y-2">' +
+          '<div class="flex items-start justify-between gap-2"><button type="button" class="min-w-0 text-left" onclick="openAccountModal(\'' + a + '\')">' +
+            '<p class="text-[13px] font-medium text-white truncate">' + esc(r.acc.company_name) + '</p>' +
+            '<p class="text-[11px] truncate" style="color:var(--muted)">' + esc(r.fu.action_title) + '</p></button>' +
+            '<span class="chip shrink-0" style="' + (late ? "color:#fca5a5" : "") + '">' + (late ? "Atrasado" : "Hoje") + '</span></div>' +
+          '<div class="flex flex-wrap gap-1.5">' +
+            (hasPhone ? '<button type="button" class="btn btn-sm" onclick="contactAccount(\'' + a + '\', \'tel\')">' + icon("phone") + 'Ligar</button>' : "") +
+            (hasPhone ? '<button type="button" class="btn btn-sm" onclick="whatsappCall(\'' + a + '\')">' + icon("chat") + 'WhatsApp</button>' : "") +
+            '<button type="button" class="btn btn-sm" onclick="startMeet(\'' + a + '\')">' + icon("video") + 'Meet</button>' +
+            '<button type="button" class="btn btn-sm" onclick="openAccountModal(\'' + a + '\')">' + icon("edit") + 'Resultado</button>' +
+          '</div></div>';
+      }).join("") : '<div class="empty">Nada para hoje. Boa hora para prospectar novas contas.</div>';
     }
 
     // Monta a rota no Google Maps partindo da localização atual (máx. 9 paradas intermediárias)
@@ -3721,6 +4492,8 @@
       document.getElementById("btnDeleteAccount").classList.toggle("hidden", !acc);
       document.getElementById("btnSaveAccountModal").textContent = acc ? "Salvar alterações" : "Criar conta";
 
+      resetCopilot();
+      document.getElementById("accCopilot").open = false;
       renderAccountSidePanel(acc);
       modal.classList.remove("hidden");
       if (!acc) setTimeout(function () { document.getElementById("accFormCompany").focus(); }, 30);
@@ -3738,6 +4511,8 @@
         tl.innerHTML = '<p style="color:var(--muted)">O histórico aparece depois que a conta for salva.</p>';
         document.getElementById("accNoteBox").classList.add("hidden");
         document.getElementById("accPatSim").classList.add("hidden");
+        document.getElementById("accHomeOffice").classList.add("hidden");
+        document.getElementById("accCopilot").classList.add("hidden");
         return;
       }
       const a = esc(acc.id);
@@ -3756,6 +4531,8 @@
         '<button type="button" class="btn btn-sm" onclick="openOpportunityModal(\'' + a + '\')">' + icon("kanban") + 'Oportunidade</button>';
       qa.classList.remove("hidden");
       document.getElementById("accNoteBox").classList.remove("hidden");
+      renderHomeOfficeHub(acc);
+      document.getElementById("accCopilot").classList.remove("hidden");
       preparePatSim(acc);
 
       snap.innerHTML =
@@ -3831,6 +4608,7 @@
     }
 
     function closeAccountModal() {
+      if (copilotListening) stopCopilotListening();
       document.getElementById("accountModal").classList.add("hidden");
     }
 
@@ -3874,6 +4652,8 @@
       let record;
       let newOpp = null;
       let newFu = null;
+      const prevStatus = existing ? existing.status : undefined;
+      const prevInterest = existing ? existing.interest_level : undefined;
       if (existing) {
         record = Object.assign(existing, payload);
       } else {
@@ -3921,6 +4701,8 @@
       showToast(existing
         ? "Conta atualizada."
         : "Conta criada" + (newOpp ? ", no pipeline" : "") + (newFu ? " e com primeiro contato agendado" : "") + ".", "💾");
+      // Pipeline automático: status/interesse movem o card (conta nova grava tudo junto abaixo)
+      const autoRes = autoAdvancePipelineFromAccount(record, "status", { prevStatus: prevStatus, prevInterest: prevInterest, defer: !existing });
       remoteWrite("Conta", async function () {
         const res = await db.upsert("crm_accounts", [accountToRow(record)], "code");
         if (res.error) return res;
@@ -3931,6 +4713,16 @@
         if (newOpp) {
           const r2 = await db.upsert("crm_opportunities", [opportunityToRow(newOpp)], "id");
           if (r2.error) return r2;
+        }
+        if (!existing && autoRes) {
+          if (autoRes.opp && autoRes.opp !== newOpp) {
+            const r3 = await db.upsert("crm_opportunities", [opportunityToRow(autoRes.opp)], "id");
+            if (r3.error) return r3;
+          }
+          if (autoRes.followups.length) {
+            const r4 = await db.upsert("crm_follow_ups", autoRes.followups.map(followupToRow), "id");
+            if (r4.error) return r4;
+          }
         }
         if (newFu) return db.upsert("crm_follow_ups", [followupToRow(newFu)], "id");
         return res;
@@ -4364,8 +5156,29 @@
     }
 
     // 7d. TELA DE INTEGRAÇÕES
+    function saveGeminiKey() {
+      const k = (document.getElementById("geminiKeyInput").value || "").trim();
+      const m = (document.getElementById("geminiModelInput").value || "").trim() || "gemini-2.5-flash";
+      try {
+        if (k) localStorage.setItem("swile_crm_gemini_key", k);
+        localStorage.setItem("swile_crm_gemini_model", m);
+      } catch (e) { showToast("O navegador bloqueou o armazenamento local.", "⚠️"); return; }
+      document.getElementById("geminiKeyInput").value = "";
+      renderIntegrations();
+      showToast(k ? "Chave salva neste navegador. O copiloto vai usar o Gemini." : "Modelo salvo.", "🔑");
+    }
+    function clearGeminiKey() {
+      try { localStorage.removeItem("swile_crm_gemini_key"); } catch (e) { /* ignore */ }
+      renderIntegrations();
+      showToast("Chave apagada. O copiloto volta para a análise local.", "🗑️");
+    }
+
     function renderIntegrations() {
       const cfg = integ();
+      const gs = document.getElementById("geminiStatus");
+      if (gs) { gs.textContent = geminiKey() ? "Gemini ativo · " + geminiModel() : "Análise local"; gs.className = geminiKey() ? "chip chip-ok" : "chip"; }
+      const gm = document.getElementById("geminiModelInput");
+      if (gm && document.activeElement !== gm) gm.value = geminiModel();
       const set = function (id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v || ""; };
       set("inputSellerName", state.sellerName);
       set("inputSellerRole", state.sellerRole);
@@ -4966,8 +5779,8 @@
       opp.notes = (opp.notes ? String(opp.notes).trim() + "\n\n" : "") + block;
       persistState();
       remoteWrite("Simulação", function () { return db.update("crm_opportunities", opp.id, { notes: opp.notes }); });
-      logInteraction(acc.id, "Nota", "Simulação PAT salva na oportunidade", true);
-      showToast("Simulação salva nas notas da oportunidade.", "🧮");
+      logInteraction(acc.id, "Nota", "Simulação PAT salva na oportunidade", true, true);
+      if (!autoAdvancePipelineFromAccount(acc, "pat")) showToast("Simulação salva nas notas da oportunidade.", "🧮");
     }
 
     // 7e. PLANILHAS: importação de CSV e backup
@@ -5183,7 +5996,7 @@
 
     function opportunityToRow(o) {
       const acc = state.accounts.find(function (a) { return a.id === o.account_id; });
-      const w = Number(o.stage_weight) || 1;
+      const w = Number(o.stage_weight) === 0 && o.stage_weight !== "" && o.stage_weight !== null ? 0 : (Number(o.stage_weight) || 1);
       return {
         id: o.id,
         account_id: o.account_id,
@@ -5590,6 +6403,7 @@
         state.supabaseConnected = true;
         persistState();
         syncPendingInteractions();
+        applyLeadDataPatch();
         setDbStatus("connected",
           "<p class='font-bold text-emerald-300'>Conectado (" + esc(db.lastMode) + ").</p>" +
           "<p>" + state.accounts.length + " contas, " + state.opportunities.length + " oportunidades e " + state.followups.length + " follow-ups carregados do banco. Alterações feitas no app são gravadas no Supabase.</p>" +
@@ -5836,6 +6650,7 @@
 
     window.addEventListener("DOMContentLoaded", function () {
       loadInitialState();
+      applyLeadDataPatch();
       refreshAllViews();
       if (AUTH_RETURN && (AUTH_RETURN.error || AUTH_RETURN.error_code)) {
         switchTab("supabase");

@@ -102,6 +102,15 @@ Tudo por link, sem OAuth e sem custo: usa o WhatsApp, o e-mail e a agenda já lo
 
 As preferências e os modelos ficam no `localStorage` deste navegador (não vão para o banco).
 
+## Relatórios (aba Relatórios)
+
+- **Indicadores:** contas, clientes, leads quentes, pipeline aberto (TPV mensal), forecast ponderado, taxa de conversão (ganhos ÷ ganhos + perdas no período), atividades concluídas e follow-ups atrasados.
+- **Gráficos:** funil por etapa (quantidade e TPV), prospecção por status, atividades concluídas por semana e temperatura da carteira.
+- **Filtro de período** (7, 30, 90 dias ou tudo) para ganhos, perdas e atividades.
+- **PDF:** botão "PDF" abre a impressão do navegador já formatada (fundo branco, só o relatório). Escolha "Salvar como PDF".
+- **Excel:** botão "Excel" gera um `.xlsx` com as abas Resumo, Contas, Oportunidades e Follow-ups (SheetJS, carregado só na hora do clique). Sem internet, cai para CSV.
+- **Enviar resumo:** texto pronto com os números, por WhatsApp ou e-mail.
+
 ## Sincronização com o Supabase
 
 - **Leitura:** ao conectar, contas, oportunidades e follow-ups são carregados do banco. O banco é a fonte da verdade.

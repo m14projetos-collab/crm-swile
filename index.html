@@ -142,6 +142,27 @@
     .pal-item { display: flex; align-items: center; gap: .65rem; width: 100%; padding: .55rem 1rem; text-align: left; font-size: .8rem; color: #c3c8d4; }
     .pal-item.is-sel, .pal-item:hover { background: var(--surface-3); color: #fff; }
     .tpl-card { border: 1px solid var(--line); border-radius: 10px; padding: .7rem; background: var(--surface-2); }
+    .print-only { display: none; }
+    @media print {
+      @page { size: A4; margin: 12mm; }
+      :root { color-scheme: light; }
+      html, body { background: #fff !important; color: #111827 !important; }
+      body * { visibility: hidden; }
+      #view-reports, #view-reports * { visibility: visible; }
+      #view-reports { position: absolute; left: 0; top: 0; width: 100%; display: block !important; animation: none !important; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; color: #111827; margin-bottom: 8px; }
+      #view-reports .card { background: #fff !important; border-color: #d1d5db !important; box-shadow: none !important; }
+      #view-reports .card-title, #view-reports .text-white, #view-reports h2 { color: #111827 !important; }
+      #view-reports .card-sub, #view-reports .eyebrow, #view-reports p, #view-reports span { color: #374151 !important; }
+      #view-reports .row-item { border-color: #e5e7eb !important; }
+      #view-reports .report-grid { grid-template-columns: 1fr 1fr !important; }
+      #reportKpis { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 8px !important; }
+      #view-reports .grid > * { min-width: 0; }
+      #view-reports canvas { max-width: 100% !important; height: auto !important; }
+      .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+      .lg\:pl-60 { padding-left: 0 !important; }
+    }
     .fade-in { animation: fadeIn .18s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   </style>
@@ -180,6 +201,7 @@
     <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0Z"/><path d="M12 17v5"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></symbol>
     <symbol id="i-search2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
     <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
   </svg>
 
@@ -217,6 +239,9 @@
         </button>
         <button id="tabBtn-playbook" data-tab="playbook" type="button" onclick="switchTab('playbook')" class="nav-item">
           <svg class="ico"><use href="#i-book"/></svg><span>Playbook</span>
+        </button>
+        <button id="tabBtn-reports" data-tab="reports" type="button" onclick="switchTab('reports')" class="nav-item">
+          <svg class="ico"><use href="#i-chart"/></svg><span>Relatórios</span>
         </button>
       </nav>
       <nav class="flex flex-col gap-0.5 px-3 mt-4 pt-4 border-t mx-3 !px-0" style="border-color:var(--line)" aria-label="Configuração">
@@ -597,6 +622,72 @@
         </section>
 
         <!-- =============================================================== -->
+        <!-- RELATÓRIOS                                                      -->
+        <!-- =============================================================== -->
+        <section id="view-reports" class="hidden space-y-4 fade-in">
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
+            <div class="no-print">
+              <h2 class="text-lg font-semibold text-white tracking-tight">Relatórios</h2>
+              <p id="reportSubtitle" class="text-sm" style="color:var(--muted)">Vendas, funil, prospecção e atividades.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 no-print">
+              <label for="reportPeriod" class="sr-only">Período</label>
+              <select id="reportPeriod" class="input w-auto h-8" onchange="renderReports()">
+                <option value="7">Últimos 7 dias</option>
+                <option value="30" selected>Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+                <option value="0">Todo o período</option>
+              </select>
+              <button type="button" class="btn btn-sm" onclick="exportReportPdf()"><svg class="ico"><use href="#i-download"/></svg>PDF</button>
+              <button type="button" class="btn btn-sm" onclick="exportExcel()"><svg class="ico"><use href="#i-download"/></svg>Excel</button>
+              <button type="button" class="btn btn-sm" onclick="shareReport('wa')"><svg class="ico"><use href="#i-chat"/></svg>Enviar resumo</button>
+              <button type="button" class="btn btn-sm" onclick="shareReport('mail')" aria-label="Enviar resumo por e-mail" title="Enviar resumo por e-mail"><svg class="ico"><use href="#i-mail"/></svg></button>
+            </div>
+          </div>
+
+          <div class="print-only">
+            <p class="text-xl font-semibold">Swile OS · Relatório comercial Middle Market RJ</p>
+            <p id="reportPrintMeta" class="text-sm"></p>
+          </div>
+
+          <div id="reportKpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 report-grid">
+            <div class="card p-4 avoid-break">
+              <h3 class="card-title">Funil de vendas</h3>
+              <p class="card-sub">Oportunidades e TPV mensal por etapa</p>
+              <div class="relative h-60 mt-3"><canvas id="chartReportFunnel" aria-label="Funil de vendas"></canvas></div>
+            </div>
+            <div class="card p-4 avoid-break">
+              <h3 class="card-title">Prospecção por status</h3>
+              <p class="card-sub">Onde está cada conta da carteira</p>
+              <div class="relative h-60 mt-3"><canvas id="chartReportStatus" aria-label="Contas por status"></canvas></div>
+            </div>
+            <div class="card p-4 avoid-break">
+              <h3 class="card-title">Atividades por semana</h3>
+              <p class="card-sub">Follow-ups concluídos nas últimas 8 semanas</p>
+              <div class="relative h-60 mt-3"><canvas id="chartReportActivity" aria-label="Atividades por semana"></canvas></div>
+            </div>
+            <div class="card p-4 avoid-break">
+              <h3 class="card-title">Temperatura da carteira</h3>
+              <p class="card-sub">Leads quentes, mornos e frios</p>
+              <div class="relative h-60 mt-3"><canvas id="chartReportInterest" aria-label="Interesse das contas"></canvas></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="card overflow-hidden avoid-break">
+              <div class="card-head pb-3"><div><h3 class="card-title">Maiores oportunidades abertas</h3><p class="card-sub">Ordenadas pelo forecast ponderado</p></div></div>
+              <div id="reportTopOpps"></div>
+            </div>
+            <div class="card overflow-hidden avoid-break">
+              <div class="card-head pb-3"><div><h3 class="card-title">Ganhos e perdas</h3><p class="card-sub">No período selecionado, com motivos de perda</p></div></div>
+              <div id="reportWinLoss"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
         <!-- INTEGRAÇÕES                                                     -->
         <!-- =============================================================== -->
         <section id="view-integrations" class="hidden space-y-4 fade-in">
@@ -711,6 +802,7 @@
               <p style="color:var(--muted)">Importe leads de uma planilha (CSV do Excel ou Google Sheets, com vírgula ou ponto e vírgula). Colunas reconhecidas: Empresa, Telefone/WhatsApp, E-mail, Decisor, Setor, Vidas, Ticket, Cartão atual, Polo, Bairro, Endereço, Site, Prioridade. Empresas que já existem são ignoradas.</p>
               <div class="flex flex-wrap gap-2">
                 <label class="btn btn-sm cursor-pointer"><svg class="ico"><use href="#i-upload"/></svg>Importar CSV<input id="csvImportInput" type="file" accept=".csv,text/csv" class="sr-only" onchange="importCsvFile(this)" /></label>
+                <button type="button" class="btn btn-sm" onclick="exportExcel()"><svg class="ico"><use href="#i-download"/></svg>Exportar Excel</button>
                 <button type="button" class="btn btn-sm" onclick="exportCrmCsv()"><svg class="ico"><use href="#i-download"/></svg>Exportar contas (CSV)</button>
                 <button type="button" class="btn btn-sm" onclick="exportBackupJson()"><svg class="ico"><use href="#i-download"/></svg>Backup completo (JSON)</button>
               </div>
@@ -804,12 +896,13 @@
   </div>
 
   <!-- NAVEGAÇÃO INFERIOR (celular) -->
-  <nav class="lg:hidden fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t backdrop-blur-md" style="background:rgba(13,16,23,.95);border-color:var(--line);padding-bottom:env(safe-area-inset-bottom)" aria-label="Seções">
+  <nav class="lg:hidden fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t backdrop-blur-md" style="background:rgba(13,16,23,.95);border-color:var(--line);padding-bottom:env(safe-area-inset-bottom)" aria-label="Seções">
     <button type="button" data-tab="cockpit" onclick="switchTab('cockpit')" class="mnav-item is-active"><svg class="ico ico-lg"><use href="#i-home"/></svg>Hoje<span id="mnavCountToday" class="mnav-badge hidden"></span></button>
     <button type="button" data-tab="accounts" onclick="switchTab('accounts')" class="mnav-item"><svg class="ico ico-lg"><use href="#i-building"/></svg>Contas</button>
     <button type="button" data-tab="pipeline" onclick="switchTab('pipeline')" class="mnav-item"><svg class="ico ico-lg"><use href="#i-kanban"/></svg>Pipeline</button>
     <button type="button" data-tab="followups" onclick="switchTab('followups')" class="mnav-item"><svg class="ico ico-lg"><use href="#i-calendar"/></svg>Agenda</button>
     <button type="button" data-tab="playbook" onclick="switchTab('playbook')" class="mnav-item"><svg class="ico ico-lg"><use href="#i-book"/></svg>Playbook</button>
+    <button type="button" data-tab="reports" onclick="switchTab('reports')" class="mnav-item"><svg class="ico ico-lg"><use href="#i-chart"/></svg>Relatórios</button>
   </nav>
   <button type="button" onclick="openFollowupModal()" class="lg:hidden fixed right-4 bottom-20 z-30 h-12 w-12 rounded-full flex items-center justify-center text-white shadow-lg" style="background:var(--accent-strong);box-shadow:0 10px 30px -8px rgba(124,58,237,.6)" aria-label="Agendar ação"><svg class="ico ico-lg"><use href="#i-calplus"/></svg></button>
 
@@ -1853,6 +1946,7 @@
       pipeline: "Pipeline",
       followups: "Agenda e rotas",
       playbook: "Playbook",
+      reports: "Relatórios",
       integrations: "Integrações",
       supabase: "Banco e login"
     };
@@ -2232,9 +2326,12 @@
       return links;
     }
 
+    // Abre em nova aba. Não usar a feature "noopener" aqui: com ela o window.open
+    // sempre retorna null e o CRM também navegaria para o link na aba atual.
     function openExternal(url) {
-      const w = window.open(url, "_blank", "noopener");
-      if (!w) window.location.href = url;
+      const w = window.open(url, "_blank");
+      if (w) { try { w.opener = null; } catch (e) { /* ignore */ } }
+      else window.location.href = url;
     }
 
     function icsEscape(s) {
@@ -2495,7 +2592,7 @@
 
     // 5. NAVEGAÇÃO
     function switchTab(tabKey) {
-      const views = ["cockpit", "accounts", "pipeline", "followups", "playbook", "integrations", "supabase"];
+      const views = ["cockpit", "accounts", "pipeline", "followups", "playbook", "reports", "integrations", "supabase"];
       if (views.indexOf(tabKey) < 0) tabKey = "cockpit";
       for (let i = 0; i < views.length; i++) {
         const k = views[i];
@@ -2539,6 +2636,7 @@
       renderObjectionsList();
       updateCoachPromptPreview();
       renderNavCounts();
+      if (currentTab === "reports") renderReports();
       persistState();
     }
 
@@ -3919,6 +4017,9 @@
         { label: "Ir para Pipeline", ic: "kanban", run: function () { switchTab("pipeline"); } },
         { label: "Ir para Agenda e rotas", ic: "calendar", run: function () { switchTab("followups"); } },
         { label: "Ir para Playbook", ic: "book", run: function () { switchTab("playbook"); } },
+        { label: "Relatórios e gráficos", ic: "chart", run: function () { switchTab("reports"); } },
+        { label: "Exportar relatório em PDF", ic: "download", run: function () { exportReportPdf(); } },
+        { label: "Exportar planilha Excel (.xlsx)", ic: "download", run: function () { exportExcel(); } },
         { label: "Integrações (WhatsApp, e-mail, agenda)", ic: "plug", run: function () { switchTab("integrations"); } },
         { label: "Banco e login", ic: "db", run: function () { switchTab("supabase"); } },
         { label: "Baixar agenda da semana (.ics)", ic: "download", run: function () { downloadWeekIcs(); } },
@@ -4110,6 +4211,364 @@
       fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
         .then(function () { st.textContent = "Enviado. Confira no Make/n8n/Zapier se chegou."; })
         .catch(function () { st.textContent = "Falhou (rede ou URL inválida)."; });
+    }
+
+    // 7f. RELATÓRIOS: indicadores, gráficos, PDF (impressão) e Excel
+    const reportCharts = {};
+    const REPORT_STATUS_ORDER = ["Lead Mapeado", "Outbound Iniciado", "Qualificado (SQL)", "Discovery RH/DP", "Demo / Diagnóstico Agendado", "Proposta & Simulação PAT", "Fechado ✅", "Perdido ❌"];
+    const REPORT_STAGE_NAMES = { 1: "Qualificado", 2: "Discovery", 3: "Demo", 4: "Proposta", 5: "Fechado" };
+
+    function reportPeriodDays() {
+      const el = document.getElementById("reportPeriod");
+      return el ? Number(el.value) || 0 : 30;
+    }
+
+    function reportPeriodLabel() {
+      const d = reportPeriodDays();
+      return d ? "últimos " + d + " dias" : "todo o período";
+    }
+
+    // Data dentro do período escolhido (0 = sem corte). Datas futuras ficam fora.
+    function inReportPeriod(iso) {
+      if (!iso) return false;
+      const diff = daysFromToday(iso);
+      if (diff > 0) return false;
+      const p = reportPeriodDays();
+      return !p || diff >= -p;
+    }
+
+    function isClientAccount(acc) {
+      if (!acc) return false;
+      if (acc.status === "Fechado ✅") return true;
+      return state.opportunities.some(function (o) { return o.account_id === acc.id && Number(o.stage_weight) === 5; });
+    }
+
+    function computeReportData() {
+      const accounts = state.accounts;
+      const opps = state.opportunities;
+      const fus = state.followups;
+      const open = opps.filter(function (o) { const w = Number(o.stage_weight); return w >= 1 && w <= 4; });
+      const won = opps.filter(function (o) { return Number(o.stage_weight) === 5 && inReportPeriod(o.closed_date); });
+      const lost = opps.filter(function (o) { return Number(o.stage_weight) === 0 && inReportPeriod(o.closed_date); });
+      const clients = accounts.filter(isClientAccount);
+      const hot = accounts.filter(function (a) { return a.interest_level === "Quente" && !isClientAccount(a) && a.status !== "Perdido ❌"; });
+      let openTpv = 0, weighted = 0;
+      open.forEach(function (o) {
+        const acc = findAccount(o.account_id);
+        const tpv = acc ? computeMonthlyTpv(acc) : 0;
+        openTpv += tpv;
+        weighted += tpv * ((Number(o.probability) || 0) / 100);
+      });
+      const wonTpv = won.reduce(function (s, o) { return s + computeMonthlyTpv(findAccount(o.account_id) || {}); }, 0);
+      const done = fus.filter(function (f) { return f.status === "Concluído" && inReportPeriod(f.completed_date || f.due_date); });
+      const pending = fus.filter(function (f) { return f.status === "Pendente"; });
+      const overdue = pending.filter(function (f) { return daysFromToday(f.due_date) < 0; });
+      const decided = won.length + lost.length;
+      const lossReasons = {};
+      lost.forEach(function (o) { const k = o.loss_category || "Não informado"; lossReasons[k] = (lossReasons[k] || 0) + 1; });
+      return {
+        accounts: accounts, open: open, won: won, lost: lost, clients: clients, hot: hot,
+        openTpv: openTpv, weighted: weighted, wonTpv: wonTpv, done: done, pending: pending, overdue: overdue,
+        conversion: decided ? Math.round((won.length / decided) * 100) : null,
+        lossReasons: lossReasons,
+        lives: accounts.reduce(function (s, a) { return s + (Number(a.active_card_users) || 0); }, 0)
+      };
+    }
+
+    function reportKpiHtml(label, value, sub) {
+      return '<div class="card p-4 avoid-break"><p class="eyebrow">' + esc(label) + '</p>' +
+        '<p class="mt-1.5 text-2xl font-semibold text-white num tracking-tight">' + esc(value) + '</p>' +
+        '<p class="mt-1 text-[12px]" style="color:var(--muted)">' + esc(sub) + '</p></div>';
+    }
+
+    function renderReports() {
+      const box = document.getElementById("reportKpis");
+      if (!box) return;
+      const r = computeReportData();
+      const period = reportPeriodLabel();
+      const sub = document.getElementById("reportSubtitle");
+      if (sub) sub.textContent = "Carteira de " + (state.sellerName || "Middle Market RJ") + " · ganhos, perdas e atividades: " + period + ".";
+      const meta = document.getElementById("reportPrintMeta");
+      if (meta) meta.textContent = "Gerado em " + formatDateShort(todayIso()) + " " + new Date().getFullYear() + (state.sellerName ? " por " + state.sellerName : "") + " · período: " + period;
+
+      box.innerHTML = [
+        reportKpiHtml("Contas na carteira", r.accounts.length, r.lives.toLocaleString("pt-BR") + " vidas mapeadas"),
+        reportKpiHtml("Clientes", r.clients.length, r.won.length + " ganho(s) no período · " + formatCompactBRL(r.wonTpv) + "/mês"),
+        reportKpiHtml("Leads quentes", r.hot.length, "interesse alto, ainda não clientes"),
+        reportKpiHtml("Pipeline aberto", formatCompactBRL(r.openTpv), r.open.length + " oportunidade(s) · TPV mensal"),
+        reportKpiHtml("Forecast ponderado", formatCompactBRL(r.weighted), "TPV × probabilidade de cada etapa"),
+        reportKpiHtml("Taxa de conversão", r.conversion === null ? "—" : r.conversion + "%", r.won.length + " ganho(s) e " + r.lost.length + " perda(s) no período"),
+        reportKpiHtml("Atividades feitas", r.done.length, "follow-ups concluídos no período"),
+        reportKpiHtml("Atrasadas", r.overdue.length, r.pending.length + " pendente(s) no total")
+      ].join("");
+
+      // Maiores oportunidades abertas
+      const top = r.open.map(function (o) {
+        const acc = findAccount(o.account_id);
+        const tpv = acc ? computeMonthlyTpv(acc) : 0;
+        return { o: o, acc: acc, tpv: tpv, w: tpv * ((Number(o.probability) || 0) / 100) };
+      }).sort(function (a, b) { return b.w - a.w; }).slice(0, 6);
+      const topEl = document.getElementById("reportTopOpps");
+      if (topEl) {
+        topEl.innerHTML = top.length ? top.map(function (t) {
+          return '<div class="row-item flex items-center justify-between gap-3 px-4 py-2.5">' +
+            '<div class="min-w-0"><p class="text-[13px] text-slate-200 truncate">' + esc(t.acc ? t.acc.company_name : "Conta removida") + '</p>' +
+            '<p class="text-[11px]" style="color:var(--faint)">' + esc(REPORT_STAGE_NAMES[Number(t.o.stage_weight)] || "") + ' · ' + esc(t.o.probability) + '% · fecha ' + esc(formatDateShort(t.o.close_date)) + '</p></div>' +
+            '<div class="text-right shrink-0"><p class="text-[13px] text-white num">' + esc(formatCompactBRL(t.w)) + '</p>' +
+            '<p class="text-[11px] num" style="color:var(--faint)">de ' + esc(formatCompactBRL(t.tpv)) + '/mês</p></div></div>';
+        }).join("") : '<p class="empty">Nenhuma oportunidade aberta.</p>';
+      }
+
+      // Ganhos e perdas
+      const wlEl = document.getElementById("reportWinLoss");
+      if (wlEl) {
+        const rows = r.won.map(function (o) { return { o: o, ok: true }; }).concat(r.lost.map(function (o) { return { o: o, ok: false }; }))
+          .sort(function (a, b) { return String(b.o.closed_date).localeCompare(String(a.o.closed_date)); });
+        let html = rows.length ? rows.slice(0, 8).map(function (x) {
+          const acc = findAccount(x.o.account_id);
+          return '<div class="row-item flex items-center justify-between gap-3 px-4 py-2.5">' +
+            '<div class="min-w-0"><p class="text-[13px] text-slate-200 truncate">' + esc(acc ? acc.company_name : "Conta removida") + '</p>' +
+            '<p class="text-[11px]" style="color:var(--faint)">' + esc(x.ok ? "Ganho" : (x.o.loss_category || "Perdido")) + ' · ' + esc(formatDateShort(x.o.closed_date)) + '</p></div>' +
+            '<span class="chip ' + (x.ok ? "chip-ok" : "chip-bad") + '">' + (x.ok ? "Ganho" : "Perdido") + '</span></div>';
+        }).join("") : '<p class="empty">Nenhum negócio ganho ou perdido no período.</p>';
+        const reasons = Object.keys(r.lossReasons).sort(function (a, b) { return r.lossReasons[b] - r.lossReasons[a]; });
+        if (reasons.length) {
+          html += '<div class="px-4 py-3 text-[12px]" style="color:var(--muted)">Motivos de perda: ' +
+            reasons.map(function (k) { return esc(k) + ' (' + r.lossReasons[k] + ')'; }).join(" · ") + '</div>';
+        }
+        wlEl.innerHTML = html;
+      }
+
+      renderReportCharts(r);
+    }
+
+    function renderReportCharts(r) {
+      if (typeof Chart === "undefined") return;
+      const tick = { color: "#7c8497", font: { size: 11 } };
+      const grid = { color: "rgba(148,163,184,0.12)" };
+      const tooltip = { backgroundColor: "#1c2130", borderColor: "rgba(148,163,184,.2)", borderWidth: 1, padding: 10, titleColor: "#e8eaf0", bodyColor: "#c3c8d4" };
+      const make = function (key, id, config) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (reportCharts[key]) reportCharts[key].destroy();
+        config.options = Object.assign({ responsive: true, maintainAspectRatio: false, animation: false }, config.options || {});
+        reportCharts[key] = new Chart(el, config);
+      };
+
+      // Funil: oportunidades por etapa (barras) + TPV (linha)
+      const stages = [1, 2, 3, 4, 5];
+      const countBy = stages.map(function (w) { return state.opportunities.filter(function (o) { return Number(o.stage_weight) === w; }).length; });
+      const tpvBy = stages.map(function (w) {
+        return state.opportunities.filter(function (o) { return Number(o.stage_weight) === w; })
+          .reduce(function (s, o) { return s + computeMonthlyTpv(findAccount(o.account_id) || {}); }, 0);
+      });
+      make("funnel", "chartReportFunnel", {
+        type: "bar",
+        data: {
+          labels: stages.map(function (w) { return REPORT_STAGE_NAMES[w]; }),
+          datasets: [
+            { label: "Oportunidades", data: countBy, backgroundColor: stages.map(function (w) { return w === 5 ? "#34d399" : "rgba(139,92,246,.6)"; }), borderRadius: 4, maxBarThickness: 40, yAxisID: "y" },
+            { label: "TPV mensal", type: "line", data: tpvBy, borderColor: "#e879f9", backgroundColor: "#e879f9", pointRadius: 3, tension: 0.3, yAxisID: "y1" }
+          ]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: "#7c8497", boxWidth: 10, font: { size: 11 } } },
+            tooltip: Object.assign({}, tooltip, { callbacks: { label: function (c) { return c.dataset.yAxisID === "y1" ? " TPV: " + formatCurrencyBRL(c.raw) : " " + c.raw + " oportunidade(s)"; } } })
+          },
+          scales: {
+            x: { ticks: tick, grid: { display: false }, border: { display: false } },
+            y: { ticks: Object.assign({ precision: 0 }, tick), grid: grid, border: { display: false }, beginAtZero: true },
+            y1: { position: "right", ticks: Object.assign({ callback: function (v) { return formatCompactBRL(v); } }, tick), grid: { display: false }, border: { display: false }, beginAtZero: true }
+          }
+        }
+      });
+
+      // Prospecção: contas por status
+      const statuses = REPORT_STATUS_ORDER.slice();
+      state.accounts.forEach(function (a) { if (a.status && statuses.indexOf(a.status) < 0) statuses.push(a.status); });
+      const statusCounts = statuses.map(function (st) { return state.accounts.filter(function (a) { return a.status === st; }).length; });
+      make("status", "chartReportStatus", {
+        type: "bar",
+        data: {
+          labels: statuses.map(function (s) { return s.replace(" ✅", "").replace(" ❌", "").replace(" Agendado", "").replace(" & Simulação PAT", ""); }),
+          datasets: [{ label: "Contas", data: statusCounts, backgroundColor: statuses.map(function (s) { return s === "Fechado ✅" ? "#34d399" : s === "Perdido ❌" ? "#f87171" : "rgba(232,121,249,.55)"; }), borderRadius: 4, maxBarThickness: 18 }]
+        },
+        options: {
+          indexAxis: "y",
+          plugins: { legend: { display: false }, tooltip: tooltip },
+          scales: {
+            x: { ticks: Object.assign({ precision: 0 }, tick), grid: grid, border: { display: false }, beginAtZero: true },
+            y: { ticks: tick, grid: { display: false }, border: { display: false } }
+          }
+        }
+      });
+
+      // Atividades concluídas por semana (8 semanas, a mais recente termina hoje)
+      const weekLabels = [], weekCounts = [];
+      for (let k = 7; k >= 0; k--) {
+        const endOff = -7 * k, startOff = endOff - 6;
+        weekLabels.push(formatDateShort(addDaysIso(startOff)));
+        weekCounts.push(state.followups.filter(function (f) {
+          if (f.status !== "Concluído") return false;
+          const d = daysFromToday(f.completed_date || f.due_date);
+          return d >= startOff && d <= endOff;
+        }).length);
+      }
+      make("activity", "chartReportActivity", {
+        type: "bar",
+        data: { labels: weekLabels, datasets: [{ label: "Concluídas", data: weekCounts, backgroundColor: "rgba(139,92,246,.6)", hoverBackgroundColor: "#a78bfa", borderRadius: 4, maxBarThickness: 30 }] },
+        options: {
+          plugins: { legend: { display: false }, tooltip: Object.assign({}, tooltip, { callbacks: { title: function (c) { return "Semana de " + c[0].label; } } }) },
+          scales: {
+            x: { ticks: tick, grid: { display: false }, border: { display: false } },
+            y: { ticks: Object.assign({ precision: 0 }, tick), grid: grid, border: { display: false }, beginAtZero: true }
+          }
+        }
+      });
+
+      // Temperatura da carteira
+      const levels = ["Quente", "Morno", "Frio"];
+      const levelCounts = levels.map(function (l) { return state.accounts.filter(function (a) { return (a.interest_level || "Morno") === l; }).length; });
+      make("interest", "chartReportInterest", {
+        type: "doughnut",
+        data: { labels: levels, datasets: [{ data: levelCounts, backgroundColor: ["#f472b6", "#a78bfa", "#64748b"], borderWidth: 0 }] },
+        options: { cutout: "62%", plugins: { legend: { position: "right", labels: { color: "#7c8497", boxWidth: 10, font: { size: 12 } } }, tooltip: tooltip } }
+      });
+    }
+
+    function resizeReportCharts() {
+      Object.keys(reportCharts).forEach(function (k) { try { reportCharts[k].resize(); } catch (e) { /* ignore */ } });
+    }
+    window.addEventListener("beforeprint", resizeReportCharts);
+    window.addEventListener("afterprint", resizeReportCharts);
+
+    // PDF: usa a impressão do navegador ("Salvar como PDF"), sem biblioteca externa
+    function exportReportPdf() {
+      if (currentTab !== "reports") switchTab("reports");
+      renderReports();
+      const prevTitle = document.title;
+      document.title = "Relatorio-Swile-CRM-" + todayIso();
+      setTimeout(function () {
+        resizeReportCharts();
+        window.print();
+        document.title = prevTitle;
+      }, 350);
+    }
+
+    // Excel: SheetJS carregado só quando necessário (gratuito, roda no navegador)
+    const XLSX_URL = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    let xlsxLoading = null;
+    function loadXlsx() {
+      if (typeof XLSX !== "undefined") return Promise.resolve(XLSX);
+      if (xlsxLoading) return xlsxLoading;
+      xlsxLoading = new Promise(function (resolve, reject) {
+        const s = document.createElement("script");
+        s.src = XLSX_URL;
+        s.onload = function () { typeof XLSX !== "undefined" ? resolve(XLSX) : reject(new Error("XLSX indisponível")); };
+        s.onerror = function () { xlsxLoading = null; reject(new Error("Falha ao carregar a biblioteca de Excel")); };
+        document.head.appendChild(s);
+      });
+      return xlsxLoading;
+    }
+
+    function buildWorkbookSheets() {
+      const r = computeReportData();
+      const resumo = [
+        ["Relatório comercial Swile OS · Middle Market RJ"],
+        ["Gerado em", todayIso()],
+        ["Período (ganhos, perdas, atividades)", reportPeriodLabel()],
+        [],
+        ["Indicador", "Valor"],
+        ["Contas na carteira", r.accounts.length],
+        ["Vidas mapeadas", r.lives],
+        ["Clientes", r.clients.length],
+        ["Leads quentes", r.hot.length],
+        ["Oportunidades abertas", r.open.length],
+        ["Pipeline aberto (TPV mensal, R$)", Math.round(r.openTpv)],
+        ["Forecast ponderado (R$)", Math.round(r.weighted)],
+        ["Ganhos no período", r.won.length],
+        ["Perdas no período", r.lost.length],
+        ["Taxa de conversão (%)", r.conversion === null ? "" : r.conversion],
+        ["Atividades concluídas no período", r.done.length],
+        ["Follow-ups pendentes", r.pending.length],
+        ["Follow-ups atrasados", r.overdue.length]
+      ];
+      const contas = state.accounts.map(function (a) {
+        return {
+          Codigo: a.code || "", Empresa: a.company_name || "", Setor: a.sector || "", Polo_RJ: a.polo_rj || "", Bairro: a.neighborhood || "",
+          Status: a.status || "", Interesse: a.interest_level || "", Prioridade: a.priority_icp || "", Score: computeCommercialScore(a),
+          Operadora_Atual: a.current_provider || "", Vidas: Number(a.active_card_users) || 0, Ticket_Medio: Number(a.avg_monthly_ticket) || 0,
+          TPV_Mensal: computeMonthlyTpv(a), Decisor: a.decision_maker_name || "", Telefone: a.phone || "", Email_RH: a.email_rh || "",
+          Proxima_Acao: computeNextBestAction(a)
+        };
+      });
+      const oportunidades = state.opportunities.map(function (o) {
+        const acc = findAccount(o.account_id);
+        return {
+          Empresa: acc ? acc.company_name : "", Etapa: STAGE_LABELS[Number(o.stage_weight)] || "", Probabilidade: Number(o.probability) || 0,
+          TPV_Mensal: acc ? computeMonthlyTpv(acc) : 0, Forecast: acc ? Math.round(computeMonthlyTpv(acc) * (Number(o.probability) || 0) / 100) : 0,
+          Previsao_Fechamento: o.close_date || "", Data_Fechamento: o.closed_date || "", Motivo_Perda: o.loss_category || "", Detalhes_Perda: o.loss_details || ""
+        };
+      });
+      const followups = state.followups.map(function (f) {
+        const acc = findAccount(f.account_id);
+        return {
+          Empresa: acc ? acc.company_name : "", Acao: f.action_title || "", Canal: f.channel || "", Data: f.due_date || "",
+          Status: f.status || "", Concluido_em: f.completed_date || "", Notas: f.notes || ""
+        };
+      });
+      return { resumo: resumo, contas: contas, oportunidades: oportunidades, followups: followups };
+    }
+
+    function exportExcel() {
+      const data = buildWorkbookSheets();
+      showToast("Gerando planilha…", "⏳");
+      loadXlsx().then(function (X) {
+        const wb = X.utils.book_new();
+        const ws0 = X.utils.aoa_to_sheet(data.resumo);
+        ws0["!cols"] = [{ wch: 38 }, { wch: 18 }];
+        X.utils.book_append_sheet(wb, ws0, "Resumo");
+        [["Contas", data.contas], ["Oportunidades", data.oportunidades], ["Follow-ups", data.followups]].forEach(function (p) {
+          const ws = X.utils.json_to_sheet(p[1].length ? p[1] : [{ Vazio: "" }]);
+          const keys = p[1].length ? Object.keys(p[1][0]) : ["Vazio"];
+          ws["!cols"] = keys.map(function (k) {
+            const max = p[1].reduce(function (m, row) { return Math.max(m, String(row[k] === undefined ? "" : row[k]).length); }, k.length);
+            return { wch: Math.min(Math.max(max + 2, 8), 50) };
+          });
+          X.utils.book_append_sheet(wb, ws, p[0]);
+        });
+        X.writeFile(wb, "swile-crm-" + todayIso() + ".xlsx");
+        showToast("Planilha Excel baixada", "📊");
+      }).catch(function () {
+        exportCrmCsv();
+        showToast("Sem conexão com a biblioteca de Excel. Baixei em CSV, que também abre no Excel.", "⚠️");
+      });
+    }
+
+    function reportSummaryText() {
+      const r = computeReportData();
+      return [
+        "Resumo comercial · Swile Middle Market RJ (" + formatDateShort(todayIso()) + ")",
+        "",
+        "• Contas na carteira: " + r.accounts.length + " (" + r.lives.toLocaleString("pt-BR") + " vidas)",
+        "• Clientes: " + r.clients.length,
+        "• Leads quentes: " + r.hot.length,
+        "• Pipeline aberto: " + r.open.length + " oportunidades · " + formatCurrencyBRL(r.openTpv) + "/mês",
+        "• Forecast ponderado: " + formatCurrencyBRL(r.weighted) + "/mês",
+        "• Ganhos/perdas (" + reportPeriodLabel() + "): " + r.won.length + " / " + r.lost.length + (r.conversion === null ? "" : " · conversão " + r.conversion + "%"),
+        "• Atividades concluídas (" + reportPeriodLabel() + "): " + r.done.length + " · atrasadas: " + r.overdue.length,
+        "",
+        sellerSignature()
+      ].join("\n").trim();
+    }
+
+    function shareReport(kind) {
+      const text = reportSummaryText();
+      if (kind === "wa") return openExternal("https://wa.me/?text=" + encodeURIComponent(text));
+      const url = composeEmailUrl(integ().emailApp, "", "Resumo comercial Swile · " + formatDateShort(todayIso()), text);
+      if (/^mailto:/.test(url)) window.location.href = url;
+      else openExternal(url);
     }
 
     // 7e. PLANILHAS: importação de CSV e backup

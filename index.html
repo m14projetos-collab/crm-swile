@@ -1123,6 +1123,35 @@
         <aside class="lg:col-span-4 space-y-3">
           <div id="accSnapshot" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line);background:var(--surface-2)"></div>
           <div id="accComposer" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line)"></div>
+          <details id="accPatSim" class="hidden rounded-xl border text-xs" style="border-color:var(--line)">
+            <summary class="flex items-center justify-between gap-2 px-3.5 py-2.5 cursor-pointer">
+              <span class="font-medium text-white">Simulador PAT e economia</span>
+              <span id="patSumTotal" class="num" style="color:#6ee7b7"></span>
+            </summary>
+            <div class="px-3.5 pb-3.5 space-y-3">
+              <div class="grid grid-cols-2 gap-2 items-end">
+                <div><label for="patLives" class="label">Vidas</label><input id="patLives" type="number" min="0" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
+                <div><label for="patTicket" class="label">Ticket VA/VR por vida (R$/mês)</label><input id="patTicket" type="number" min="0" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
+                <div><label for="patFlex" class="label">Flex/mobilidade/home office (R$/mês)</label><input id="patFlex" type="number" min="0" value="0" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
+                <div><label for="patRegime" class="label">Regime tributário</label>
+                  <select id="patRegime" class="input h-8 text-[12px]" onchange="renderPatResult()">
+                    <option value="real">Lucro Real</option><option value="presumido">Lucro Presumido</option><option value="simples">Simples Nacional</option>
+                  </select></div>
+                <div class="col-span-2"><label for="patIrpj" class="label">IRPJ devido no ano, alíquota de 15% (R$) · opcional</label><input id="patIrpj" type="number" min="0" placeholder="Pergunte ao financeiro/contador" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
+                <div><label for="patFeeNow" class="label">Taxa cobrada hoje da empresa (%)</label><input id="patFeeNow" type="number" step="0.1" min="0" value="0" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
+                <div><label for="patFeeSwile" class="label">Taxa proposta Swile (%)</label><input id="patFeeSwile" type="number" step="0.1" min="0" value="0" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
+                <div><label for="patHrHours" class="label">Horas de RH poupadas/mês (premissa)</label><input id="patHrHours" type="number" min="0" value="12" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
+                <div><label for="patHrCost" class="label">Custo da hora do RH (R$, premissa)</label><input id="patHrCost" type="number" min="0" value="65" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
+              </div>
+              <div id="patResult" class="rounded-lg p-3 space-y-1.5" style="background:var(--surface-2)"></div>
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" class="btn btn-sm" onclick="sharePatSummary('wa')"><svg class="ico"><use href="#i-chat"/></svg>Enviar no WhatsApp</button>
+                <button type="button" class="btn btn-sm" onclick="sharePatSummary('copy')"><svg class="ico"><use href="#i-copy"/></svg>Copiar resumo</button>
+                <button id="btnSavePatToOpp" type="button" class="btn btn-sm" onclick="savePatToOpportunity()"><svg class="ico"><use href="#i-kanban"/></svg>Salvar na oportunidade</button>
+              </div>
+              <p class="text-[11px] leading-relaxed" style="color:var(--faint)">Incentivo PAT (só Lucro Real): dedução do IRPJ igual a 15% das despesas com o programa, limitada a 4% do IRPJ devido (Lei 6.321/1976, art. 1º; RIR/2018 – Decreto 9.580/2018, arts. 641 e 642). A Receita deixou de aplicar os limites do Decreto 10.854/2021 (até 5 salários mínimos e 1 salário mínimo por trabalhador) na Solução de Consulta COSIT nº 3/2026. Estimativa comercial: confirme com a contabilidade do cliente.</p>
+            </div>
+          </details>
           <div id="accResearch" class="hidden"></div>
           <div>
             <p class="eyebrow mb-2">Histórico e próximos passos</p>
@@ -2540,12 +2569,54 @@
     function logInteraction(accountId, type, text, auto) {
       if (!accountId || !text) return null;
       if (!Array.isArray(state.interactions)) state.interactions = [];
-      const it = { id: "int-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6), account_id: accountId, type: type || "Nota", text: String(text).slice(0, 2000), at: new Date().toISOString(), auto: !!auto };
+      const it = { id: newUuid(), account_id: accountId, type: type || "Nota", text: String(text).slice(0, 2000), at: new Date().toISOString(), auto: !!auto, synced: false };
       state.interactions.push(it);
       persistState();
+      pushInteraction(it);
       const modal = document.getElementById("accountModal");
       if (modal && !modal.classList.contains("hidden") && document.getElementById("accFormId").value === accountId) renderAccountSidePanel(findAccount(accountId));
       return it;
+    }
+
+    // No banco, cada nota vira uma linha concluída em crm_follow_ups marcada com trigger_used = "crm_interaction".
+    // Ao carregar, essas linhas voltam para o histórico e ficam FORA da Agenda, dos contadores e dos relatórios.
+    const INTERACTION_MARKER = "crm_interaction";
+    function isInteractionRow(r) {
+      return String(r && r.trigger_used || "").indexOf(INTERACTION_MARKER) === 0 || /^\[Hist[óo]rico/.test(String(r && r.action_title || ""));
+    }
+    function interactionToRow(it) {
+      const day = isoFromDate(new Date(it.at));
+      return {
+        id: it.id, account_id: it.account_id,
+        action_title: ("[Histórico · " + it.type + "] " + it.text).slice(0, 80),
+        due_date: day, completed_date: day, status: "Concluído",
+        channel: it.type, priority: "Baixa",
+        trigger_used: INTERACTION_MARKER + (it.auto ? "_auto" : ""),
+        notes: it.text
+      };
+    }
+    function rowToInteraction(r) {
+      return {
+        id: r.id, account_id: r.account_id, type: r.channel || "Nota",
+        text: r.notes || String(r.action_title || "").replace(/^\[[^\]]*\]\s*/, ""),
+        at: r.created_at || ((r.completed_date || r.due_date || todayIso()) + "T12:00:00"),
+        auto: /_auto$/.test(String(r.trigger_used || "")), synced: true
+      };
+    }
+    function pushInteraction(it) {
+      if (!state.supabaseConnected || !isUuid(it.account_id) || !isUuid(it.id)) return;
+      remoteWrite("Anotação", async function () {
+        const res = await db.upsert("crm_follow_ups", [interactionToRow(it)], "id");
+        if (!res.error) { it.synced = true; persistState(); }
+        return res;
+      });
+    }
+    function syncPendingInteractions() {
+      (state.interactions || []).forEach(function (it) {
+        if (it.synced) return;
+        if (!isUuid(it.id)) it.id = newUuid();
+        pushInteraction(it);
+      });
     }
 
     function interactionsOf(accountId) {
@@ -2571,6 +2642,7 @@
       state.interactions = (state.interactions || []).filter(function (i) { return i.id !== intId; });
       persistState();
       if (it) renderAccountSidePanel(findAccount(it.account_id));
+      if (it && it.synced) remoteWrite("Anotação", function () { return db.remove("crm_follow_ups", it.id); });
     }
 
     function formatDateTimeBR(iso) {
@@ -3613,6 +3685,7 @@
     function openAccountModal(accountId) {
       const modal = document.getElementById("accountModal");
       if (!modal) return;
+      patSimAccountId = null;
 
       const acc = accountId ? findAccount(accountId) : null;
       document.getElementById("accountModalTitle").textContent = acc ? acc.company_name : "Nova conta";
@@ -3664,6 +3737,7 @@
         document.getElementById("accResearch").classList.add("hidden");
         tl.innerHTML = '<p style="color:var(--muted)">O histórico aparece depois que a conta for salva.</p>';
         document.getElementById("accNoteBox").classList.add("hidden");
+        document.getElementById("accPatSim").classList.add("hidden");
         return;
       }
       const a = esc(acc.id);
@@ -3682,6 +3756,7 @@
         '<button type="button" class="btn btn-sm" onclick="openOpportunityModal(\'' + a + '\')">' + icon("kanban") + 'Oportunidade</button>';
       qa.classList.remove("hidden");
       document.getElementById("accNoteBox").classList.remove("hidden");
+      preparePatSim(acc);
 
       snap.innerHTML =
         '<div class="flex justify-between"><span style="color:var(--muted)">TPV / mês</span><span class="num text-white">' + formatCurrencyBRL(computeMonthlyTpv(acc)) + '</span></div>' +
@@ -4778,6 +4853,123 @@
       else openExternal(url);
     }
 
+    // 7g. SIMULADOR PAT E ECONOMIA (estimativa comercial, premissas editáveis)
+    let patSimAccountId = null;
+    function preparePatSim(acc) {
+      const box = document.getElementById("accPatSim");
+      if (!box || !acc) return;
+      box.classList.remove("hidden");
+      if (patSimAccountId !== acc.id) {
+        patSimAccountId = acc.id;
+        document.getElementById("patLives").value = Number(acc.active_card_users) || 0;
+        document.getElementById("patTicket").value = Number(acc.avg_monthly_ticket) || 0;
+        document.getElementById("patFlex").value = 0;
+        document.getElementById("patIrpj").value = "";
+        document.getElementById("patFeeNow").value = 0;
+        document.getElementById("patFeeSwile").value = 0;
+      }
+      renderPatResult();
+    }
+
+    function readPatInputs() {
+      const n = function (id) { return Math.max(0, Number(document.getElementById(id).value) || 0); };
+      const irpjRaw = String(document.getElementById("patIrpj").value || "").trim();
+      return {
+        lives: n("patLives"), ticketFood: n("patTicket"), ticketFlex: n("patFlex"),
+        regime: document.getElementById("patRegime").value,
+        irpjDue: irpjRaw === "" ? null : n("patIrpj"),
+        feeNow: Number(document.getElementById("patFeeNow").value) || 0,
+        feeSwile: Number(document.getElementById("patFeeSwile").value) || 0,
+        hrHours: n("patHrHours"), hrCost: n("patHrCost")
+      };
+    }
+
+    // Regra do incentivo: 15% das despesas com o PAT, limitado a 4% do IRPJ devido, apenas no Lucro Real.
+    // Sem o IRPJ devido não dá para saber o teto, então o incentivo fica fora do total.
+    function calculatePatSimulation(i) {
+      const tpvMonthly = i.lives * (i.ticketFood + i.ticketFlex);
+      const tpvAnnual = tpvMonthly * 12;
+      const foodAnnual = i.lives * i.ticketFood * 12;
+      let pat = 0, patGross = 0, patCap = null, patStatus = "na";
+      if (i.regime === "real") {
+        patGross = foodAnnual * 0.15;
+        if (i.irpjDue === null) patStatus = "need_irpj";
+        else { patCap = i.irpjDue * 0.04; pat = Math.min(patGross, patCap); patStatus = pat < patGross ? "capped" : "ok"; }
+      }
+      const fees = tpvAnnual * ((i.feeNow - i.feeSwile) / 100);
+      const hr = i.lives > 0 ? i.hrHours * i.hrCost * 12 : 0;
+      return { tpvMonthly: tpvMonthly, tpvAnnual: tpvAnnual, foodAnnual: foodAnnual, pat: pat, patGross: patGross, patCap: patCap, patStatus: patStatus, fees: fees, hr: hr, total: pat + fees + hr };
+    }
+
+    function renderPatResult() {
+      const out = document.getElementById("patResult");
+      if (!out) return;
+      const i = readPatInputs();
+      const r = calculatePatSimulation(i);
+      const row = function (label, value, note) {
+        return '<div class="flex justify-between gap-3"><span style="color:var(--muted)">' + label + (note ? '<span class="block text-[10px]" style="color:var(--faint)">' + note + '</span>' : '') + '</span><span class="num text-white text-right shrink-0">' + value + '</span></div>';
+      };
+      let patTxt, patNote;
+      if (r.patStatus === "na") { patTxt = "não se aplica"; patNote = "Incentivo só existe no Lucro Real"; }
+      else if (r.patStatus === "need_irpj") { patTxt = "informe o IRPJ"; patNote = "Até " + formatCurrencyBRL(r.patGross) + " (15% do gasto), limitado a 4% do IRPJ devido"; }
+      else if (r.patStatus === "capped") { patTxt = formatCurrencyBRL(r.pat); patNote = "Limitado a 4% do IRPJ informado"; }
+      else { patTxt = formatCurrencyBRL(r.pat); patNote = "15% do gasto com alimentação, dentro do teto de 4%"; }
+      out.innerHTML =
+        row("TPV mensal", formatCurrencyBRL(r.tpvMonthly)) +
+        row("TPV anual", formatCurrencyBRL(r.tpvAnnual)) +
+        '<div class="divider pt-1.5"></div>' +
+        row("Incentivo PAT no IRPJ (ano)", patTxt, patNote) +
+        row("Diferença de taxas (ano)", formatCurrencyBRL(r.fees), r.fees === 0 ? "Preencha as taxas se houver cobrança" : "") +
+        row("Tempo do RH poupado (ano)", formatCurrencyBRL(r.hr), "Premissa: " + i.hrHours + " h/mês × " + formatCurrencyBRL(i.hrCost) + "/h") +
+        '<div class="divider pt-1.5"></div>' +
+        '<div class="flex justify-between gap-3 font-semibold"><span class="text-white">Ganho anual estimado</span><span class="num" style="color:#6ee7b7">' + formatCurrencyBRL(r.total) + '</span></div>' +
+        (r.patStatus === "need_irpj" ? '<p class="text-[10px]" style="color:#fcd34d">O total não inclui o PAT até você informar o IRPJ devido.</p>' : '');
+      const sum = document.getElementById("patSumTotal");
+      if (sum) sum.textContent = formatCompactBRL(r.total) + "/ano";
+    }
+
+    function patSummaryText() {
+      const acc = findAccount(patSimAccountId);
+      const i = readPatInputs();
+      const r = calculatePatSimulation(i);
+      const regime = { real: "Lucro Real", presumido: "Lucro Presumido", simples: "Simples Nacional" }[i.regime];
+      const patLine = r.patStatus === "na" ? "Incentivo PAT no IRPJ: não se aplica (" + regime + ")"
+        : r.patStatus === "need_irpj" ? "Incentivo PAT no IRPJ: até " + formatCurrencyBRL(r.patGross) + "/ano, limitado a 4% do IRPJ devido (a confirmar com a contabilidade)"
+        : "Incentivo PAT no IRPJ: " + formatCurrencyBRL(r.pat) + "/ano (estimativa, limitado a 4% do IRPJ devido)";
+      return [
+        "Simulação Swile · " + (acc ? acc.company_name : "") + " (" + formatDateShort(todayIso()) + ")",
+        "• " + i.lives.toLocaleString("pt-BR") + " vidas · TPV " + formatCurrencyBRL(r.tpvMonthly) + "/mês (" + formatCurrencyBRL(r.tpvAnnual) + "/ano)",
+        "• " + patLine,
+        "• Diferença de taxas: " + formatCurrencyBRL(r.fees) + "/ano",
+        "• Tempo do RH poupado: " + formatCurrencyBRL(r.hr) + "/ano (premissa " + i.hrHours + " h/mês)",
+        "• Ganho anual estimado: " + formatCurrencyBRL(r.total) + (r.patStatus === "need_irpj" ? " (sem o PAT)" : ""),
+        "Valores estimados; o incentivo do PAT depende do IRPJ devido no Lucro Real."
+      ].join("\n");
+    }
+
+    function sharePatSummary(kind) {
+      const text = patSummaryText();
+      const acc = findAccount(patSimAccountId);
+      if (kind === "copy") return copyTextSafe(text, "Resumo da simulação copiado!");
+      if (acc && phoneDigits(acc.phone)) openExternal(waUrl(acc.phone, text));
+      else openExternal("https://wa.me/?text=" + encodeURIComponent(text));
+      if (acc) logInteraction(acc.id, "WhatsApp", "Simulação PAT enviada por WhatsApp", true);
+    }
+
+    function savePatToOpportunity() {
+      const acc = findAccount(patSimAccountId);
+      if (!acc) return;
+      const opps = state.opportunities.filter(function (o) { return o.account_id === acc.id; });
+      const opp = opps.find(function (o) { const w = Number(o.stage_weight); return w >= 1 && w <= 4; }) || opps[opps.length - 1];
+      if (!opp) { showToast("Esta conta ainda não tem oportunidade. Crie uma e salve de novo.", "⚠️"); return; }
+      const block = "--- " + patSummaryText();
+      opp.notes = (opp.notes ? String(opp.notes).trim() + "\n\n" : "") + block;
+      persistState();
+      remoteWrite("Simulação", function () { return db.update("crm_opportunities", opp.id, { notes: opp.notes }); });
+      logInteraction(acc.id, "Nota", "Simulação PAT salva na oportunidade", true);
+      showToast("Simulação salva nas notas da oportunidade.", "🧮");
+    }
+
     // 7e. PLANILHAS: importação de CSV e backup
     /** Parser CSV (RFC 4180): aspas, vírgula ou ponto e vírgula (Excel pt-BR), quebra de linha dentro de aspas. */
     function parseCsv(text) {
@@ -5293,6 +5485,7 @@
       for (let i = 0; i < state.accounts.length; i++) if (state.accounts[i].id === oldId) state.accounts[i].id = newId;
       for (let i = 0; i < state.opportunities.length; i++) if (state.opportunities[i].account_id === oldId) state.opportunities[i].account_id = newId;
       for (let i = 0; i < state.followups.length; i++) if (state.followups[i].account_id === oldId) state.followups[i].account_id = newId;
+      (state.interactions || []).forEach(function (n) { if (n.account_id === oldId) n.account_id = newId; });
     }
 
     // Grava no Supabase em segundo plano quando conectado; o estado local já foi atualizado.
@@ -5333,7 +5526,17 @@
     function applyRemoteData(remote) {
       state.accounts = remote.accounts.map(rowToAccount);
       if (remote.opportunities) state.opportunities = remote.opportunities.map(rowToOpportunity);
-      if (remote.followups) state.followups = remote.followups.map(function (r) { return Object.assign({}, r); });
+      if (remote.followups) {
+        const remoteNotes = remote.followups.filter(isInteractionRow).map(rowToInteraction);
+        const ids = {};
+        remoteNotes.forEach(function (n) { ids[n.id] = true; });
+        const accIds = {};
+        state.accounts.forEach(function (a) { accIds[a.id] = true; });
+        // Notas ainda não enviadas continuam (se a conta existir no banco) e sobem logo depois
+        const pending = (state.interactions || []).filter(function (n) { return !n.synced && !ids[n.id] && accIds[n.account_id]; });
+        state.interactions = remoteNotes.concat(pending);
+        state.followups = remote.followups.filter(function (r) { return !isInteractionRow(r); }).map(function (r) { return Object.assign({}, r); });
+      }
     }
 
     async function connectAndSyncSupabase(opts) {
@@ -5386,6 +5589,7 @@
         applyRemoteData(remote);
         state.supabaseConnected = true;
         persistState();
+        syncPendingInteractions();
         setDbStatus("connected",
           "<p class='font-bold text-emerald-300'>Conectado (" + esc(db.lastMode) + ").</p>" +
           "<p>" + state.accounts.length + " contas, " + state.opportunities.length + " oportunidades e " + state.followups.length + " follow-ups carregados do banco. Alterações feitas no app são gravadas no Supabase.</p>" +

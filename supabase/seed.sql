@@ -1,5 +1,7 @@
 -- =============================================================================
 -- SEED DATA — 15 CONTAS REAIS MIDDLE MARKET RIO DE JANEIRO (SWILE OS CRM)
+-- Idempotente: pode ser executado mais de uma vez (não duplica nem sobrescreve edições).
+-- Rode DEPOIS da migration supabase/migrations/20261029000000_swile_os_crm_schema.sql
 -- =============================================================================
 
 insert into public.crm_accounts (
@@ -22,4 +24,42 @@ insert into public.crm_accounts (
 ('LD-12', 'ICONIC Lubrificantes (Sede RJ)', 'https://www.iconiclubrificantes.com.br/', 'https://www.iconiclubrificantes.com.br/', 'Indústria Química & Energia', 'Barra da Tijuca / Recreio', 'Barra da Tijuca / São Cristóvão', 'Av. das Américas, 3434 - Bl 7, 4° andar - Barra da Tijuca, Rio de Janeiro - RJ', '+55 21 3906-1515', 'rh@iconic.com.br', 'Gerente de Remuneração e Benefícios', 'Gerente de Benefícios', 'CFO / Compras & Redução de Custos', 620, 600, 1020.00, 'Pluxee (ex-Sodexo)', 'Tradicional Corporativo', 'Lead Mapeado', 'Média', 'Frio', 'E-mail', 'Operação dividida entre escritório híbrido na Barra da Tijuca e fábricas em São Cristóvão e Duque de Caxias.', 'Público corporativo da Barra quer mobilidade e home office; fábrica prioriza atacadistas e farmácia.', 'Prós: Contrato antigo. Contras: Zero flexibilidade para o time híbrido da Barra.', 'Políticas customizadas por grupo no Dash RH: perfil Barra (híbrido) e perfil Planta Industrial na mesma fatura.'),
 ('LD-13', 'Grant Thornton Brasil (RJ)', 'https://www.grantthornton.com.br/onde-estamos/rio-de-janeiro/', 'https://www.grantthornton.com.br/', 'Auditoria & Consultoria', 'Zona Sul / Barra', 'Flamengo', 'Praia do Flamengo, 154 - Conjuntos 401/402 - Flamengo, Rio de Janeiro - RJ', '+55 21 3512-4100', 'pessoas.rj@br.gt.com', 'Gerente de Pessoas & Cultura RJ', 'Gerente de RH', 'RH Estratégico / Employer Branding', 260, 250, 1100.00, 'Alelo', 'Tradicional (VA/VR)', 'Lead Mapeado', 'Média', 'Morno', 'LinkedIn', 'Auditores jovens com alta demanda por cursos/idiomas e deslocamento constante entre clientes no RJ.', 'Auditores reclamam que cartão Elo não entra no Apple Pay e não permite usar saldo em Educação/Mobilidade.', 'Prós: Tradição em auditoria. Contras: Sem autonomia de saldo nem X-Pay.', 'Retenção de auditores: bandeira Mastercard + X-Pay + carteiras Educação e Mobilidade com compliance PAT.'),
 ('LD-14', 'Camorim Serviços Marítimos', 'http://www.camorim.com.br/', 'http://www.camorim.com.br/', 'Logística Portuária & Offshore', 'Niterói / Região Metropolitana', 'Ilha da Conceição (Niterói)', 'R. Mario Trilha, 136 - Ilha da Conceição, Niterói - RJ, 24050-190', '+55 21 3906-0450', 'rh@camorim.com.br', 'Gerente de RH / DP Marítimo', 'Gerente de DP', 'DP Operacional / Folha & PAT', 520, 490, 850.00, 'VR Benefícios', 'Tradicional (VA/VR)', 'Lead Mapeado', 'Média', 'Morno', 'Ligação', 'Forte ritmo de contratações em Niterói; escala de embarque exige flexibilidade entre VA (família) e VR.', 'Marítimos embarcados ficam com saldo preso em VR sem conseguir transferir para supermercado da família.', 'Prós: Conhecido no setor naval. Contras: Rigidez entre VA e VR na escala.', 'Flexibilidade inteligente dentro do PAT (VA/VR no mesmo cartão Mastercard aceito em +4 milhões de locais).'),
-('LD-15', 'Tursan Turismo', 'https://tursan.com.br/', 'https://tursan.com.br/', 'Transporte & Fretamento', 'Zona Oeste - Campo Grande', 'Campo Grande', 'Av. Brasil, 49389 - Campo Grande, Rio de Janeiro - RJ, 23065-480', '+55 21 3554-8000', 'vagas@tursan.com.br', 'Gerente de RH / DP', 'Gerente de DP', 'CFO / Compras & Redução de Custos', 380, 360, 650.00, 'VR Benefícios', 'Tradicional + Premiação separada', 'Outbound Iniciado', 'Alta', 'Quente', 'E-mail', 'Expansão de frota na Zona Oeste; opera vale alimentação e vale premiação de assiduidade em cartões separados.', 'Motoristas em rotas pela ZO, ZN e Serra enfrentam recusas de bandeira fechada e carregam 2 cartões.', 'Prós: Tradicional. Contras: Gestão duplicada entre alimentação e premiação.', 'Unificar Vale Alimentação + Vale Premiação de assiduidade dos motoristas em 1 único Swile Mastercard Taxa Zero.');
+('LD-15', 'Tursan Turismo', 'https://tursan.com.br/', 'https://tursan.com.br/', 'Transporte & Fretamento', 'Zona Oeste - Campo Grande', 'Campo Grande', 'Av. Brasil, 49389 - Campo Grande, Rio de Janeiro - RJ, 23065-480', '+55 21 3554-8000', 'vagas@tursan.com.br', 'Gerente de RH / DP', 'Gerente de DP', 'CFO / Compras & Redução de Custos', 380, 360, 650.00, 'VR Benefícios', 'Tradicional + Premiação separada', 'Outbound Iniciado', 'Alta', 'Quente', 'E-mail', 'Expansão de frota na Zona Oeste; opera vale alimentação e vale premiação de assiduidade em cartões separados.', 'Motoristas em rotas pela ZO, ZN e Serra enfrentam recusas de bandeira fechada e carregam 2 cartões.', 'Prós: Tradicional. Contras: Gestão duplicada entre alimentação e premiação.', 'Unificar Vale Alimentação + Vale Premiação de assiduidade dos motoristas em 1 único Swile Mastercard Taxa Zero.')
+on conflict (code) do nothing;
+
+-- -----------------------------------------------------------------------------
+-- PIPELINE INICIAL (7 oportunidades) — mesmo conteúdo do modo local do app
+-- -----------------------------------------------------------------------------
+insert into public.crm_opportunities (account_id, title, stage, stage_weight, negotiated_lives, proposed_monthly_tpv, probability, expected_close_date)
+select a.id, 'Swile — ' || a.company_name, v.stage, v.stage_weight, a.active_card_users, a.estimated_monthly_tpv, v.probability, v.close_date::date
+from (values
+  ('LD-04', '4. Proposta & Simulação PAT', 4, 75, '2026-11-12'),
+  ('LD-03', '3. Demo Dash RH & App',       3, 60, '2026-11-18'),
+  ('LD-02', '2. Discovery & Vidas',        2, 50, '2026-11-25'),
+  ('LD-08', '2. Discovery & Vidas',        2, 45, '2026-11-28'),
+  ('LD-01', '1. Qualificado (SQL)',        1, 35, '2026-12-04'),
+  ('LD-07', '1. Qualificado (SQL)',        1, 35, '2026-12-08'),
+  ('LD-10', '1. Qualificado (SQL)',        1, 30, '2026-12-10')
+) as v(code, stage, stage_weight, probability, close_date)
+join public.crm_accounts a on a.code = v.code
+where not exists (
+  select 1 from public.crm_opportunities o where o.account_id = a.id
+);
+
+-- -----------------------------------------------------------------------------
+-- FOLLOW-UPS INICIAIS (Fonte Única de Próxima Ação)
+-- -----------------------------------------------------------------------------
+insert into public.crm_follow_ups (account_id, action_title, due_date, channel, status, priority)
+select a.id, v.action_title, v.due_date::date, v.channel, 'Pendente', v.priority
+from (values
+  ('LD-01', 'Abordar Head de People sobre compra da Caju pelo iFood (20/10) + enviar comparativo Swile Shop', '2026-10-30', 'LinkedIn', 'Alta'),
+  ('LD-02', 'Apresentar simulação VA/VR + Mobilidade Frota (900 vidas) para Diretora de Gente da Beep Saúde', '2026-10-30', 'WhatsApp', 'Alta'),
+  ('LD-03', 'Confirmar Demo presencial no CEO Office Barra (RJZ Cyrela) — foco em logística de cartões p/ obras', '2026-10-31', 'Visita Presencial', 'Alta'),
+  ('LD-04', 'Validar minuta Taxa Zero + carteira Premiação BeInspired com People & Compras da Bemobi', '2026-10-31', 'E-mail', 'Alta'),
+  ('LD-07', 'Enviar vídeo de 60s mostrando X-Pay (Apple/Google Pay) para o RH da Vasco da Gama SAF', '2026-11-02', 'WhatsApp', 'Alta'),
+  ('LD-15', 'Ligar p/ RH da Tursan em Campo Grande sobre unificação do Vale Alimentação + Vale Premiação', '2026-11-03', 'Ligação', 'Média')
+) as v(code, action_title, due_date, channel, priority)
+join public.crm_accounts a on a.code = v.code
+where not exists (
+  select 1 from public.crm_follow_ups f where f.account_id = a.id and f.action_title = v.action_title
+);

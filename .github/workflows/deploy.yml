@@ -1,21 +1,38 @@
-name: Deploy Swile OS CRM to GitHub Pages & Supabase
+name: Deploy Swile OS CRM to GitHub Pages
 
 on:
   push:
     branches: [ main ]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: "pages"
+  group: "pages-${{ github.ref }}"
   cancel-in-progress: false
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validar sintaxe do JavaScript do index.html
+        run: node scripts/check_js.mjs
+
+      - name: Validar que o SQL embutido no app está igual aos arquivos do Supabase
+        run: python3 scripts/embed_sql.py --check
+
   deploy-web:
+    needs: validate
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -24,13 +41,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Montar pasta pública (somente o app e os SQLs)
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp -r supabase _site/
+          touch _site/.nojekyll
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload static CRM artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '_site'
 
       - name: Deploy to GitHub Pages
         id: deployment

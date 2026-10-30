@@ -122,6 +122,11 @@
     .kcol { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--kc, #64748b); border-radius: 14px; display: flex; flex-direction: column; min-height: 14rem; scroll-snap-align: start; }
     .kcol-head { background: color-mix(in srgb, var(--kc, #64748b) 10%, transparent); border-bottom: 1px solid var(--line); border-radius: 10px 10px 0 0; margin-bottom: .5rem; }
     .kcol .kcard { border-left: 3px solid var(--kc, #64748b); }
+    .kcard[draggable="true"] { cursor: grab; }
+    .kcard.is-dragging { opacity: .55; }
+    .kcol.drag-over { outline: 2px dashed #a855f7; outline-offset: -2px; background: rgba(139,92,246,.07); }
+    .th-sort { display: inline-flex; align-items: center; gap: 2px; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; }
+    .th-sort:hover, .th-sort.is-sorted { color: var(--text); }
     .kcard { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: .7rem .75rem; transition: border-color .15s; }
     .kcard:hover { border-color: var(--line-strong); }
 
@@ -145,6 +150,12 @@
     .pal-item { display: flex; align-items: center; gap: .65rem; width: 100%; padding: .55rem 1rem; text-align: left; font-size: .8rem; color: #c3c8d4; }
     .pal-item.is-sel, .pal-item:hover { background: var(--surface-3); color: #fff; }
     .tpl-card { border: 1px solid var(--line); border-radius: 10px; padding: .7rem; background: var(--surface-2); }
+    .sidebar-backdrop { display: none; }
+    @media (max-width: 1023.98px) {
+      .app-sidebar { z-index: 55; transform: translateX(-100%); transition: transform .22s cubic-bezier(.4,0,.2,1); visibility: hidden; }
+      .app-sidebar.is-open { transform: none; visibility: visible; box-shadow: 0 0 40px rgba(0,0,0,.6); }
+      .sidebar-backdrop.is-open { display: block; position: fixed; inset: 0; z-index: 54; background: rgba(5,7,12,.6); backdrop-filter: blur(2px); }
+    }
     .print-only { display: none; }
     @media print {
       @page { size: A4; margin: 12mm; }
@@ -204,6 +215,7 @@
     <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0Z"/><path d="M12 17v5"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></symbol>
     <symbol id="i-search2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
     <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
     <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
   </svg>
@@ -216,9 +228,27 @@
     </div>
   </div>
 
+  <!-- CONFIRMAÇÃO (substitui o confirm() do navegador) -->
+  <div id="confirmModal" class="fixed inset-0 z-[70] hidden modal-backdrop flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" onclick="if(event.target===this)resolveConfirm(false)">
+    <div class="modal-panel w-full max-w-md p-5 space-y-4 fade-in">
+      <div class="flex items-start gap-3">
+        <span id="confirmIcon" class="h-9 w-9 shrink-0 rounded-full flex items-center justify-center" style="background:rgba(244,63,94,.12);color:#fb7185"><svg class="ico"><use href="#i-alert"/></svg></span>
+        <div class="min-w-0">
+          <h3 id="confirmTitle" class="text-[15px] font-semibold text-white">Confirmar</h3>
+          <p id="confirmMessage" class="mt-1 text-[13px] leading-relaxed" style="color:var(--muted)"></p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button id="confirmCancel" type="button" class="btn btn-sm" onclick="resolveConfirm(false)">Cancelar</button>
+        <button id="confirmOk" type="button" class="btn btn-sm btn-danger" onclick="resolveConfirm(true)">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="lg:flex min-h-screen">
     <!-- SIDEBAR (desktop) -->
-    <aside class="hidden lg:flex fixed inset-y-0 left-0 w-60 z-30 border-r flex-col" style="background:#0d1017;border-color:var(--line)">
+    <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+    <aside id="appSidebar" class="app-sidebar flex fixed inset-y-0 left-0 w-60 z-30 border-r flex-col" style="background:#0d1017;border-color:var(--line)" aria-label="Menu">
       <div class="flex items-center gap-2.5 px-5 pt-5 pb-6">
         <div class="h-8 w-8 rounded-lg swile-gradient flex items-center justify-center text-[13px] font-bold text-white">S</div>
         <div class="leading-tight">
@@ -268,7 +298,7 @@
       <!-- TOPBAR -->
       <header class="sticky top-0 z-20 border-b backdrop-blur-md" style="background:rgba(11,13,19,.85);border-color:var(--line)">
         <div class="mx-auto max-w-[1280px] px-4 lg:px-8 h-14 flex items-center gap-2 sm:gap-3">
-          <div class="lg:hidden h-7 w-7 rounded-lg swile-gradient flex items-center justify-center text-[12px] font-bold text-white shrink-0">S</div>
+          <button id="btnSidebarToggle" type="button" onclick="toggleSidebar()" class="icon-btn lg:hidden shrink-0" aria-label="Abrir menu" aria-controls="appSidebar" aria-expanded="false"><svg class="ico"><use href="#i-menu"/></svg></button>
           <h1 id="pageTitle" class="hidden sm:block text-[15px] font-semibold text-white tracking-tight truncate lg:min-w-[9rem]">Hoje</h1>
           <button id="btnOpenPalette" type="button" onclick="openPalette()" class="flex-1 min-w-0 sm:flex-none sm:w-72 flex items-center gap-2 h-8 rounded-lg border px-2.5 text-left text-xs transition hover:border-slate-500" style="border-color:var(--line-strong);background:var(--bg);color:var(--faint)">
             <svg class="ico"><use href="#i-search"/></svg><span class="flex-1 truncate">Buscar conta ou ação…</span>
@@ -459,13 +489,13 @@
               <table class="tbl">
                 <thead>
                   <tr>
-                    <th>Empresa</th>
-                    <th>Polo</th>
+                    <th><button type="button" class="th-sort" data-sort="name" onclick="toggleAccountSort('name')">Empresa<span class="sort-ind"></span></button></th>
+                    <th><button type="button" class="th-sort" data-sort="polo" onclick="toggleAccountSort('polo')">Polo<span class="sort-ind"></span></button></th>
                     <th>Decisor</th>
-                    <th class="text-right">Vidas</th>
-                    <th class="text-right">TPV/mês</th>
-                    <th>Cartão atual</th>
-                    <th class="text-center">Score</th>
+                    <th class="text-right"><button type="button" class="th-sort" data-sort="lives" onclick="toggleAccountSort('lives')">Vidas<span class="sort-ind"></span></button></th>
+                    <th class="text-right"><button type="button" class="th-sort" data-sort="tpv" onclick="toggleAccountSort('tpv')">TPV/mês<span class="sort-ind"></span></button></th>
+                    <th><button type="button" class="th-sort" data-sort="provider" onclick="toggleAccountSort('provider')">Cartão atual<span class="sort-ind"></span></button></th>
+                    <th class="text-center"><button type="button" class="th-sort" data-sort="score" onclick="toggleAccountSort('score')">Score<span class="sort-ind"></span></button></th>
                     <th>Próxima ação</th>
                     <th class="text-right">Contato</th>
                   </tr>
@@ -1096,6 +1126,17 @@
           <div id="accResearch" class="hidden"></div>
           <div>
             <p class="eyebrow mb-2">Histórico e próximos passos</p>
+            <div id="accNoteBox" class="hidden mb-3 rounded-xl border p-2.5 space-y-2" style="border-color:var(--line)">
+              <div class="flex gap-2">
+                <label for="accNoteType" class="sr-only">Tipo</label>
+                <select id="accNoteType" class="input h-8 w-auto text-[12px]">
+                  <option>Nota</option><option>WhatsApp</option><option>Ligação</option><option>Reunião</option><option>E-mail</option><option>Visita</option>
+                </select>
+                <label for="accNoteText" class="sr-only">Nota</label>
+                <input id="accNoteText" type="text" class="input h-8 text-[12px] flex-1 min-w-0" placeholder="Registrar nota ou interação…" onkeydown="if(event.key==='Enter'){event.preventDefault();addInteractionFromModal();}">
+              </div>
+              <div class="flex justify-end"><button id="btnAddInteraction" type="button" class="btn btn-sm" onclick="addInteractionFromModal()"><svg class="ico"><use href="#i-plus"/></svg>Registrar</button></div>
+            </div>
             <div id="accTimeline" class="space-y-2 text-xs"><p style="color:var(--muted)">O histórico aparece depois que a conta for salva.</p></div>
           </div>
         </aside>
@@ -1788,7 +1829,8 @@
       autoConnect: true,
       sellerName: "",
       sellerRole: "",
-      integ: null
+      integ: null,
+      interactions: []
     };
 
     let chartProvidersInstance = null;
@@ -1854,6 +1896,7 @@
         state.sellerName = saved.sellerName || "";
         state.sellerRole = saved.sellerRole || "";
         state.integ = saved.integ || null;
+        state.interactions = Array.isArray(saved.interactions) ? saved.interactions : [];
       } else {
         // Preferências pessoais sobrevivem mesmo sem contas salvas
         if (saved) {
@@ -2478,6 +2521,7 @@
         if (!isLikelyMobile(acc.phone)) showToast("Este número parece fixo: o WhatsApp só abre se ele tiver WhatsApp Business.", "ℹ️");
         openExternal(waUrl(acc.phone, text));
       }
+      logInteraction(acc.id, "WhatsApp", "Contato via WhatsApp iniciado" + (tpl && tpl.name ? " (modelo: " + tpl.name + ")" : ""), true);
       if (tpl && tpl.advance_to) advanceAccountStatus(acc, tpl.advance_to);
     }
 
@@ -2487,10 +2531,90 @@
       const url = composeEmailUrl(integ().emailApp, to, subject, body);
       if (/^mailto:/.test(url)) window.location.href = url;
       else openExternal(url);
+      logInteraction(acc.id, "E-mail", "E-mail aberto: " + (subject || "sem assunto"), true);
       if (tpl && tpl.advance_to) advanceAccountStatus(acc, tpl.advance_to);
     }
 
     // Ponto único dos botões de contato. kind: wa | mail | tel | cal | gcal | ics | maps | linkedin | site
+    // Registro de interações por conta (fica no navegador; entra no backup JSON)
+    function logInteraction(accountId, type, text, auto) {
+      if (!accountId || !text) return null;
+      if (!Array.isArray(state.interactions)) state.interactions = [];
+      const it = { id: "int-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6), account_id: accountId, type: type || "Nota", text: String(text).slice(0, 2000), at: new Date().toISOString(), auto: !!auto };
+      state.interactions.push(it);
+      persistState();
+      const modal = document.getElementById("accountModal");
+      if (modal && !modal.classList.contains("hidden") && document.getElementById("accFormId").value === accountId) renderAccountSidePanel(findAccount(accountId));
+      return it;
+    }
+
+    function interactionsOf(accountId) {
+      return (state.interactions || []).filter(function (i) { return i.account_id === accountId; })
+        .sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+    }
+
+    function addInteractionFromModal() {
+      const id = document.getElementById("accFormId").value;
+      const input = document.getElementById("accNoteText");
+      const text = (input.value || "").trim();
+      if (!id) return;
+      if (!text) { showToast("Escreva a nota antes de registrar.", "⚠️"); input.focus(); return; }
+      logInteraction(id, document.getElementById("accNoteType").value, text, false);
+      input.value = "";
+      showToast("Interação registrada no histórico.", "📝");
+    }
+
+    async function removeInteraction(intId) {
+      const ok = await uiConfirm("Remover esta anotação do histórico?", { title: "Remover anotação", okLabel: "Remover" });
+      if (!ok) return;
+      const it = (state.interactions || []).find(function (i) { return i.id === intId; });
+      state.interactions = (state.interactions || []).filter(function (i) { return i.id !== intId; });
+      persistState();
+      if (it) renderAccountSidePanel(findAccount(it.account_id));
+    }
+
+    function formatDateTimeBR(iso) {
+      const d = new Date(iso);
+      if (isNaN(d)) return "";
+      return formatDateShort(isoFromDate(d)) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+
+    // Modal de confirmação no tema do app (retorna Promise<boolean>)
+    let confirmResolver = null;
+    function uiConfirm(message, opts) {
+      opts = opts || {};
+      if (confirmResolver) confirmResolver(false);
+      document.getElementById("confirmTitle").textContent = opts.title || "Confirmar";
+      document.getElementById("confirmMessage").textContent = message;
+      const ok = document.getElementById("confirmOk");
+      ok.textContent = opts.okLabel || "Confirmar";
+      ok.className = "btn btn-sm " + (opts.danger === false ? "btn-primary" : "btn-danger");
+      const ic = document.getElementById("confirmIcon");
+      ic.style.background = opts.danger === false ? "rgba(139,92,246,.14)" : "rgba(244,63,94,.12)";
+      ic.style.color = opts.danger === false ? "#c4b5fd" : "#fb7185";
+      document.getElementById("confirmModal").classList.remove("hidden");
+      setTimeout(function () { ok.focus(); }, 30);
+      return new Promise(function (resolve) { confirmResolver = resolve; });
+    }
+    function resolveConfirm(v) {
+      document.getElementById("confirmModal").classList.add("hidden");
+      const r = confirmResolver;
+      confirmResolver = null;
+      if (r) r(!!v);
+    }
+
+    // Menu lateral retrátil abaixo de 1024px
+    function toggleSidebar(force) {
+      const sb = document.getElementById("appSidebar");
+      const bd = document.getElementById("sidebarBackdrop");
+      if (!sb) return;
+      const open = typeof force === "boolean" ? force : !sb.classList.contains("is-open");
+      sb.classList.toggle("is-open", open);
+      if (bd) bd.classList.toggle("is-open", open);
+      const btn = document.getElementById("btnSidebarToggle");
+      if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
     function contactAccount(accountId, kind, fuId) {
       const acc = findAccount(accountId);
       if (!acc) return;
@@ -2506,6 +2630,7 @@
       } else if (kind === "tel") {
         const d = phoneDigits(acc.phone);
         if (!d) { showToast("Conta sem telefone cadastrado.", "⚠️"); return; }
+        logInteraction(acc.id, "Ligação", "Ligação iniciada para " + (acc.phone || "+" + d), true);
         window.location.href = "tel:+" + d;
       } else if (kind === "cal") {
         openCalendarFor(fu, acc);
@@ -2614,6 +2739,7 @@
         else btn.removeAttribute("aria-current");
       });
       currentTab = tabKey;
+      toggleSidebar(false);
       const title = document.getElementById("pageTitle");
       if (title) title.textContent = TAB_TITLES[tabKey] || "";
       if (tabKey === "integrations") renderIntegrations();
@@ -2963,6 +3089,28 @@
       }
     }
 
+    // Ordenação da tabela de Contas (padrão: score decrescente)
+    const accountSort = { field: "score", dir: "desc" };
+    function toggleAccountSort(field) {
+      if (accountSort.field === field) accountSort.dir = accountSort.dir === "asc" ? "desc" : "asc";
+      else { accountSort.field = field; accountSort.dir = (field === "name" || field === "polo" || field === "provider") ? "asc" : "desc"; }
+      renderAccountsTable();
+    }
+    function accountSortValue(a, field) {
+      if (field === "name") return a.company_name || "";
+      if (field === "polo") return a.polo_rj || "";
+      if (field === "provider") return a.current_provider || "";
+      if (field === "lives") return Number(a.active_card_users) || 0;
+      if (field === "tpv") return computeMonthlyTpv(a);
+      return computeCommercialScore(a);
+    }
+    function compareAccountsForTable(a, b) {
+      const va = accountSortValue(a, accountSort.field), vb = accountSortValue(b, accountSort.field);
+      const dir = accountSort.dir === "asc" ? 1 : -1;
+      const r = typeof va === "string" ? va.localeCompare(vb, "pt-BR", { sensitivity: "base" }) : va - vb;
+      return r !== 0 ? r * dir : computeCommercialScore(b) - computeCommercialScore(a);
+    }
+
     function renderAccountsTable() {
       const tbody = document.getElementById("accountsTableBody");
       if (!tbody) return;
@@ -2982,7 +3130,13 @@
           if (!hay.includes(q)) return false;
         }
         return true;
-      }).sort(function (a, b) { return computeCommercialScore(b) - computeCommercialScore(a); });
+      }).sort(compareAccountsForTable);
+      document.querySelectorAll(".th-sort").forEach(function (b) {
+        const on = b.getAttribute("data-sort") === accountSort.field;
+        b.classList.toggle("is-sorted", on);
+        b.querySelector(".sort-ind").textContent = on ? (accountSort.dir === "asc" ? " ↑" : " ↓") : "";
+        b.closest("th").setAttribute("aria-sort", on ? (accountSort.dir === "asc" ? "ascending" : "descending") : "none");
+      });
 
       let html = "";
       for (let i = 0; i < filtered.length; i++) {
@@ -3048,7 +3202,7 @@
           }
         }
 
-        html += '<div class="kcol" style="--kc:' + st.color + '">' +
+        html += '<div class="kcol" data-stage="' + st.weight + '" style="--kc:' + st.color + '" ondragover="kanbanDragOver(event)" ondragleave="kanbanDragLeave(event)" ondrop="kanbanDrop(event)">' +
           '<div class="kcol-head px-3 pt-3 pb-2">' +
             '<div class="flex items-center gap-2">' +
               '<span class="dot" style="background:' + st.color + '"></span>' +
@@ -3068,7 +3222,7 @@
           const next = pendingFollowupsOf(acc.id)[0];
           const closeN = opp.close_date ? daysFromToday(opp.close_date) : null;
 
-          html += '<div class="kcard space-y-2">' +
+          html += '<div class="kcard space-y-2" draggable="true" data-opp="' + esc(opp.id) + '" ondragstart="kanbanDragStart(event)" ondragend="kanbanDragEnd(event)">' +
             '<div class="flex items-start justify-between gap-2">' +
               '<button type="button" onclick="openAccountModal(\'' + esc(acc.id) + '\')" class="text-left text-[13px] font-medium text-white hover:text-violet-300 leading-snug">' + esc(acc.company_name) + '</button>' +
               '<button type="button" onclick="editOpportunity(\'' + esc(opp.id) + '\')" class="icon-btn !w-6 !h-6 -mr-1 -mt-0.5" title="Editar oportunidade" aria-label="Editar oportunidade">' + icon("edit", "!w-3.5 !h-3.5") + '</button>' +
@@ -3171,6 +3325,41 @@
       } else {
         showToast("Etapa atualizada no pipeline e na conta.", "📊");
       }
+    }
+
+    // Arrastar e soltar no Kanban (os botões Voltar/Avançar continuam valendo)
+    let draggedOppId = null;
+    function kanbanDragStart(ev) {
+      const card = ev.currentTarget;
+      draggedOppId = card.getAttribute("data-opp");
+      try { ev.dataTransfer.effectAllowed = "move"; ev.dataTransfer.setData("text/plain", draggedOppId); } catch (e) { /* ignore */ }
+      card.classList.add("is-dragging");
+    }
+    function kanbanDragEnd(ev) {
+      ev.currentTarget.classList.remove("is-dragging");
+      document.querySelectorAll(".kcol.drag-over").forEach(function (c) { c.classList.remove("drag-over"); });
+      draggedOppId = null;
+    }
+    function kanbanDragOver(ev) {
+      if (!draggedOppId) return;
+      ev.preventDefault();
+      try { ev.dataTransfer.dropEffect = "move"; } catch (e) { /* ignore */ }
+      ev.currentTarget.classList.add("drag-over");
+    }
+    function kanbanDragLeave(ev) {
+      if (!ev.currentTarget.contains(ev.relatedTarget)) ev.currentTarget.classList.remove("drag-over");
+    }
+    function kanbanDrop(ev) {
+      ev.preventDefault();
+      ev.currentTarget.classList.remove("drag-over");
+      let id = draggedOppId;
+      try { id = ev.dataTransfer.getData("text/plain") || id; } catch (e) { /* ignore */ }
+      draggedOppId = null;
+      const opp = state.opportunities.find(function (o) { return o.id === id; });
+      const target = Number(ev.currentTarget.getAttribute("data-stage"));
+      if (!opp || !target) return;
+      const delta = target - Number(opp.stage_weight);
+      if (delta !== 0) moveOpportunityStage(opp.id, delta);
     }
 
     function reopenOpportunity(oppId) {
@@ -3474,6 +3663,7 @@
         document.getElementById("accComposer").classList.add("hidden");
         document.getElementById("accResearch").classList.add("hidden");
         tl.innerHTML = '<p style="color:var(--muted)">O histórico aparece depois que a conta for salva.</p>';
+        document.getElementById("accNoteBox").classList.add("hidden");
         return;
       }
       const a = esc(acc.id);
@@ -3491,6 +3681,7 @@
         '<button type="button" class="btn btn-sm" onclick="openFollowupModal(\'' + a + '\')">' + icon("calplus") + 'Follow-up</button>' +
         '<button type="button" class="btn btn-sm" onclick="openOpportunityModal(\'' + a + '\')">' + icon("kanban") + 'Oportunidade</button>';
       qa.classList.remove("hidden");
+      document.getElementById("accNoteBox").classList.remove("hidden");
 
       snap.innerHTML =
         '<div class="flex justify-between"><span style="color:var(--muted)">TPV / mês</span><span class="num text-white">' + formatCurrencyBRL(computeMonthlyTpv(acc)) + '</span></div>' +
@@ -3533,7 +3724,19 @@
           (f.notes ? '<span class="block text-[11px] mt-0.5" style="color:var(--muted)">' + esc(f.notes) + '</span>' : '') +
           '</span></button>';
       });
-      tl.innerHTML = html || '<p style="color:var(--muted)">Nenhuma oportunidade ou follow-up ainda. Use os botões acima.</p>';
+      const notes = interactionsOf(acc.id);
+      if (notes.length) {
+        html += '<p class="eyebrow pt-2">Interações registradas</p>';
+        notes.slice(0, 30).forEach(function (n) {
+          html += '<div class="flex gap-2.5 rounded-lg px-1 py-1.5 group">' +
+            '<span class="dot mt-1.5" style="background:' + (n.auto ? '#5d6579' : '#38bdf8') + '"></span>' +
+            '<span class="min-w-0 flex-1"><span class="block text-slate-200">' + esc(n.text) + '</span>' +
+            '<span class="block text-[11px]" style="color:var(--faint)">' + esc(n.type) + ' · ' + esc(formatDateTimeBR(n.at)) + (n.auto ? ' · automático' : '') + '</span></span>' +
+            '<button type="button" class="icon-btn !w-6 !h-6 opacity-60 hover:opacity-100" title="Remover" aria-label="Remover anotação" onclick="removeInteraction(\'' + esc(n.id) + '\')">' + icon("x", "!w-3 !h-3") + '</button>' +
+          '</div>';
+        });
+      }
+      tl.innerHTML = html || '<p style="color:var(--muted)">Nenhuma oportunidade, follow-up ou nota ainda. Use os botões acima.</p>';
     }
 
     // Define o valor de um <select>; se o valor vier do banco e não existir na lista, cria a opção (evita perder o dado ao salvar)
@@ -3556,7 +3759,7 @@
       document.getElementById("accountModal").classList.add("hidden");
     }
 
-    function saveAccountFromModal() {
+    async function saveAccountFromModal() {
       const id = document.getElementById("accFormId").value;
       const comp = (document.getElementById("accFormCompany").value || "").trim();
       if (!comp) {
@@ -3569,7 +3772,7 @@
       const dup = state.accounts.find(function (a) {
         return a.id !== id && String(a.company_name || "").trim().toLowerCase() === comp.toLowerCase();
       });
-      if (dup && !window.confirm("Já existe uma conta chamada \"" + dup.company_name + "\". Salvar mesmo assim?")) return;
+      if (dup && !(await uiConfirm("Já existe uma conta chamada \"" + dup.company_name + "\". Salvar mesmo assim?", { title: "Conta duplicada", okLabel: "Salvar mesmo assim", danger: false }))) return;
 
       const lives = Number(document.getElementById("accFormLives").value) || 100;
       const website = (document.getElementById("accFormWebsite").value || "").trim();
@@ -3659,19 +3862,22 @@
       });
     }
 
-    function deleteAccountFromModal() {
+    async function deleteAccountFromModal() {
       const id = document.getElementById("accFormId").value;
       const acc = findAccount(id);
       if (!acc) return;
       const nOpp = state.opportunities.filter(function (o) { return o.account_id === id; }).length;
       const nFu = state.followups.filter(function (f) { return f.account_id === id; }).length;
-      if (!window.confirm("Excluir \"" + acc.company_name + "\"? Isso apaga também " + nOpp + " oportunidade(s) e " + nFu + " follow-up(s). Não dá para desfazer.")) return;
+      const nInt = (state.interactions || []).filter(function (i) { return i.account_id === id; }).length;
+      const ok = await uiConfirm("Isso apaga também " + nOpp + " oportunidade(s), " + nFu + " follow-up(s)" + (nInt ? " e " + nInt + " anotação(ões)" : "") + ". Não dá para desfazer.", { title: "Excluir " + acc.company_name + "?", okLabel: "Excluir conta" });
+      if (!ok) return;
       state.accounts = state.accounts.filter(function (a) { return a.id !== id; });
       state.opportunities = state.opportunities.filter(function (o) { return o.account_id !== id; });
       state.followups = state.followups.filter(function (f) { return f.account_id !== id; });
+      state.interactions = (state.interactions || []).filter(function (i) { return i.account_id !== id; });
       closeAccountModal();
       refreshAllViews();
-      showToast("Conta excluída.", "🗑️");
+      showToast("Conta, oportunidades, follow-ups e notas excluídos.", "🗑️");
       // No banco, oportunidades e follow-ups saem junto (on delete cascade)
       remoteWrite("Exclusão", function () { return db.remove("crm_accounts", id); });
     }
@@ -3825,9 +4031,9 @@
       }
     }
 
-    function deleteFollowupFromModal() {
+    async function deleteFollowupFromModal() {
       const id = document.getElementById("fuFormId").value;
-      if (!id || !window.confirm("Excluir este follow-up?")) return;
+      if (!id || !(await uiConfirm("O follow-up sai da agenda e do histórico da conta.", { title: "Excluir este follow-up?", okLabel: "Excluir" }))) return;
       state.followups = state.followups.filter(function (f) { return f.id !== id; });
       closeFollowupModal();
       refreshAllViews();
@@ -3877,7 +4083,7 @@
       document.getElementById("opportunityModal").classList.add("hidden");
     }
 
-    function saveOpportunityFromModal() {
+    async function saveOpportunityFromModal() {
       const editId = document.getElementById("oppFormId").value;
       const accId = document.getElementById("oppAccountSelect").value;
       const stageW = Number(document.getElementById("oppStageSelect").value) || 1;
@@ -3888,7 +4094,7 @@
 
       if (!editId) {
         const dupOpen = state.opportunities.find(function (o) { return o.account_id === accId && Number(o.stage_weight) >= 1 && Number(o.stage_weight) <= 4; });
-        if (dupOpen && !window.confirm((acc ? acc.company_name : "Esta conta") + " já tem uma oportunidade aberta. Criar outra?")) return;
+        if (dupOpen && !(await uiConfirm((acc ? acc.company_name : "Esta conta") + " já tem uma oportunidade aberta. Criar outra?", { title: "Oportunidade duplicada", okLabel: "Criar outra", danger: false }))) return;
       }
 
       let opp = editId ? state.opportunities.find(function (o) { return o.id === editId; }) : null;
@@ -4163,17 +4369,17 @@
       if (boxes.length) boxes[boxes.length - 1].open = true;
     }
 
-    function removeTemplate(kind, i) {
+    async function removeTemplate(kind, i) {
       const list = kind === "email" ? integ().emailTemplates : integ().waTemplates;
       if (list.length <= 1) { showToast("Mantenha pelo menos um modelo.", "⚠️"); return; }
-      if (!window.confirm("Excluir o modelo \"" + list[i].name + "\"?")) return;
+      if (!(await uiConfirm("O modelo \"" + list[i].name + "\" será removido.", { title: "Excluir modelo?", okLabel: "Excluir" }))) return;
       list.splice(i, 1);
       persistState();
       renderTemplateEditors();
     }
 
-    function resetTemplates(kind) {
-      if (!window.confirm("Voltar os modelos de " + (kind === "email" ? "e-mail" : "WhatsApp") + " para o padrão? Suas edições serão perdidas.")) return;
+    async function resetTemplates(kind) {
+      if (!(await uiConfirm("Suas edições nos modelos de " + (kind === "email" ? "e-mail" : "WhatsApp") + " serão perdidas.", { title: "Voltar ao padrão?", okLabel: "Voltar ao padrão" }))) return;
       if (kind === "email") integ().emailTemplates = JSON.parse(JSON.stringify(DEFAULT_EMAIL_TEMPLATES));
       else integ().waTemplates = JSON.parse(JSON.stringify(DEFAULT_WA_TEMPLATES));
       persistState();
@@ -4723,6 +4929,7 @@
         accounts: state.accounts,
         opportunities: state.opportunities,
         followups: state.followups,
+        interactions: state.interactions || [],
         integrations: integ()
       };
       downloadFile("swile-os-crm-backup-" + todayIso() + ".json", JSON.stringify(data, null, 2), "application/json");
@@ -5059,6 +5266,7 @@
         missing: ["Local · tabelas pendentes", "Status: Tabelas não encontradas", "border-amber-500/40", "#fbbf24"],
         error: ["Local · erro no banco", "Status: Erro de conexão", "border-rose-500/40", "#f87171"],
         local: ["Modo local", "Status: Cache Local Ativo", "border-slate-700/70", "#5d6579"],
+        login: ["Local · entre para sincronizar", "Status: Aguardando login", "border-amber-500/40", "#fbbf24"],
         busy: ["Conectando…", "Status: Conectando…", "border-violet-500/40", "#a78bfa"]
       };
       const l = labels[kind] || labels.local;
@@ -5141,7 +5349,8 @@
 
       try {
         db.init(cfg.url, cfg.key);
-        setAuthLabel(await db.restoreSession());
+        const sessionUser = await db.restoreSession();
+        setAuthLabel(sessionUser);
 
         let remote = await loadRemoteData();
         if (remote.error) {
@@ -5157,10 +5366,11 @@
             }
           } else {
             const permDenied = /permission denied|row-level security|JWT|401|42501/i.test((remote.error.message || "") + " " + (remote.error.code || "") + " " + (remote.error.status || ""));
-            setDbStatus("error", permDenied
+            // Sem sessão e o banco exige login: não é erro, só falta entrar
+            setDbStatus(permDenied && !sessionUser ? "login" : "error", permDenied
               ? "<p class='font-bold text-amber-300'>🔐 Modo Seguro ativo: faça login abaixo para ver os dados.</p>"
               : "<p class='font-bold text-rose-300'>Erro do Supabase:</p><p>" + esc(remote.error.message) + "</p><p class='text-slate-500'>Se você ativou o Modo Seguro, faça login abaixo.</p>");
-            if (!silent) showToast("Supabase: " + remote.error.message, "⚠️");
+            if (!silent) showToast(permDenied && !sessionUser ? "Entre com seu login para sincronizar com o banco." : "Supabase: " + remote.error.message, permDenied && !sessionUser ? "🔐" : "⚠️");
           }
           return;
         }
@@ -5452,6 +5662,9 @@
       }
       const modals = ["paletteModal", "lossModal", "followupModal", "opportunityModal", "accountModal"];
       if (e.key === "Escape") {
+        if (!document.getElementById("confirmModal").classList.contains("hidden")) { resolveConfirm(false); return; }
+        const sb = document.getElementById("appSidebar");
+        if (sb && sb.classList.contains("is-open")) { toggleSidebar(false); return; }
         for (let i = 0; i < modals.length; i++) {
           const m = document.getElementById(modals[i]);
           if (m && !m.classList.contains("hidden")) { m.classList.add("hidden"); return; }

@@ -690,7 +690,7 @@
               <div class="card-head pb-3">
                 <div>
                   <h3 class="card-title">Matriz competitiva</h3>
-                  <p class="card-sub">Notas e bandeiras como vieram no documento de referência. <b style="color:#fcd34d">Fonte e data das notas não verificadas</b>: confira na loja de apps ou no Reclame Aqui antes de citar ao cliente.</p>
+                  <p class="card-sub">Nota da Swile e bandeira da Flash conferidas no portal Benway. As demais notas foram informadas pelo usuário. Fonte de cada linha na coluna "Nota".</p>
                 </div>
               </div>
               <div class="overflow-x-auto custom-scroll">
@@ -2757,11 +2757,12 @@
       });
     }
 
-    // Dados de contato informados pelo Michel (out/2026). NÃO verificados de forma independente:
+    // Dados de contato informados pelo usuário (out/2026); Fattu cita fattu.com.br/filiais e Econodata.
     // só substituem os valores provisórios antigos, nunca algo que você já editou.
     const LEAD_DATA_PATCH = [
       {
         code: "LD-09", match: /fattu/i,
+        source: "informados pelo usuário; fontes: fattu.com.br/filiais e Econodata",
         placeholders: { phone: ["", "+55 21 3000-0000"], email_rh: ["", "fattu.gupy.io | DHO Fattu"], address: ["", "Unidade Logística e Comercial Rio de Janeiro - RJ"] },
         data: {
           phone: "+55 21 3900-8200",
@@ -2771,6 +2772,7 @@
       },
       {
         code: "LD-08", match: /future/i,
+        source: "informado pelo usuário",
         placeholders: { address: ["", "Centro Empresarial Rio de Janeiro - RJ"], website: ["", "https://futurevagas.vagas.solides.com.br/"] },
         data: {
           address: "Av. Rio Branco / Centro Empresarial Rio de Janeiro - RJ (Matriz RJ: Rua Afrânio Melo Franco, 333 - Petrópolis/RJ)",
@@ -2790,7 +2792,7 @@
         });
         if (!Object.keys(changed).length) return;
         persistState();
-        logInteraction(acc.id, "Nota", "Dados de contato atualizados com informações passadas pelo Michel (não verificadas de forma independente): " + Object.keys(changed).join(", ") + ".", true, true);
+        logInteraction(acc.id, "Nota", "Dados de contato atualizados (" + p.source + "): " + Object.keys(changed).join(", ") + ".", true, true);
         remoteWrite("Dados do lead", function () { return db.update("crm_accounts", acc.id, changed); });
       });
     }
@@ -3169,9 +3171,9 @@
     // FASE 3 · PLAYBOOK EM SUB-ABAS
     // =====================================================================
     const PB_MATRIX = [
-      { name: "Swile", flag: "Mastercard", rating: "4,5", use: "Nossa proposta: cartão único com carteiras, app e X-Pay. Mostre a simulação PAT antes da condição." },
+      { name: "Swile", flag: "Mastercard", rating: "4,5", src: "Benway · 38.221 avaliações", url: "https://benway.com.br/beneficios-avaliacoes/swile-beneficios", use: "Nossa proposta: cartão único com carteiras, app e X-Pay. Mostre a simulação PAT antes da condição." },
       { name: "Caju", flag: "Visa", rating: "4,6", use: "Compra pelo iFood anunciada em 20/10/2026, ainda pendente de CADE e Banco Central. Explore a incerteza da integração, sem atacar o produto." },
-      { name: "Flash", flag: "não informada", rating: "4,6", use: "Concorrente forte em experiência. Pergunte onde ainda há atrito e ancore no valor total, não em preço." },
+      { name: "Flash", flag: "Mastercard", rating: "4,6", flagSrc: "https://benway.com.br/flash-vs-swile", use: "Concorrente forte em experiência. Pergunte onde ainda há atrito e ancore no valor total, não em preço." },
       { name: "iFood Benefícios", flag: "não informada", rating: "4,5", use: "Agora terá duas plataformas para integrar (iFood + Caju). Pergunte como o RH avalia o risco de mudança no contrato." },
       { name: "Alelo", flag: "Elo", rating: "4,4", use: "Explore aceitação e experiência no app. O Decreto 12.712/2025 é um bom motivo para revisar o contrato." },
       { name: "Pluxee (ex-Sodexo)", flag: "Elo", rating: "4,2", use: "Explore a experiência após o rebranding e carteira digital, se o lead citar." },
@@ -3210,12 +3212,14 @@
       { title: "Tamanho no mundo", status: "ok", text: "Mais de 85 mil empresas e 5,5 milhões de usuários. São números globais de 2024, não do Brasil.", source: "Dados públicos da Swile, 2024" },
       { title: "Tamanho no Brasil", status: "partial", text: "700 mil usuários em set/2024 (Bloomberg Línea). Uma manchete do Times Brasil fala em mais de 800 mil usuários ativos; a data exata não foi confirmada.", source: "Bloomberg Línea, set/2024; Times Brasil" },
       { title: "Empresa B certificada", status: "ok", text: "A Swile (Swile S.A.S. e subsidiárias) é B Corp, com nota 86,8 no B Impact Assessment (mínimo para certificar: 80).", source: "Relatório de impacto publicado pelo B Lab", url: "https://www.bcorporation.net/en-us/find-a-b-corp/company/swile/" },
-      { title: "Não verificado: use com cuidado", status: "no", text: "eNPS acima de 75, número exato de carteiras e trava por CNAE na maquininha. Confirme no material oficial da Swile antes de citar ao cliente.", source: "Sem fonte pública encontrada" }
+      { title: "Carteiras e saldo por categoria", status: "ok", text: "No cartão Swile, a categoria do estabelecimento (MCC) define qual saldo é debitado. Carteira digital: Apple Pay, Google Pay e Samsung Pay.", source: "Benway, comparativo Flash vs Swile", url: "https://benway.com.br/flash-vs-swile" },
+      { title: "eNPS e número de carteiras", status: "user", text: "eNPS acima de 75 e o número de carteiras do cartão foram informados pelo usuário.", source: "Informado pelo usuário" }
     ];
     const PB_STATUS = {
       ok: { label: "Verificado", css: "chip chip-ok" },
       partial: { label: "Parcial", css: "chip", style: "color:#fcd34d" },
-      no: { label: "Não verificado", css: "chip", style: "color:#fca5a5" }
+      no: { label: "Sem fonte", css: "chip", style: "color:#fca5a5" },
+      user: { label: "Informado pelo usuário", css: "chip", style: "color:#c4b5fd" }
     };
 
     let playbookTab = "chave";
@@ -3241,8 +3245,9 @@
         const us = r.name === "Swile";
         return '<tr class="divider align-top"' + (us ? ' style="background:rgba(124,58,237,.08)"' : "") + '>' +
           '<td class="px-4 py-2.5 font-medium text-white whitespace-nowrap">' + esc(r.name) + '</td>' +
-          '<td class="px-3 py-2.5 whitespace-nowrap" style="color:' + (r.flag === "não informada" ? "var(--faint)" : "#c3c8d4") + '">' + esc(r.flag) + '</td>' +
-          '<td class="px-3 py-2.5 whitespace-nowrap"><span class="num text-white">' + esc(r.rating) + '</span> <span class="chip" style="color:#fcd34d">não verificada</span></td>' +
+          '<td class="px-3 py-2.5 whitespace-nowrap" style="color:' + (r.flag === "não informada" ? "var(--faint)" : "#c3c8d4") + '">' + esc(r.flag) + (r.flagSrc ? ' <a class="underline text-[11px] hover:text-white" style="color:var(--faint)" href="' + esc(r.flagSrc) + '" target="_blank" rel="noopener">Benway</a>' : "") + '</td>' +
+          '<td class="px-3 py-2.5 whitespace-nowrap"><span class="num text-white">' + esc(r.rating) + '</span> ' +
+            (r.url ? '<a class="chip chip-ok hover:text-white" href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.src) + '</a>' : '<span class="chip">informada pelo usuário</span>') + '</td>' +
           '<td class="px-4 py-2.5" style="color:var(--muted);min-width:16rem">' + esc(r.use) + '</td></tr>';
       }).join("");
       const tl = document.getElementById("pbTriggersList");

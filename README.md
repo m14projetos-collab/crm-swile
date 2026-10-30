@@ -145,6 +145,20 @@ As preferências e os modelos ficam no `localStorage` deste navegador (não vão
   - inspetor de payload REST v60.0 (PATCH Opportunity por External_ID__c, composite/tree Account, Task), com cópia e envio opcional pelo webhook.
   - Pré-requisito na org: campo `External_ID__c` (ID externo) em Account e Opportunity e os campos personalizados citados.
 
+### Briefing executivo e copiloto (Fase 4 completa)
+
+- **Briefing por tela** (Hoje, Contas, Pipeline, Agenda, Relatórios): 1 a 2 linhas calculadas na hora pelo motor local, com "Detalhar" e "Atualizar com Gemini 2.5". A resposta do Gemini fica em cache na sessão do navegador até os dados mudarem.
+- **Relatórios:** o briefing faz o diagnóstico de ganhos e perdas com o motivo registrado ao marcar Perdida e a fase em que o negócio morreu (`lost_stage`, só no navegador).
+- **Ficha da conta:** card "Diagnóstico do lead & próximo passo" com nível de interesse, dor/gatilho, como trabalhar e uma ação em 1 clique.
+- **Copiloto de call:**
+  - ditado rápido (SpeechRecognition);
+  - gravação da call completa: microfone e, opcionalmente, áudio da aba, em arquivos separados, com aviso de consentimento (LGPD) antes de gravar;
+  - transcrição pelo Gemini em `inlineData`, separando Executivo Swile e Cliente;
+  - análise em JSON, "Aplicar no lead" e "Pergunte ao copiloto".
+- **Limites:** a requisição inline do Gemini é de 20 MB, então a gravação para perto de 14 MB de áudio. O modelo padrão é `gemini-2.5-flash`; se a chave não tiver acesso (404), o CRM tenta `gemini-3.8-flash`.
+- **Sugerir empresas RJ via Gemini:** entram como "sugestão não verificada" e só viram conta depois de conferidas.
+- **Sem chave:** tudo funciona pelo motor local.
+
 ## Sincronização com o Supabase
 
 - **Leitura:** ao conectar, contas, oportunidades e follow-ups são carregados do banco. O banco é a fonte da verdade.

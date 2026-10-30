@@ -52,11 +52,20 @@ A chave `sb_publishable_...` é pública por design (fica visível no código do
 A migration principal cria policies **`using (true)`** para o papel `anon` — isso é um **modo demo**: qualquer pessoa
 com a URL do site consegue ler, editar e apagar as contas.
 
-Para uso real, ative o **modo seguro**:
-1. Supabase → **Authentication → Users → Add user** (seu e-mail e senha).
-2. **Authentication → Sign In / Providers** → desative *Allow new users to sign up*.
-3. Rode `supabase/security/secure_rls_authenticated.sql` no SQL Editor.
-4. No app, aba **⚡ Supabase & GitHub**, faça **login**. Sem login, o banco não devolve nada.
+Para uso real, ative o **modo seguro** (só e-mails liberados acessam):
+1. No app, aba **⚡ Supabase & GitHub**: digite e-mail e senha e clique em **Criar login**.
+   Por padrão o Supabase pede confirmação por e-mail: clique no link recebido.
+   Em **Authentication → URL Configuration**, coloque `https://m14projetos-collab.github.io/crm-swile/` como *Site URL*
+   para o link voltar ao site.
+2. Em `supabase/security/secure_rls_authenticated.sql`, troque `SEU_EMAIL_AQUI` pelo e-mail do passo 1 e rode no SQL Editor.
+   Nenhum dado é apagado; só muda quem pode ver.
+3. No app, clique em **Entrar**. Sem login (ou com um e-mail fora da lista), o banco não devolve nada.
+
+Mesmo com o botão "Criar login" aberto, quem se cadastrar sem estar na lista `crm_allowed_users` não vê dados.
+Para liberar outra pessoa: `insert into public.crm_allowed_users (email) values ('email@exemplo.com');`
+
+> Observação: as 15 contas iniciais também estão embutidas no `index.html` (modo offline) e o repositório é público,
+> então esses dados de seed são visíveis para qualquer pessoa. O modo seguro protege o que é gravado no banco.
 
 Para voltar ao modo demo, rode a migration principal de novo.
 

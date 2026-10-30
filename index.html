@@ -505,7 +505,9 @@
                   <button type="button" class="btn btn-sm" onclick="openDiscovery('linkedin')"><svg class="ico"><use href="#i-user"/></svg>Decisores RH/CFO no LinkedIn</button>
                   <button type="button" class="btn btn-sm" onclick="openDiscovery('econodata')"><svg class="ico"><use href="#i-building"/></svg>Empresas na Econodata</button>
                   <button id="btnDiscNewAccount" type="button" class="btn btn-primary btn-sm" onclick="newAccountFromDiscovery()"><svg class="ico"><use href="#i-plus"/></svg>Cadastrar conta encontrada</button>
+                  <button id="btnDiscGemini" type="button" class="btn btn-sm" onclick="suggestCompaniesGemini()"><svg class="ico"><use href="#i-spark"/></svg>Sugerir novas empresas RJ (&gt;200v) via Gemini</button>
                 </div>
+                <div id="discSuggest" class="space-y-2"></div>
               </div>
             </div>
           </details>
@@ -962,8 +964,8 @@
                 <h3 class="card-title flex items-center gap-2"><svg class="ico"><use href="#i-spark"/></svg>Copiloto de call · Gemini (opcional)</h3>
                 <span id="geminiStatus" class="chip">Análise local</span>
               </div>
-              <p style="color:var(--muted)">Sem chave, o copiloto usa a análise local (palavras-sinal, grátis e sem rede). Com uma chave do Google AI Studio, a transcrição vai para o Gemini e a resposta volta em JSON; se falhar, o CRM usa a análise local.</p>
-              <p class="rounded-lg p-2.5" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fde68a">Atenção: a chave fica guardada neste navegador, sem criptografia. Quem usar este computador ou rodar um script nesta página pode lê-la. Use uma chave só para isto, com limite de uso, e apague quando não precisar. Ela não entra no backup JSON nem vai para o Supabase. A transcrição enviada ao Gemini sai do seu navegador para o Google.</p>
+              <p style="color:var(--muted)">Sem chave, tudo funciona com o motor local (briefings, diagnóstico do lead e análise da call por palavras-sinal, grátis e sem rede). Com uma chave do Google AI Studio, você pode aprofundar com o Gemini: briefings, diagnóstico do lead, transcrição da gravação, perguntas ao copiloto e sugestão de empresas. Se o Gemini falhar, o CRM volta ao motor local.</p>
+              <p class="rounded-lg p-2.5" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fde68a">Atenção: a chave fica guardada neste navegador, sem criptografia. Quem usar este computador ou rodar um script nesta página pode lê-la. Use uma chave só para isto, com limite de uso, e apague quando não precisar. Ela não entra no backup JSON nem vai para o Supabase. Transcrições, áudios gravados e dados das contas enviados ao Gemini saem do seu navegador para o Google.</p>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
                 <div class="sm:col-span-2"><label for="geminiKeyInput" class="label">Chave da API Gemini</label><input id="geminiKeyInput" type="password" autocomplete="off" class="input" placeholder="Cole a chave do AI Studio" /></div>
                 <div><label for="geminiModelInput" class="label">Modelo</label><input id="geminiModelInput" type="text" class="input" value="gemini-2.5-flash" /></div>
@@ -971,7 +973,11 @@
               <div class="flex flex-wrap gap-2">
                 <button type="button" class="btn btn-primary btn-sm" onclick="saveGeminiKey()"><svg class="ico"><use href="#i-check"/></svg>Salvar chave</button>
                 <button type="button" class="btn btn-sm" onclick="clearGeminiKey()"><svg class="ico"><use href="#i-trash"/></svg>Apagar chave</button>
+                <button type="button" class="btn btn-sm" onclick="testGeminiKey()"><svg class="ico"><use href="#i-plug"/></svg>Testar chave Gemini</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="openExternal('https://aistudio.google.com/app/apikey')"><svg class="ico"><use href="#i-link"/></svg>Criar chave no AI Studio</button>
               </div>
+              <p id="geminiTestStatus" class="text-[11px]" style="color:var(--faint)"></p>
+              <p style="color:var(--faint)">Modelo padrão: gemini-2.5-flash. O Google limitou esse modelo a quem já o usava; se a sua chave não tiver acesso, o CRM tenta o gemini-3.8-flash, que o Google recomenda para projetos novos. Gravações de call vão em base64 dentro da requisição, que tem limite de 20 MB: o CRM encerra a gravação perto de 14 MB de áudio (cerca de 55 minutos).</p>
             </div>
 
             <div class="card p-4 space-y-3 text-xs lg:col-span-2">
@@ -1382,6 +1388,7 @@
 
         <!-- Histórico da conta -->
         <aside class="lg:col-span-4 space-y-3">
+          <div id="accDiagnosis" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:rgba(139,92,246,.35);background:rgba(139,92,246,.06)"></div>
           <div id="accSnapshot" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line);background:var(--surface-2)"></div>
           <div id="accComposer" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line)"></div>
           <div id="accHomeOffice" class="hidden rounded-xl border p-3.5 text-xs space-y-2.5" style="border-color:var(--line)">
@@ -1398,19 +1405,41 @@
           <details id="accCopilot" class="hidden rounded-xl border text-xs" style="border-color:var(--line)">
             <summary class="flex items-center justify-between gap-2 px-3.5 py-2.5 cursor-pointer">
               <span class="font-medium text-white">Copiloto de call</span>
-              <span id="copilotLive" class="hidden live-dot text-[11px] font-semibold" style="color:#f87171">Ouvindo</span>
+              <span id="copilotLiveWrap"></span><span id="copilotLive" class="hidden live-dot text-[11px] font-semibold" style="color:#f87171">Ouvindo</span>
             </summary>
             <div class="px-3.5 pb-3.5 space-y-2.5">
-              <p class="text-[11px] leading-relaxed" style="color:var(--faint)">A gravação usa só o <b>seu microfone</b>: em call do Meet ou WhatsApp a voz do cliente não entra. Para a conversa completa, cole aqui a transcrição do Meet, Gemini ou Tactiq.</p>
+              <p class="text-[11px] leading-relaxed" style="color:var(--faint)"><b>Ditado rápido</b> transcreve só a sua voz, no navegador. <b>Gravar call completa</b> grava o microfone e, se você quiser, o áudio da aba do Meet ou do WhatsApp Web; a transcrição com os dois lados é feita pelo Gemini. Você também pode colar a transcrição do Meet ou do Tactiq.</p>
               <p id="copilotNoSpeech" class="hidden text-[11px]" style="color:#fcd34d">Este navegador não transcreve voz. Use Chrome ou Edge, ou cole a transcrição.</p>
               <label for="copilotTranscript" class="sr-only">Transcrição</label>
               <textarea id="copilotTranscript" rows="5" class="input text-[12px]" placeholder="Grave sua voz ou cole a transcrição da call…"></textarea>
               <p id="copilotInterim" class="italic min-h-[1em]" style="color:var(--muted)"></p>
               <div class="flex flex-wrap gap-1.5">
-                <button id="btnCopilotMic" type="button" class="btn btn-sm" onclick="toggleCopilotListening()"><svg class="ico"><use href="#i-mic"/></svg>Gravar minha voz</button>
-                <button id="btnCopilotAnalyze" type="button" class="btn btn-primary btn-sm" onclick="runCopilotAnalysis()"><svg class="ico"><use href="#i-spark"/></svg>Analisar</button>
+                <button id="btnCopilotMic" type="button" class="btn btn-sm" onclick="toggleCopilotListening()"><svg class="ico"><use href="#i-mic"/></svg>Ditado rápido</button>
+                <button id="btnCallRec" type="button" class="btn btn-sm" onclick="callRec ? stopCallRecording() : startCallRecording()"><svg class="ico"><use href="#i-video"/></svg>Gravar call completa</button>
+                <button id="btnCopilotAnalyze" type="button" class="btn btn-primary btn-sm" onclick="runCopilotAnalysis()"><svg class="ico"><use href="#i-spark"/></svg>Analisar call</button>
+              </div>
+              <label class="flex items-center gap-1.5" style="color:var(--muted)"><input id="callRecTab" type="checkbox" class="accent-violet-500" checked />Incluir o áudio da aba da reunião (Meet / WhatsApp Web)</label>
+              <p id="callRecStatus" class="text-[11px]"></p>
+              <div id="callRecActions" class="hidden flex flex-wrap items-center gap-1.5">
+                <button id="btnCallTranscribe" type="button" class="btn btn-primary btn-sm" onclick="transcribeCallWithGemini()"><svg class="ico"><use href="#i-spark"/></svg>Transcrever com Gemini</button>
+                <button type="button" class="btn btn-sm" onclick="downloadCallAudio()"><svg class="ico"><use href="#i-download"/></svg>Baixar áudio</button>
+                <span id="callNoKey" class="hidden text-[11px]" style="color:#fcd34d">Sem chave do Gemini a transcrição da gravação não é feita aqui. Baixe o áudio ou cole a transcrição.</span>
               </div>
               <div id="copilotResult" class="hidden rounded-lg p-3 space-y-2" style="background:var(--surface-2)"></div>
+              <div class="space-y-1.5 pt-1 divider">
+                <p class="label pt-2">Pergunte ao copiloto sobre esta conversa</p>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" class="btn btn-sm" onclick="askCopilot('objection')">Rebater objeção agora</button>
+                  <button type="button" class="btn btn-sm" onclick="askCopilot('cfo')">Gerar e-mail p/ CFO</button>
+                  <button type="button" class="btn btn-sm" onclick="askCopilot('steps')">Resumir próximos passos</button>
+                </div>
+                <div class="flex gap-1.5">
+                  <label for="copilotQuestion" class="sr-only">Pergunta</label>
+                  <input id="copilotQuestion" type="text" class="input h-8 text-[12px] flex-1" placeholder="Ex.: Por que esse cliente está hesitando?" onkeydown="if(event.key==='Enter'){askCopilot();}" />
+                  <button type="button" class="btn btn-sm" onclick="askCopilot()">Perguntar</button>
+                </div>
+                <div id="copilotAnswer" class="hidden rounded-lg p-3" style="background:var(--surface-2)"></div>
+              </div>
             </div>
           </details>
           <details id="accPatSim" class="hidden rounded-xl border text-xs" style="border-color:var(--line)">
@@ -2898,6 +2927,7 @@
         if (acc.status === "Perdido ❌" && !cur && trigger === "status") return null;
         acc.status = "Perdido ❌";
         if (cur) {
+          if (Number(cur.stage_weight) > 0) cur.lost_stage = Number(cur.stage_weight);
           cur.stage_weight = 0; cur.stage = STAGE_LABELS[0]; cur.probability = 0;
           cur.closed_date = todayIso();
           cur.loss_category = cur.loss_category || "Sem prioridade agora";
@@ -3375,50 +3405,128 @@
         (highlights[0] ? " Anotei o principal: \"" + highlights[0].slice(0, 140).replace(/[.!?\s]+$/, "") + "\"." : "") +
         " " + nextStep + (sellerSignature() ? "\n\n" + sellerSignature() : "");
 
-      return { temperature: temperature, score: score, highlights: highlights, rebuttal: rebuttal, whatsapp: whatsapp, next_stage: nextStage, competitor: comp ? comp.name : "", source: "local" };
+      const objections = [];
+      if (/taxa|preço|preco|caro|custo/i.test(raw)) objections.push("Preço / taxa");
+      if (/contrato|multa|renovamos|renovar/i.test(raw)) objections.push("Contrato vigente / multa");
+      if (/satisfeit|funciona bem|não temos problema|nao temos problema/i.test(raw)) objections.push("Satisfeito com o fornecedor atual");
+      if (lost > 0) objections.push("Sem interesse declarado");
+      return { temperature: temperature, score: score, highlights: highlights, objections: objections, rebuttal: rebuttal, whatsapp: whatsapp, next_stage: nextStage, competitor: comp ? comp.name : "", source: "local" };
     }
 
     function geminiKey() { try { return localStorage.getItem("swile_crm_gemini_key") || ""; } catch (e) { return ""; } }
     function geminiModel() { try { return localStorage.getItem("swile_crm_gemini_model") || "gemini-2.5-flash"; } catch (e) { return "gemini-2.5-flash"; } }
 
+    const SF_STAGE_BY_NAME = { "nao contactado": 1, "qualificando": 2, "em contato": 3, "negociando": 4, "contrato enviado": 5, "contrato assinado": 6, "perdida": 0, "perdido": 0 };
     async function analyzeTranscriptGemini(transcript, acc) {
-      const key = geminiKey();
-      if (!key) return null;
+      if (!geminiKey()) return null;
       const prompt = "Você é um coach de vendas B2B de benefícios corporativos (Swile, Brasil). Analise a transcrição de call abaixo com o lead " +
         (acc ? acc.company_name + " (fornecedor atual: " + (acc.current_provider || "não informado") + ")" : "") +
-        ". Responda SOMENTE em JSON com as chaves: temperature (Quente|Morno|Frio|Perdido), score (0-100), highlights (array com 3 frases curtas), " +
-        "rebuttal (contorno da principal objeção, em português, sem inventar números), whatsapp (mensagem curta de follow-up pós-call), " +
-        "next_stage (0=perdida, 3=em contato, 4=negociando/proposta, ou null).\n\nTranscrição:\n" + String(transcript).slice(0, 12000);
-      const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(geminiModel()) + ":generateContent";
-      const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-      const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 20000) : null;
-      try {
-        const r = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.2 } }),
-          signal: ctrl ? ctrl.signal : undefined
-        });
-        if (!r.ok) return null;
-        const j = await r.json();
-        const txt = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text;
-        const out = JSON.parse(String(txt || "").replace(/^```json\s*|```$/g, ""));
-        const temps = ["Quente", "Morno", "Frio", "Perdido"];
-        if (temps.indexOf(out.temperature) < 0) return null;
-        const ns = out.next_stage === null || out.next_stage === undefined ? null : Number(out.next_stage);
-        return {
-          temperature: out.temperature,
-          score: Math.max(0, Math.min(100, Number(out.score) || 0)),
-          highlights: (Array.isArray(out.highlights) ? out.highlights : []).slice(0, 3).map(String),
-          rebuttal: String(out.rebuttal || ""),
-          whatsapp: String(out.whatsapp || ""),
-          next_stage: [0, 3, 4].indexOf(ns) >= 0 ? ns : (ns === 2 ? 3 : null),
-          source: "gemini"
-        };
-      } catch (e) {
-        return null;
-      } finally {
-        if (timer) clearTimeout(timer);
+        ". Responda SOMENTE em JSON com as chaves: temperatura (Quente|Morno|Frio|Perdido), score (0-100), principais_pontos (array com 3 frases curtas), " +
+        "objecoes_detectadas (array de strings, pode ser vazio), resposta_recomendada (contorno da principal objeção, em português, sem inventar números), " +
+        "etapa_salesforce_sugerida (uma de: Não contactado, Qualificando, Em contato, Negociando, Contrato enviado, Contrato assinado, Perdida; ou null se não mudou), " +
+        "mensagem_whatsapp_pos_call (mensagem curta de follow-up).\n\nTranscrição:\n" + String(transcript).slice(0, 30000);
+      const r = await geminiRequest([{ text: prompt }], { json: true, timeout: 45000 });
+      if (!r.ok || !r.data) return null;
+      const out = r.data;
+      const temp = out.temperatura || out.temperature;
+      if (["Quente", "Morno", "Frio", "Perdido"].indexOf(temp) < 0) return null;
+      let ns = out.etapa_salesforce_sugerida !== undefined ? out.etapa_salesforce_sugerida : out.next_stage;
+      if (typeof ns === "string") ns = SF_STAGE_BY_NAME[normalizeText(ns).replace(/[^a-z ]/g, "").trim()];
+      ns = ns === null || ns === undefined || isNaN(Number(ns)) ? null : Number(ns);
+      // Assinatura e "Não contactado" nunca vêm da IA: só o executivo fecha ou reabre
+      if (ns === 6 || ns === 1) ns = null;
+      return {
+        temperature: temp,
+        score: Math.max(0, Math.min(100, Number(out.score) || 0)),
+        highlights: (Array.isArray(out.principais_pontos) ? out.principais_pontos : Array.isArray(out.highlights) ? out.highlights : []).slice(0, 3).map(String),
+        objections: (Array.isArray(out.objecoes_detectadas) ? out.objecoes_detectadas : []).slice(0, 5).map(String),
+        rebuttal: String(out.resposta_recomendada || out.rebuttal || ""),
+        whatsapp: String(out.mensagem_whatsapp_pos_call || out.whatsapp || ""),
+        next_stage: [0, 2, 3, 4, 5].indexOf(ns) >= 0 ? ns : null,
+        source: "gemini",
+        model: r.model
+      };
+    }
+
+
+    // ---------------------------------------------------------------------
+    // Gemini: chamada única, com troca automática de modelo e cache por sessão.
+    // O Google limitou o gemini-2.5-flash a quem já usava o modelo; chaves novas
+    // podem receber 404. Nesse caso tentamos o modelo recomendado para projetos novos.
+    // ---------------------------------------------------------------------
+    const GEMINI_FALLBACK_MODEL = "gemini-3.8-flash";
+    // Limite de requisição inline do Gemini (doc de áudio: 20 MB no total, já em base64)
+    const GEMINI_INLINE_MAX_BYTES = 20 * 1024 * 1024;
+    const GEMINI_AUDIO_MAX_RAW = 14 * 1024 * 1024; // 14 MB de áudio ≈ 18,7 MB em base64, com folga para o texto
+    const geminiMemCache = {};
+
+    function geminiCacheGet(key) {
+      if (geminiMemCache[key]) return geminiMemCache[key];
+      try { const v = sessionStorage.getItem("swile_gem_" + key); if (v) return (geminiMemCache[key] = JSON.parse(v)); } catch (e) { /* ignore */ }
+      return null;
+    }
+    function geminiCacheSet(key, val) {
+      geminiMemCache[key] = val;
+      try { sessionStorage.setItem("swile_gem_" + key, JSON.stringify(val)); } catch (e) { /* ignore */ }
+    }
+    function hashText(s) {
+      let h = 5381;
+      s = String(s);
+      for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+      return (h >>> 0).toString(36);
+    }
+
+    /** parts: array no formato da API. Retorna { ok, data|text, model, error } */
+    async function geminiRequest(parts, opts) {
+      opts = opts || {};
+      const key = geminiKey();
+      if (!key) return { ok: false, error: "sem chave" };
+      const models = [geminiModel()];
+      if (models[0] !== GEMINI_FALLBACK_MODEL) models.push(GEMINI_FALLBACK_MODEL);
+      const body = JSON.stringify({ contents: [{ role: "user", parts: parts }], generationConfig: Object.assign({ temperature: 0.3 }, opts.json ? { responseMimeType: "application/json" } : {}) });
+      if (body.length > GEMINI_INLINE_MAX_BYTES) return { ok: false, error: "conteúdo acima do limite de 20 MB do Gemini" };
+      let lastErr = "";
+      for (let i = 0; i < models.length; i++) {
+        const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+        const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, opts.timeout || 30000) : null;
+        try {
+          const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(models[i]) + ":generateContent", {
+            method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: body, signal: ctrl ? ctrl.signal : undefined
+          });
+          if (r.status === 404 && i + 1 < models.length) { lastErr = "modelo " + models[i] + " indisponível para esta chave"; continue; }
+          if (!r.ok) {
+            let msg = "erro " + r.status;
+            try { const ej = await r.json(); if (ej && ej.error && ej.error.message) msg += ": " + String(ej.error.message).slice(0, 160); } catch (e) { /* ignore */ }
+            return { ok: false, error: msg, status: r.status };
+          }
+          const j = await r.json();
+          const txt = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts &&
+            j.candidates[0].content.parts.map(function (p) { return p.text || ""; }).join("");
+          if (!txt) return { ok: false, error: "resposta vazia" };
+          if (!opts.json) return { ok: true, text: String(txt), model: models[i] };
+          try { return { ok: true, data: JSON.parse(String(txt).replace(/^```json\s*|```\s*$/g, "")), model: models[i] }; }
+          catch (e) { return { ok: false, error: "resposta fora do formato JSON" }; }
+        } catch (e) {
+          lastErr = e && e.name === "AbortError" ? "tempo esgotado" : "falha de rede";
+          return { ok: false, error: lastErr };
+        } finally {
+          if (timer) clearTimeout(timer);
+        }
+      }
+      return { ok: false, error: lastErr || "falha" };
+    }
+
+    async function testGeminiKey() {
+      const st = document.getElementById("geminiTestStatus");
+      if (!geminiKey()) { st.textContent = "Salve uma chave antes de testar."; st.style.color = "#fcd34d"; return; }
+      st.textContent = "Testando…"; st.style.color = "var(--faint)";
+      const r = await geminiRequest([{ text: "Responda apenas com a palavra OK." }], { timeout: 15000 });
+      if (r.ok) {
+        st.textContent = "Chave funcionando com " + r.model + (r.model !== geminiModel() ? " (o modelo configurado não está disponível para esta chave)" : "") + ".";
+        st.style.color = "#6ee7b7";
+      } else {
+        st.textContent = "Falhou: " + r.error + ".";
+        st.style.color = "#fca5a5";
       }
     }
 
@@ -3436,7 +3544,7 @@
       }
       if (!result) result = analyzeTranscriptLocal(text, acc);
       btn.disabled = false;
-      btn.innerHTML = icon("spark") + "Analisar";
+      btn.innerHTML = icon("spark") + "Analisar call";
       copilotLast = result;
       renderCopilotResult();
     }
@@ -3452,13 +3560,14 @@
         '<div class="flex flex-wrap items-center gap-2">' +
           '<span class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '55">' + esc(r.temperature) + '</span>' +
           '<span class="num text-white">Score ' + r.score + '/100</span>' +
-          '<span style="color:var(--faint)">· ' + (r.source === "gemini" ? "Gemini" : "análise local") + '</span>' +
+          '<span style="color:var(--faint)">· ' + (r.source === "gemini" ? "Gemini · " + esc(r.model || geminiModel()) : "análise local") + '</span>' +
         '</div>' +
         '<div class="h-1.5 rounded-full overflow-hidden" style="background:var(--surface-3,#1f2433)"><div style="height:100%;width:' + r.score + '%;background:' + c + '"></div></div>' +
-        (r.highlights.length ? '<div><p class="label mb-1">Destaques</p><ul class="space-y-1 list-disc pl-4" style="color:#c3c8d4">' + r.highlights.map(function (h) { return "<li>" + esc(h) + "</li>"; }).join("") + '</ul></div>' : "") +
-        '<div class="rounded-lg p-2.5" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3)"><p class="label mb-1" style="color:#fcd34d">Contorno sugerido</p><p style="color:#fde68a">' + esc(r.rebuttal) + '</p></div>' +
+        (r.objections && r.objections.length ? '<p style="color:#c3c8d4"><span style="color:var(--faint)">Objeções:</span> ' + esc(r.objections.join(" · ")) + '</p>' : "") +
+        (r.highlights.length ? '<div><p class="label mb-1">Principais pontos</p><ul class="space-y-1 list-disc pl-4" style="color:#c3c8d4">' + r.highlights.map(function (h) { return "<li>" + esc(h) + "</li>"; }).join("") + '</ul></div>' : "") +
+        '<div class="rounded-lg p-2.5" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3)"><p class="label mb-1" style="color:#fcd34d">Resposta recomendada</p><p style="color:#fde68a">' + esc(r.rebuttal) + '</p></div>' +
         '<div><p class="label mb-1">WhatsApp pós-call</p><textarea id="copilotWa" rows="3" class="input text-[12px]">' + esc(r.whatsapp) + '</textarea></div>' +
-        '<p style="color:var(--muted)">Etapa sugerida: <b class="text-white">' + esc(ns) + '</b></p>' +
+        '<p style="color:var(--muted)">Etapa do Salesforce sugerida: <b class="text-white">' + esc(ns) + '</b></p>' +
         '<div class="flex flex-wrap gap-1.5">' +
           '<button id="btnCopilotApply" type="button" class="btn btn-primary btn-sm" onclick="applyCopilotToLead()">' + icon("check") + 'Aplicar no lead</button>' +
           '<button type="button" class="btn btn-sm" onclick="sendCopilotWhatsApp()">' + icon("chat") + 'Enviar WhatsApp</button>' +
@@ -3479,7 +3588,8 @@
       if (!acc || !r) return;
       const transcript = (document.getElementById("copilotTranscript").value || "").trim();
       const summary = "Call analisada (" + (r.source === "gemini" ? "Gemini" : "local") + "): " + r.temperature + ", score " + r.score + "/100." +
-        (r.highlights.length ? " Destaques: " + r.highlights.join(" | ") + "." : "");
+        (r.highlights.length ? " Destaques: " + r.highlights.join(" | ") + "." : "") +
+        (r.objections && r.objections.length ? " Objeções: " + r.objections.join(", ") + "." : "");
       logInteraction(acc.id, "Ligação", summary + "\n\nTranscrição:\n" + transcript, false, true);
       const prevInterest = acc.interest_level;
       if (r.temperature === "Quente" || r.temperature === "Morno" || r.temperature === "Frio") acc.interest_level = r.temperature;
@@ -3496,6 +3606,250 @@
       document.getElementById("copilotTranscript").value = "";
       copilotLast = null;
       renderCopilotResult();
+    }
+
+
+    // =====================================================================
+    // COPILOTO · GRAVAÇÃO DA CALL COMPLETA (microfone + áudio da aba, opcional)
+    // Grava em arquivos separados: microfone = Executivo Swile, aba = Cliente.
+    // =====================================================================
+    let callRec = null; // { recorders: [], chunks: {mic:[], tab:[]}, streams: [], started, timer, mime }
+    let callAudio = null; // { mic: Blob, tab: Blob|null, mime, seconds }
+
+    function pickAudioMime() {
+      if (typeof MediaRecorder === "undefined") return null;
+      const c = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"];
+      for (let i = 0; i < c.length; i++) if (!MediaRecorder.isTypeSupported || MediaRecorder.isTypeSupported(c[i])) return c[i];
+      return "";
+    }
+    function callRecSize() {
+      if (!callRec) return 0;
+      let n = 0;
+      ["mic", "tab"].forEach(function (k) { (callRec.chunks[k] || []).forEach(function (b) { n += b.size; }); });
+      return n;
+    }
+
+    async function startCallRecording() {
+      if (callRec) return;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || pickAudioMime() === null) { showToast("Este navegador não grava áudio. Use Chrome ou Edge no computador.", "⚠️"); return; }
+      const ok = await uiConfirm("Antes de gravar, avise o cliente que a conversa será gravada e transcrita, explique a finalidade (registro comercial) e peça o consentimento dele. Pela LGPD, sem esse aviso e o aceite, não grave. O áudio só sai do seu navegador se você mandar para o Gemini.", { title: "Consentimento para gravar", okLabel: "Cliente informado e de acordo", danger: false });
+      if (!ok) return;
+      if (copilotListening) stopCopilotListening();
+      const withTab = document.getElementById("callRecTab").checked;
+      const mime = pickAudioMime();
+      const streams = [];
+      let mic, tab = null;
+      try {
+        mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        streams.push(mic);
+      } catch (e) { showToast("Microfone bloqueado. Libere o acesso no navegador.", "⚠️"); return; }
+      if (withTab) {
+        try {
+          const disp = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+          streams.push(disp);
+          disp.getVideoTracks().forEach(function (t) { t.stop(); });
+          if (disp.getAudioTracks().length) tab = new MediaStream(disp.getAudioTracks());
+          else showToast("A aba foi compartilhada sem áudio. Marque \"Compartilhar áudio da guia\". Gravando só o microfone.", "⚠️");
+        } catch (e) { showToast("Compartilhamento da aba cancelado. Gravando só o microfone.", "ℹ️"); }
+      }
+      const rec = { recorders: [], chunks: { mic: [], tab: [] }, streams: streams, started: Date.now(), mime: mime };
+      const add = function (stream, k) {
+        const r = new MediaRecorder(stream, Object.assign({ audioBitsPerSecond: 32000 }, mime ? { mimeType: mime } : {}));
+        r.ondataavailable = function (ev) { if (ev.data && ev.data.size) rec.chunks[k].push(ev.data); };
+        r.start(5000);
+        rec.recorders.push(r);
+      };
+      add(mic, "mic");
+      if (tab) add(tab, "tab");
+      rec.hasTab = !!tab;
+      rec.timer = setInterval(function () {
+        updateCallRecUi();
+        if (callRecSize() > GEMINI_AUDIO_MAX_RAW) { showToast("Gravação chegou ao limite de tamanho do Gemini e foi encerrada.", "⚠️"); stopCallRecording(); }
+      }, 1000);
+      callRec = rec;
+      callAudio = null;
+      updateCallRecUi();
+    }
+
+    function stopCallRecording() {
+      const rec = callRec;
+      if (!rec) return;
+      clearInterval(rec.timer);
+      let pending = rec.recorders.length;
+      const done = function () {
+        if (--pending > 0) return;
+        rec.streams.forEach(function (s) { s.getTracks().forEach(function (t) { t.stop(); }); });
+        const type = (rec.mime || "audio/webm").split(";")[0];
+        callAudio = {
+          mic: new Blob(rec.chunks.mic, { type: type }),
+          tab: rec.chunks.tab.length ? new Blob(rec.chunks.tab, { type: type }) : null,
+          mime: type, seconds: Math.round((Date.now() - rec.started) / 1000)
+        };
+        callRec = null;
+        updateCallRecUi();
+      };
+      rec.recorders.forEach(function (r) { r.onstop = done; try { r.stop(); } catch (e) { done(); } });
+      if (!rec.recorders.length) done();
+    }
+
+    function updateCallRecUi() {
+      const btn = document.getElementById("btnCallRec");
+      const st = document.getElementById("callRecStatus");
+      const act = document.getElementById("callRecActions");
+      if (!btn || !st || !act) return;
+      if (callRec) {
+        const s = Math.round((Date.now() - callRec.started) / 1000);
+        btn.innerHTML = icon("x") + "Parar gravação";
+        btn.classList.add("btn-danger");
+        st.textContent = "Gravando " + Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") + (callRec.hasTab ? " · microfone + aba" : " · só microfone") + " · " + (callRecSize() / 1048576).toFixed(1).replace(".", ",") + " MB";
+        st.style.color = "#f87171";
+        act.classList.add("hidden");
+        return;
+      }
+      btn.innerHTML = icon("video") + "Gravar call completa";
+      btn.classList.remove("btn-danger");
+      if (callAudio) {
+        const mb = ((callAudio.mic.size + (callAudio.tab ? callAudio.tab.size : 0)) / 1048576).toFixed(1).replace(".", ",");
+        st.textContent = "Gravação pronta: " + Math.floor(callAudio.seconds / 60) + " min " + (callAudio.seconds % 60) + " s, " + mb + " MB" + (callAudio.tab ? " (microfone + aba)" : " (só microfone)") + ".";
+        st.style.color = "var(--muted)";
+        act.classList.remove("hidden");
+        document.getElementById("btnCallTranscribe").classList.toggle("hidden", !geminiKey());
+        document.getElementById("callNoKey").classList.toggle("hidden", !!geminiKey());
+      } else {
+        st.textContent = "";
+        act.classList.add("hidden");
+      }
+    }
+
+    function downloadCallAudio() {
+      if (!callAudio) return;
+      const ext = /ogg/.test(callAudio.mime) ? "ogg" : /mp4/.test(callAudio.mime) ? "m4a" : "webm";
+      const save = function (blob, name) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob); a.download = name;
+        document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+      };
+      save(callAudio.mic, "call-microfone-" + todayIso() + "." + ext);
+      if (callAudio.tab) save(callAudio.tab, "call-aba-" + todayIso() + "." + ext);
+    }
+
+    function blobToBase64(blob) {
+      return new Promise(function (resolve, reject) {
+        const r = new FileReader();
+        r.onload = function () { resolve(String(r.result).split(",")[1] || ""); };
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+      });
+    }
+
+    async function transcribeCallWithGemini() {
+      if (!callAudio || !geminiKey()) return;
+      const btn = document.getElementById("btnCallTranscribe");
+      btn.disabled = true;
+      btn.textContent = "Transcrevendo…";
+      const parts = [{ text: "Transcreva em português do Brasil a call comercial abaixo. " +
+        (callAudio.tab ? "O áudio 1 é o microfone do executivo (Executivo Swile). O áudio 2 é o som da reunião, com a voz do cliente (Cliente). Junte os dois em ordem cronológica." : "Há um único áudio; identifique pelo contexto quem é o executivo da Swile e quem é o cliente.") +
+        " Escreva uma fala por linha, começando com \"Executivo Swile:\" ou \"Cliente:\". Não invente trechos inaudíveis: marque [inaudível]. Responda só com a transcrição." }];
+      try {
+        parts.push({ inlineData: { mimeType: callAudio.mime, data: await blobToBase64(callAudio.mic) } });
+        if (callAudio.tab) parts.push({ inlineData: { mimeType: callAudio.mime, data: await blobToBase64(callAudio.tab) } });
+      } catch (e) { btn.disabled = false; btn.innerHTML = icon("spark") + "Transcrever com Gemini"; showToast("Não consegui ler o áudio gravado.", "⚠️"); return; }
+      const r = await geminiRequest(parts, { timeout: 180000 });
+      btn.disabled = false;
+      btn.innerHTML = icon("spark") + "Transcrever com Gemini";
+      if (!r.ok) { showToast("Transcrição falhou (" + r.error + "). Baixe o áudio e tente de novo.", "⚠️"); return; }
+      const ta = document.getElementById("copilotTranscript");
+      ta.value = (ta.value ? ta.value.replace(/\s*$/, "\n\n") : "") + r.text.trim();
+      showToast("Transcrição pronta. Analisando a call…", "📝");
+      runCopilotAnalysis();
+    }
+
+    // =====================================================================
+    // COPILOTO · PERGUNTE SOBRE ESTA CONVERSA
+    // =====================================================================
+    const COPILOT_QUICK = {
+      objection: "Como rebato agora a principal objeção desta conversa?",
+      cfo: "Crie um e-mail curto para o CFO com base nesta call.",
+      steps: "Resuma os próximos passos combinados e o que falta para avançar."
+    };
+    function copilotLocalAnswer(kind, acc, transcript) {
+      const a = copilotLast || analyzeTranscriptLocal(transcript || "", acc);
+      if (kind === "objection") return a.rebuttal;
+      if (kind === "cfo") {
+        return "Assunto: " + acc.company_name + " · benefícios com custo total menor\n\nOlá,\n\nConversei com o time de RH da " + acc.company_name + " sobre os benefícios de " + (acc.active_card_users || "") + " colaboradores, hoje com " + (acc.current_provider || "o fornecedor atual") + ". " +
+          (a.highlights[0] ? "O ponto principal foi: \"" + a.highlights[0].slice(0, 160) + "\". " : "") +
+          "Preparei uma simulação com o incentivo do PAT (para empresas no Lucro Real) e o custo operacional do RH. Podemos marcar 20 minutos para eu apresentar os números?\n\n" + (sellerSignature() || "");
+      }
+      const pend = pendingFollowupsOf(acc.id);
+      return "Próximos passos: " + (pend.length ? pend.slice(0, 3).map(function (f) { return f.action_title + " (" + f.due_date + ")"; }).join("; ") : "nenhum agendado ainda") + ". " +
+        "Sugestão do copiloto: " + (a.next_stage === 4 ? "enviar a proposta com a simulação PAT" : a.next_stage === 3 ? "marcar a demonstração com RH e, se possível, o CFO" : a.next_stage === 0 ? "registrar a perda com motivo e agendar recontato" : "confirmar decisor e data do próximo contato") + ".";
+    }
+    async function askCopilot(kind) {
+      const acc = findAccount(document.getElementById("accFormId").value);
+      if (!acc) return;
+      const input = document.getElementById("copilotQuestion");
+      const q = kind ? COPILOT_QUICK[kind] : (input.value || "").trim();
+      if (!q) { showToast("Escreva uma pergunta ou use um atalho.", "ℹ️"); return; }
+      const transcript = (document.getElementById("copilotTranscript").value || "").trim();
+      const out = document.getElementById("copilotAnswer");
+      out.classList.remove("hidden");
+      out.textContent = "Pensando…";
+      let answer = null, src = "análise local";
+      if (geminiKey()) {
+        const ctx = leadDiagnosisLocal(acc).facts;
+        const r = await geminiRequest([{ text: "Você é um coach de vendas B2B de benefícios corporativos (Swile, RJ). Responda em português, de forma prática e curta, sem inventar números ou fatos que não estejam no contexto.\n\nConta: " + JSON.stringify(ctx) +
+          (transcript ? "\n\nTranscrição da call:\n" + transcript.slice(0, 15000) : "\n\n(Sem transcrição nesta sessão.)") +
+          (copilotLast ? "\n\nAnálise da call: " + JSON.stringify(copilotLast) : "") + "\n\nPergunta: " + q }], { timeout: 45000 });
+        if (r.ok) { answer = r.text.trim(); src = "Gemini"; }
+        else showToast("Gemini não respondeu (" + r.error + "). Usei a análise local.", "ℹ️");
+      }
+      if (!answer) answer = kind ? copilotLocalAnswer(kind, acc, transcript) : "Sem a chave do Gemini, o copiloto responde só aos 3 atalhos. Configure a chave em Integrações para perguntas livres.";
+      out.innerHTML = '<p class="label mb-1">' + esc(q) + ' · <span style="color:var(--faint)">' + src + '</span></p><p class="whitespace-pre-wrap" style="color:#c3c8d4">' + esc(answer) + '</p>' +
+        '<button type="button" class="btn btn-ghost btn-sm mt-1" onclick="copyTextSafe(document.getElementById(\'copilotAnswer\').querySelector(\'.whitespace-pre-wrap\').textContent, \'Resposta copiada.\')">' + icon("copy") + 'Copiar</button>';
+      if (!kind) input.value = "";
+    }
+
+    // =====================================================================
+    // SUGERIR NOVAS EMPRESAS RJ VIA GEMINI (sempre como sugestão não verificada)
+    // =====================================================================
+    let geminiSuggestions = [];
+    async function suggestCompaniesGemini() {
+      const box = document.getElementById("discSuggest");
+      if (!geminiKey()) { box.innerHTML = '<p style="color:#fcd34d">Configure a chave do Gemini em Integrações para usar as sugestões. Sem chave, use as buscas acima.</p>'; return; }
+      const p = discoveryParams();
+      const known = state.accounts.map(function (a) { return a.company_name; }).concat(RJ_CATALOG.map(function (c) { return c.name; }));
+      box.innerHTML = '<p style="color:var(--faint)">Consultando o Gemini…</p>';
+      const prompt = "Liste até 8 empresas reais com operação no estado do Rio de Janeiro e, provavelmente, 200 colaboradores ou mais, que possam ser prospectadas para benefícios corporativos (vale-refeição/alimentação)." +
+        (p.polo ? " Região preferida: " + p.polo + "." : "") + (p.sector ? " Setor: " + p.sector + "." : "") + (p.prov ? " Que provavelmente usem " + p.prov + "." : "") +
+        " Não repita estas: " + known.join("; ") + ". Não invente nomes de pessoas, telefones ou endereços. Se não tiver certeza de que a empresa existe, não liste. " +
+        "Responda em JSON: [{\"nome\": \"\", \"setor\": \"\", \"regiao\": \"\", \"porte_estimado\": \"faixa de colaboradores\", \"por_que\": \"1 frase\"}].";
+      const r = await geminiRequest([{ text: prompt }], { json: true, timeout: 45000 });
+      if (!r.ok || !Array.isArray(r.data)) { box.innerHTML = '<p style="color:#fca5a5">Gemini não respondeu (' + esc(r.error || "formato inválido") + ').</p>'; return; }
+      const lower = known.map(function (k) { return normalizeText(k); });
+      geminiSuggestions = r.data.filter(function (s) { return s && s.nome && lower.indexOf(normalizeText(s.nome)) < 0; }).slice(0, 8);
+      box.innerHTML = '<p class="rounded-lg p-2.5" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fde68a">Sugestões geradas pelo Gemini (' + esc(r.model) + '). O modelo pode errar ou inventar empresas: confira cada uma no site, na Gupy ou na Econodata antes de cadastrar.</p>' +
+        (geminiSuggestions.length ? '<div class="grid grid-cols-1 lg:grid-cols-2 gap-2 mt-2">' + geminiSuggestions.map(function (s, i) {
+          return '<div class="rounded-xl border p-3 space-y-1" style="border-color:var(--line)">' +
+            '<div class="flex items-start justify-between gap-2"><p class="text-[13px] font-medium text-white">' + esc(s.nome) + '</p><span class="chip shrink-0" style="color:#fcd34d">sugestão não verificada</span></div>' +
+            '<p style="color:var(--muted)">' + esc([s.setor, s.regiao, s.porte_estimado].filter(Boolean).join(" · ")) + '</p>' +
+            (s.por_que ? '<p style="color:#c3c8d4">' + esc(s.por_que) + '</p>' : '') +
+            '<div class="flex flex-wrap gap-1.5 pt-0.5"><button type="button" class="btn btn-sm" onclick="checkSuggestion(' + i + ')">' + icon("search") + 'Conferir no Google</button>' +
+            '<button type="button" class="btn btn-sm" onclick="registerSuggestion(' + i + ')">' + icon("plus") + 'Cadastrar após conferir</button></div></div>';
+        }).join("") + '</div>' : '<p class="mt-2" style="color:var(--muted)">Nenhuma sugestão nova.</p>');
+    }
+    function checkSuggestion(i) {
+      const s = geminiSuggestions[i];
+      if (s) openExternal("https://www.google.com/search?q=" + encodeURIComponent('"' + s.nome + '" Rio de Janeiro funcionários'));
+    }
+    function registerSuggestion(i) {
+      const s = geminiSuggestions[i];
+      if (!s) return;
+      newAccountFromDiscovery();
+      document.getElementById("accFormCompany").value = s.nome;
+      if (s.setor) document.getElementById("accFormSector").value = s.setor;
+      const trig = document.getElementById("accFormTrigger");
+      if (trig) trig.value = "Sugestão do Gemini, não verificada: " + (s.por_que || "") + " Confirmar porte (≥ 200 vidas) e operadora.";
     }
 
     function speechSupported() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
@@ -3546,13 +3900,18 @@
       const b = document.getElementById("btnCopilotMic");
       const live = document.getElementById("copilotLive");
       if (!b || !live) return;
-      b.innerHTML = copilotListening ? icon("x") + "Parar" : icon("mic") + "Gravar minha voz";
+      b.innerHTML = copilotListening ? icon("x") + "Parar ditado" : icon("mic") + "Ditado rápido";
       b.classList.toggle("btn-danger", copilotListening);
       live.classList.toggle("hidden", !copilotListening);
     }
 
     function resetCopilot() {
       if (copilotListening) stopCopilotListening();
+      if (callRec) stopCallRecording();
+      callAudio = null;
+      updateCallRecUi();
+      const ans = document.getElementById("copilotAnswer");
+      if (ans) { ans.classList.add("hidden"); ans.innerHTML = ""; }
       copilotLast = null;
       const ta = document.getElementById("copilotTranscript");
       if (ta) ta.value = "";
@@ -4175,6 +4534,8 @@
       if (currentTab === "reports") renderReports();
       const feed = document.getElementById("weeklyFeed");
       if (feed && feed.open) renderWeeklyFeed();
+      mountBriefingBars();
+      renderBriefing(currentTab);
       persistState();
     }
 
@@ -4804,6 +5165,7 @@
     function confirmLoss() {
       const opp = state.opportunities.find(function (o) { return o.id === document.getElementById("lossOppId").value; });
       if (!opp) return closeLossModal();
+      if (Number(opp.stage_weight) > 0) opp.lost_stage = Number(opp.stage_weight);
       opp.stage_weight = 0;
       opp.probability = 0;
       opp.stage = STAGE_LABELS[0];
@@ -5115,8 +5477,10 @@
         document.getElementById("accPatSim").classList.add("hidden");
         document.getElementById("accHomeOffice").classList.add("hidden");
         document.getElementById("accCopilot").classList.add("hidden");
+        renderLeadDiagnosis(null);
         return;
       }
+      renderLeadDiagnosis(acc);
       const a = esc(acc.id);
       const hasPhone = !!phoneDigits(acc.phone);
       const btn = function (kind, ic, label, extra) {
@@ -6070,6 +6434,314 @@
       fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
         .then(function () { st.textContent = "Enviado ao webhook. A automação é que chama o Salesforce."; })
         .catch(function () { st.textContent = "Falhou (rede ou URL inválida)."; });
+    }
+
+
+    // =====================================================================
+    // BRIEFING EXECUTIVO POR TELA + DIAGNÓSTICO DO LEAD
+    // Motor local (instantâneo, sem rede) e, opcionalmente, o Gemini com cache por sessão.
+    // =====================================================================
+    const BRIEF_VIEWS = ["cockpit", "pipeline", "reports", "accounts", "followups"];
+    const briefOpen = {};
+
+    function lastContactDays(accId) {
+      const its = (state.interactions || []).filter(function (i) { return i.account_id === accId && i.type !== "Nota"; });
+      const fus = state.followups.filter(function (f) { return f.account_id === accId && f.status !== "Pendente" && f.completed_date; });
+      let last = null;
+      its.forEach(function (i) { const d = String(i.at || "").slice(0, 10); if (d && (!last || d > last)) last = d; });
+      fus.forEach(function (f) { const d = String(f.completed_date).slice(0, 10); if (d && (!last || d > last)) last = d; });
+      return last ? -daysFromToday(last) : null;
+    }
+    function openOppOf(accId) {
+      return state.opportunities.filter(function (o) { return o.account_id === accId && isOpenStage(o.stage_weight); }).slice(-1)[0] || null;
+    }
+    function monthElapsedShare() {
+      const now = new Date();
+      let total = 0, done = 0;
+      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      for (let d = 1; d <= last; d++) {
+        const wd = new Date(now.getFullYear(), now.getMonth(), d).getDay();
+        if (wd === 0 || wd === 6) continue;
+        total++;
+        if (d <= now.getDate()) done++;
+      }
+      return total ? done / total : 0;
+    }
+    function pct0(v) { return Math.round(v * 100) + "%"; }
+
+    // Contas para atacar primeiro: TPV ponderado + urgência (atraso, dias sem contato)
+    function focusAccounts(n) {
+      return state.opportunities.filter(function (o) { return isOpenStage(o.stage_weight); }).map(function (o) {
+        const acc = findAccount(o.account_id);
+        if (!acc) return null;
+        const tpv = computeMonthlyTpv(acc);
+        const pend = pendingFollowupsOf(acc.id);
+        const overdue = pend.filter(function (f) { return daysFromToday(f.due_date) < 0; }).length;
+        const today = pend.filter(function (f) { return daysFromToday(f.due_date) === 0; }).length;
+        const idle = lastContactDays(acc.id);
+        let score = tpv * (Number(o.probability) || STAGE_PROBS[Number(o.stage_weight)] || 10) / 100;
+        if (overdue) score *= 1.6; else if (today) score *= 1.4;
+        if (!pend.length) score *= 1.3;
+        if (idle !== null && idle > 7) score *= 1.2;
+        let why = overdue ? overdue + " ação atrasada" : today ? "ação marcada para hoje" : !pend.length ? "sem próximo passo agendado" : idle !== null && idle > 7 ? idle + " dias sem contato" : "maior valor ponderado";
+        return { acc: acc, opp: o, tpv: tpv, score: score, why: why, next: pend[0] || null };
+      }).filter(Boolean).sort(function (a, b) { return b.score - a.score; }).slice(0, n || 3);
+    }
+
+    function stageAdvice(w) {
+      return {
+        1: "abrir contato com o RH usando o gatilho da operadora atual",
+        2: "confirmar decisor e número de vidas, e marcar a reunião",
+        3: "levar a simulação PAT e chamar o CFO para a próxima conversa",
+        4: "cobrar retorno da proposta com o CFO e tratar a objeção principal",
+        5: "acompanhar o jurídico e fixar data de assinatura"
+      }[w] || "definir o próximo passo com data";
+    }
+
+    function briefLocal(view) {
+      const m = computeCaseMetrics();
+      const share = monthElapsedShare();
+      if (view === "cockpit") {
+        const pend = state.followups.filter(function (f) { return f.status === "Pendente"; });
+        const overdue = pend.filter(function (f) { return daysFromToday(f.due_date) < 0; });
+        const today = pend.filter(function (f) { return daysFromToday(f.due_date) === 0; });
+        const doneToday = state.followups.filter(function (f) { return f.status !== "Pendente" && String(f.completed_date || "").slice(0, 10) === todayIso(); }).length;
+        const meetings = today.filter(function (f) { return /Visita|Reunião/i.test(f.channel || "") || /reuni|demo|visita/i.test(f.action_title || ""); }).length;
+        const focus = focusAccounts(3);
+        const pace = m.wonMonthTpv / CASE_TARGET_MONTH;
+        const head = "Hoje: " + today.length + " ação(ões) para hoje" + (overdue.length ? " e " + overdue.length + " atrasada(s)" : "") + ", " + doneToday + " concluída(s)" + (meetings ? ", " + meetings + " reunião(ões)" : "") + ". " +
+          "Mês em " + fmtK(m.wonMonthTpv) + " de " + fmtK(CASE_TARGET_MONTH) + " (" + pct0(pace) + " da meta com " + pct0(share) + " do mês corrido)." +
+          (focus.length ? " Comece por " + focus.map(function (f) { return f.acc.company_name; }).join(", ") + "." : "");
+        const pts = focus.map(function (f) {
+          return f.acc.company_name + ": " + f.why + ", " + fmtK(f.tpv) + "/mês em " + SF_STAGE_NAMES[Number(f.opp.stage_weight)] + ". Próximo passo: " + stageAdvice(Number(f.opp.stage_weight)) + ".";
+        });
+        if (overdue.length) pts.push("Limpe as " + overdue.length + " ação(ões) atrasada(s) antes do almoço: concluir ou reagendar com data.");
+        if (pace < share) pts.push("O ritmo está abaixo do mês: priorize Negociando e Contrato enviado, que são o que fecha ainda este mês.");
+        return { head: head, points: pts, facts: { pendentes_hoje: today.length, atrasadas: overdue.length, concluidas_hoje: doneToday, reunioes_hoje: meetings, assinado_mes: m.wonMonthTpv, ritmo_meta: pct0(pace), mes_corrido: pct0(share), foco: focus.map(function (f) { return { conta: f.acc.company_name, motivo: f.why, tpv: f.tpv, fase: SF_STAGE_NAMES[Number(f.opp.stage_weight)] }; }) } };
+      }
+      if (view === "pipeline") {
+        const stages = [1, 2, 3, 4, 5].map(function (w) {
+          const list = state.opportunities.filter(function (o) { return Number(o.stage_weight) === w; });
+          const stale = list.filter(function (o) { const d = lastContactDays(o.account_id); return d === null || d > 7; }).length;
+          return { w: w, n: list.length, stale: stale, ratio: list.length / CASE_FUNNEL[w] };
+        });
+        const bottleneck = stages.slice().sort(function (a, b) { return b.stale - a.stale || b.n - a.n; })[0];
+        const thin = stages.slice().sort(function (a, b) { return a.ratio - b.ratio; })[0];
+        const gap = Math.max(0, CASE_TARGET_MONTH * CASE_COVERAGE - m.coverageTpv);
+        const big = focusAccounts(5).sort(function (a, b) { return b.tpv - a.tpv; })[0];
+        const head = "Cobertura em " + num1Br(m.coverage) + "x de " + CASE_COVERAGE + "x" + (gap ? ": faltam " + fmtK(gap) + " em Negociando e Contrato enviado" : ", meta de cobertura batida") + ". " +
+          (bottleneck && bottleneck.stale ? bottleneck.stale + " negócio(s) parado(s) há mais de 7 dias em " + SF_STAGE_NAMES[bottleneck.w] + ". " : "") +
+          (big ? "Maior negócio que pede ação: " + big.acc.company_name + " (" + fmtK(big.tpv) + "/mês)." : "");
+        const pts = stages.map(function (s) { return SF_STAGE_NAMES[s.w] + ": " + s.n + " de " + CASE_FUNNEL_LABEL[s.w] + " na referência" + (s.stale ? ", " + s.stale + " sem contato há mais de 7 dias" : "") + "."; });
+        if (thin) pts.push("Fase mais rasa frente ao case: " + SF_STAGE_NAMES[thin.w] + ". Abasteça antes que falte negócio nas fases seguintes.");
+        if (big) pts.push(big.acc.company_name + ": " + big.why + ". " + stageAdvice(Number(big.opp.stage_weight)).replace(/^./, function (c) { return c.toUpperCase(); }) + ".");
+        return { head: head, points: pts, facts: { cobertura: m.coverage, gap_cobertura: gap, fases: stages.map(function (s) { return { fase: SF_STAGE_NAMES[s.w], qtd: s.n, parados_7d: s.stale, referencia: CASE_FUNNEL_LABEL[s.w] }; }), maior_negocio: big ? { conta: big.acc.company_name, tpv: big.tpv, motivo: big.why } : null } };
+      }
+      if (view === "reports") return winLossLocal();
+      if (view === "accounts") {
+        const groups = {};
+        state.accounts.forEach(function (a) {
+          if (a.status === "Fechado ✅" || a.status === "Perdido ❌") return;
+          const k = (a.polo_rj || "Sem polo") + " + " + (a.current_provider || "A validar");
+          if (!groups[k]) groups[k] = { k: k, n: 0, hot: 0, pot: 0 };
+          const g = groups[k];
+          const o = openOppOf(a.id);
+          g.n++;
+          if (a.interest_level === "Quente") g.hot++;
+          g.pot += computeMonthlyTpv(a) * ((o ? Number(o.probability) : 0) + (a.interest_level === "Quente" ? 20 : a.interest_level === "Morno" ? 10 : 0)) / 100;
+        });
+        const top = Object.keys(groups).map(function (k) { return groups[k]; }).sort(function (a, b) { return b.pot - a.pot; });
+        const under = state.accounts.filter(function (a) { return Number(a.active_card_users) < CASE_MIN_LIVES; }).length;
+        const head = top.length ? "Perfil com maior chance de fechamento rápido: " + top[0].k + " (" + top[0].n + " conta(s), " + top[0].hot + " quente(s), " + fmtK(top[0].pot) + "/mês em potencial ponderado)." + (under ? " " + under + " conta(s) abaixo de 200 vidas, fora da regra do case." : "") : "Cadastre contas para ver o perfil com mais potencial.";
+        const pts = top.slice(0, 4).map(function (g) { return g.k + ": " + g.n + " conta(s), " + g.hot + " quente(s), " + fmtK(g.pot) + "/mês ponderado."; });
+        pts.push("Use o Abastecimento Semanal para puxar empresas parecidas com o perfil do topo (mesmo polo e operadora).");
+        return { head: head, points: pts, facts: { perfis: top.slice(0, 5), abaixo_200: under } };
+      }
+      // Agenda e rotas
+      const pend = state.followups.filter(function (f) { return f.status === "Pendente" && daysFromToday(f.due_date) <= 0; });
+      const field = pend.filter(function (f) { return f.channel === "Visita Presencial"; });
+      const remote = pend.length - field.length;
+      const polos = {};
+      field.forEach(function (f) { const a = findAccount(f.account_id); const p = a ? a.polo_rj : "Sem polo"; polos[p] = (polos[p] || 0) + 1; });
+      const mainPolo = Object.keys(polos).sort(function (a, b) { return polos[b] - polos[a]; })[0];
+      const hotNoVisit = state.accounts.filter(function (a) { return a.interest_level === "Quente" && openOppOf(a.id) && !state.followups.some(function (f) { return f.account_id === a.id && f.status === "Pendente" && f.channel === "Visita Presencial"; }); });
+      const head = "Para hoje: " + remote + " contato(s) remoto(s) e " + field.length + " visita(s)." +
+        (field.length ? " Bloco da manhã em home office para ligações e WhatsApp; tarde em campo" + (mainPolo ? " no polo " + mainPolo : "") + "." : " Dia todo em home office: blocos de 90 minutos de ligação com pausas para registrar.");
+      const pts = [];
+      if (remote) pts.push("Home office: agrupe as " + remote + " ações remotas em 2 blocos (9h–11h e 14h–16h) e registre o resultado de cada ligação na hora.");
+      Object.keys(polos).forEach(function (p) { pts.push("Campo · " + p + ": " + polos[p] + " visita(s). Use a rota otimizada para fazer na sequência."); });
+      if (hotNoVisit.length) pts.push("Contas quentes sem visita marcada: " + hotNoVisit.slice(0, 3).map(function (a) { return a.company_name; }).join(", ") + ". Vale propor visita presencial.");
+      return { head: head, points: pts, facts: { remotas: remote, visitas: field.length, polos: polos, quentes_sem_visita: hotNoVisit.map(function (a) { return a.company_name; }).slice(0, 5) } };
+    }
+
+    function num1Br(v) { return (Math.round((Number(v) || 0) * 10) / 10).toString().replace(".", ","); }
+
+    const LOSS_ADVICE = {
+      "Ficou com o concorrente": "Antes da proposta, compare item a item com a operadora atual (battlecard) e leve a simulação PAT para o CFO.",
+      "Contrato vigente / multa": "Descubra a data de vencimento no 1º contato e entre 60 a 90 dias antes da renovação. A entrada por Premiação evita a multa.",
+      "Preço / condição comercial": "Ancore no custo total (taxa, horas do RH, incentivo PAT) antes de falar de condição, e envolva o CFO ainda no discovery.",
+      "Sem prioridade agora": "Qualifique o gatilho (decreto do PAT, troca de operadora, reclamações) antes de avançar; sem gatilho, o lead esfria.",
+      "Sem resposta do decisor": "Abra mais de um contato na conta (RH e Financeiro) e use cadência de 5 toques em 10 dias.",
+      "Fora do ICP": "Filtre na entrada: só contas com 200 vidas ou mais no RJ."
+    };
+    function winLossLocal() {
+      const lost = state.opportunities.filter(function (o) { return Number(o.stage_weight) === 0; });
+      const won = state.opportunities.filter(function (o) { return Number(o.stage_weight) === STAGE_WON; });
+      const open = state.opportunities.filter(function (o) { return isOpenStage(o.stage_weight); });
+      const count = function (list, fn) { const g = {}; list.forEach(function (o) { const k = fn(o); g[k] = (g[k] || 0) + 1; }); return Object.keys(g).sort(function (a, b) { return g[b] - g[a]; }).map(function (k) { return { k: k, n: g[k] }; }); };
+      const reasons = count(lost, function (o) { return o.loss_category || "Não informado"; });
+      const comps = count(lost, function (o) { const a = findAccount(o.account_id); return a ? a.current_provider || "A validar" : "A validar"; });
+      const where = count(lost.filter(function (o) { return o.lost_stage; }), function (o) { return SF_STAGE_NAMES[Number(o.lost_stage)] || "?"; });
+      const wr = won.length + lost.length ? won.length / (won.length + lost.length) : null;
+      let head;
+      if (!lost.length && !won.length) head = "Ainda não há negócios ganhos ou perdidos para diagnosticar. Com " + open.length + " oportunidade(s) aberta(s), registre o motivo de cada perda para este painel aprender.";
+      else head = "Win rate em " + (wr === null ? "—" : pct0(wr)) + " (" + won.length + " ganho(s), " + lost.length + " perda(s); meta do case 28%)." +
+        (reasons[0] ? " Principal motivo de perda: " + reasons[0].k + " (" + reasons[0].n + ")." : "") +
+        (comps[0] && lost.length ? " Perdas concentradas em contas com " + comps[0].k + "." : "");
+      const pts = [];
+      if (reasons[0] && LOSS_ADVICE[reasons[0].k]) pts.push("Ajuste da semana: " + LOSS_ADVICE[reasons[0].k]);
+      if (reasons[1] && LOSS_ADVICE[reasons[1].k]) pts.push("Segundo motivo (" + reasons[1].k + "): " + LOSS_ADVICE[reasons[1].k]);
+      if (where[0]) pts.push("Fase onde mais morre negócio: " + where[0].k + " (" + where[0].n + "). Reforce o critério de saída da fase anterior.");
+      if (won.length) pts.push("Ganhos: " + won.length + " contrato(s), ticket médio " + fmtK(sumTpv(won) / won.length) + "/mês. Repita o roteiro que funcionou nessas contas.");
+      return { head: head, points: pts, facts: { win_rate: wr, ganhos: won.length, perdas: lost.length, motivos: reasons, operadora_das_perdas: comps, fase_da_perda: where } };
+    }
+
+    function briefCacheKey(view, local) { return "brief_" + view + "_" + hashText(JSON.stringify(local.facts)); }
+
+    function renderBriefing(view) {
+      if (BRIEF_VIEWS.indexOf(view) < 0) return;
+      const el = document.getElementById("brief-" + view);
+      if (!el) return;
+      const local = briefLocal(view);
+      const cached = geminiCacheGet(briefCacheKey(view, local));
+      const b = cached || local;
+      const src = cached ? "Gemini · em cache" : "motor local";
+      el.innerHTML =
+        '<div class="flex flex-wrap items-start gap-x-3 gap-y-1.5">' +
+          '<p class="flex-1 min-w-[14rem] text-[12.5px] leading-relaxed" style="color:#c3c8d4"><span class="eyebrow mr-1.5">Briefing</span>' + esc(b.head) + '</p>' +
+          '<div class="flex items-center gap-1.5 shrink-0">' +
+            '<span class="text-[10.5px]" style="color:var(--faint)">' + src + '</span>' +
+            '<button type="button" class="btn btn-ghost btn-sm" onclick="toggleBriefing(\'' + view + '\')">' + (briefOpen[view] ? "Fechar" : "Detalhar") + '</button>' +
+            '<button type="button" class="btn btn-sm" onclick="refreshBriefingGemini(\'' + view + '\')">' + icon("spark") + 'Atualizar com Gemini 2.5</button>' +
+          '</div>' +
+        '</div>' +
+        (briefOpen[view] && b.points && b.points.length ? '<ul class="mt-2 space-y-1 text-[12px]" style="color:var(--muted)">' + b.points.map(function (p) { return '<li class="flex gap-2"><span style="color:var(--faint)">•</span><span>' + esc(p) + '</span></li>'; }).join("") + '</ul>' : '');
+    }
+    function toggleBriefing(view) { briefOpen[view] = !briefOpen[view]; renderBriefing(view); }
+
+    const BRIEF_PROMPTS = {
+      cockpit: "Avalie o dia do executivo: tarefas, reuniões e ritmo para a meta de R$ 600 mil/mês. Diga quais 2 ou 3 contas atacar primeiro e por quê, e como melhorar o dia.",
+      pipeline: "Analise a saúde do funil nas 6 fases do Salesforce: onde os negócios acumulam ou esfriam, quanto falta para a cobertura de 4x (R$ 2,4 mi) e qual negócio de maior valor precisa de ação hoje.",
+      reports: "Faça o diagnóstico de ganhos e perdas: por que o executivo está perdendo negócios (motivos registrados, operadora atual, fase da perda) e o que ajustar na abordagem desta semana.",
+      accounts: "Aponte qual perfil de empresa (polo do RJ + operadora atual) tem mais chance de fechamento rápido e como priorizar a prospecção.",
+      followups: "Sugira como dividir o dia entre home office (ligações, WhatsApp) e visitas em campo, por polo do RJ."
+    };
+
+    async function refreshBriefingGemini(view) {
+      if (!geminiKey()) { showToast("Sem chave do Gemini: o briefing usa o motor local. Configure a chave em Integrações.", "ℹ️"); return; }
+      const local = briefLocal(view);
+      const key = briefCacheKey(view, local);
+      if (geminiCacheGet(key)) { briefOpen[view] = true; renderBriefing(view); return; }
+      const el = document.getElementById("brief-" + view);
+      if (el) { const s = el.querySelector("span.text-\\[10\\.5px\\]"); if (s) s.textContent = "consultando Gemini…"; }
+      const prompt = "Você é um diretor comercial B2B de benefícios corporativos (Swile, Rio de Janeiro). Tom direto e sóbrio, sem emojis. " +
+        BRIEF_PROMPTS[view] + " Use só os dados abaixo, sem inventar números ou nomes. Responda em JSON: {\"head\": \"1 a 2 frases\", \"points\": [\"até 5 tópicos curtos e práticos\"]}.\n\nDados:\n" + JSON.stringify(local.facts);
+      const r = await geminiRequest([{ text: prompt }], { json: true });
+      if (!r.ok || !r.data || !r.data.head) { showToast("Gemini não respondeu (" + (r.error || "formato inválido") + "). Mantive o motor local.", "ℹ️"); renderBriefing(view); return; }
+      geminiCacheSet(key, { head: String(r.data.head), points: (Array.isArray(r.data.points) ? r.data.points : []).slice(0, 5).map(String) });
+      briefOpen[view] = true;
+      renderBriefing(view);
+    }
+
+    function mountBriefingBars() {
+      BRIEF_VIEWS.forEach(function (v) {
+        const sec = document.getElementById("view-" + v);
+        if (!sec || document.getElementById("brief-" + v)) return;
+        const bar = document.createElement("div");
+        bar.id = "brief-" + v;
+        bar.className = "brief-bar rounded-xl border px-3.5 py-2.5";
+        bar.setAttribute("style", "border-color:var(--line);background:var(--surface-2)");
+        const head = sec.firstElementChild;
+        if (head && head.nextSibling) sec.insertBefore(bar, head.nextSibling); else sec.appendChild(bar);
+      });
+    }
+
+    // ---------- Diagnóstico do Lead & Próximo Passo (ficha da conta)
+    const PROVIDER_TRIGGER = {
+      "Caju": "a compra da Caju pelo iFood (pendente de CADE e BC), que traz incerteza sobre app e regras",
+      "iFood Benefícios": "a integração com a Caju após a compra, que pode mudar app e regras",
+      "Alelo": "o Decreto 12.712 (teto de 3,6% no MDR e repasse em 15 dias), que abre a revisão do contrato",
+      "Ticket": "o Decreto 12.712 e o custo operacional do DP com cartões separados",
+      "Pluxee (ex-Sodexo)": "o Decreto 12.712 e a experiência do colaborador no app",
+      "VR Benefícios": "o Decreto 12.712 e o custo operacional do DP",
+      "Flash": "a experiência do time e o atrito de aceitação; sem atacar a Flash"
+    };
+    function leadDiagnosisLocal(acc) {
+      const opp = openOppOf(acc.id) || sfLatestOpp(acc.id);
+      const w = opp ? Number(opp.stage_weight) : 0;
+      const idle = lastContactDays(acc.id);
+      const pend = pendingFollowupsOf(acc.id);
+      const tpv = computeMonthlyTpv(acc);
+      const calls = (state.interactions || []).filter(function (i) { return i.account_id === acc.id && /Call analisada/.test(i.text || ""); });
+      let level = acc.interest_level || "Morno", why;
+      if (acc.status === "Perdido ❌" || (opp && w === 0)) { level = "Em risco de perda"; why = "a oportunidade está marcada como perdida" + (opp && opp.loss_category ? " (" + opp.loss_category + ")" : "") + "."; }
+      else if (acc.status === "Fechado ✅") { level = "Cliente"; why = "contrato assinado; foco agora é ativação."; }
+      else if (idle !== null && idle > 14 && w >= 3) { level = "Em risco de perda"; why = "está em " + SF_STAGE_NAMES[w] + " e sem contato há " + idle + " dias."; }
+      else why = (calls.length ? "última call analisada: " + String(calls[calls.length - 1].text).split("\n")[0].replace(/^Call analisada[^:]*:\s*/, "") : "interesse registrado na ficha") +
+        (idle !== null ? "; último contato há " + idle + " dia(s)" : "; ainda sem contato registrado") + (pend.length ? "" : "; sem próximo passo agendado") + ".";
+      const dor = acc.rh_pains ? String(acc.rh_pains).split(/[.;\n]/)[0] : acc.swile_trigger_2026 ? String(acc.swile_trigger_2026).split(/[.;\n]/)[0] : (PROVIDER_TRIGGER[acc.current_provider] ? "Gatilho: " + PROVIDER_TRIGGER[acc.current_provider] : "Dor ainda não mapeada: pergunte no discovery o que o RH mais resolve no fechamento do mês");
+      const who = w >= 3 ? "envolva o CFO junto com o RH" : "fale com o RH (Gente/DP)";
+      const how = (w ? "Em " + SF_STAGE_NAMES[w] + ": " + stageAdvice(w) : "Sem oportunidade aberta: crie uma e " + stageAdvice(1)) + "; " + who + ". Com " + (acc.active_card_users || 0) + " vidas, o TPV estimado é " + fmtK(tpv) + "/mês.";
+      let action;
+      if (w >= 3 && w <= 4) action = { label: "Abrir simulação PAT", run: "openPatFromDiagnosis()" };
+      else if (w === 2) action = { label: "Marcar reunião", run: "scheduleMeetingInvite('" + acc.id + "')" };
+      else action = { label: "Enviar WhatsApp", run: "contactAccount('" + acc.id + "', 'wa')" };
+      return { level: level, why: why, pain: dor, how: how, action: action, facts: { empresa: acc.company_name, vidas: acc.active_card_users, beneficio: acc.avg_monthly_ticket, tpv: tpv, operadora: acc.current_provider, status: acc.status, interesse: acc.interest_level, fase: w ? SF_STAGE_NAMES[w] : "sem oportunidade", dias_sem_contato: idle, proximos_passos: pend.slice(0, 3).map(function (f) { return f.action_title + " (" + f.due_date + ")"; }), dores_rh: acc.rh_pains || "", gatilho: acc.swile_trigger_2026 || "", historico: (state.interactions || []).filter(function (i) { return i.account_id === acc.id; }).slice(-6).map(function (i) { return i.type + ": " + String(i.text).slice(0, 300); }) } };
+    }
+    function openPatFromDiagnosis() {
+      const d = document.getElementById("accPatSim");
+      if (d) { d.open = true; d.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+    }
+
+    function renderLeadDiagnosis(acc) {
+      const box = document.getElementById("accDiagnosis");
+      if (!box) return;
+      if (!acc) { box.classList.add("hidden"); return; }
+      const local = leadDiagnosisLocal(acc);
+      const cached = geminiCacheGet("lead_" + acc.id + "_" + hashText(JSON.stringify(local.facts)));
+      const d = cached ? Object.assign({}, local, cached) : local;
+      const colors = { "Quente": "#f87171", "Morno": "#fbbf24", "Frio": "#60a5fa", "Em risco de perda": "#fb923c", "Cliente": "#34d399" };
+      const c = colors[d.level] || "#c4b5fd";
+      box.innerHTML =
+        '<div class="flex items-center justify-between gap-2"><p class="font-medium text-white">Diagnóstico do lead &amp; próximo passo</p>' +
+          '<span class="text-[10.5px]" style="color:var(--faint)">' + (cached ? "Gemini · em cache" : "motor local") + '</span></div>' +
+        '<p><span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '55">' + esc(d.level) + '</span> <span style="color:#c3c8d4">' + esc(d.why) + '</span></p>' +
+        '<p style="color:#c3c8d4"><span style="color:var(--faint)">Dor/gatilho:</span> ' + esc(d.pain) + '</p>' +
+        '<p style="color:#c3c8d4"><span style="color:var(--faint)">Como trabalhar agora:</span> ' + esc(d.how) + '</p>' +
+        '<div class="flex flex-wrap gap-1.5 pt-0.5">' +
+          '<button type="button" class="btn btn-primary btn-sm" onclick="' + local.action.run + '">' + esc(local.action.label) + '</button>' +
+          '<button type="button" class="btn btn-sm" onclick="refreshLeadDiagnosisGemini()">' + icon("spark") + 'Atualizar com Gemini 2.5</button>' +
+        '</div>';
+      box.classList.remove("hidden");
+    }
+
+    async function refreshLeadDiagnosisGemini() {
+      const acc = findAccount(document.getElementById("accFormId").value);
+      if (!acc) return;
+      if (!geminiKey()) { showToast("Sem chave do Gemini: o diagnóstico usa o motor local. Configure a chave em Integrações.", "ℹ️"); return; }
+      const local = leadDiagnosisLocal(acc);
+      const key = "lead_" + acc.id + "_" + hashText(JSON.stringify(local.facts));
+      if (!geminiCacheGet(key)) {
+        showToast("Consultando o Gemini…", "⏳");
+        const prompt = "Você é um diretor comercial B2B de benefícios (Swile, RJ). Analise o lead abaixo e responda em JSON: " +
+          "{\"level\": \"Quente|Morno|Frio|Em risco de perda\", \"why\": \"1 frase\", \"pain\": \"dor ou gatilho principal, 1 frase\", \"how\": \"como trabalhar agora: argumento, quem envolver (RH ou CFO) e a ação, 1 a 2 frases\"}. " +
+          "Use só os dados, sem inventar números, nomes ou fatos.\n\nDados:\n" + JSON.stringify(local.facts);
+        const r = await geminiRequest([{ text: prompt }], { json: true });
+        if (!r.ok || !r.data || !r.data.how) { showToast("Gemini não respondeu (" + (r.error || "formato inválido") + "). Mantive o motor local.", "ℹ️"); return; }
+        const lv = ["Quente", "Morno", "Frio", "Em risco de perda"].indexOf(r.data.level) >= 0 ? r.data.level : local.level;
+        geminiCacheSet(key, { level: lv, why: String(r.data.why || local.why), pain: String(r.data.pain || local.pain), how: String(r.data.how) });
+      }
+      renderLeadDiagnosis(acc);
     }
 
     function renderIntegrations() {

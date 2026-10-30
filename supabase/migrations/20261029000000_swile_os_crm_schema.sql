@@ -1,6 +1,7 @@
 -- =============================================================================
 -- SWILE OS CRM — MIDDLE MARKET RJ (SUPABASE POSTGRESQL SCHEMA)
--- Evolução do Fields OS CRM (Takeat) -> Arquitetura Relacional Limpa (Seção 9 Corrigida)
+-- Evolução do Fields OS CRM (Takeat) -> Arquitetura Relacional Limpa
+-- Idempotente: pode ser executado mais de uma vez no SQL Editor sem erro.
 -- =============================================================================
 
 create extension if not exists "pgcrypto";
@@ -26,7 +27,7 @@ create table if not exists public.crm_accounts (
   employees_count integer not null default 100,
   active_card_users integer not null default 100,
   avg_monthly_ticket numeric(12,2) not null default 800.00,
-  -- TPV Mensal e Anual calculados diretamente pelo banco (Generated Columns)
+  -- TPV Mensal e Anual calculados pelo banco (Generated Columns)
   estimated_monthly_tpv numeric(14,2) generated always as (active_card_users * avg_monthly_ticket) stored,
   estimated_annual_tpv numeric(14,2) generated always as (active_card_users * avg_monthly_ticket * 12) stored,
   current_provider text not null default 'A Validar',
@@ -48,15 +49,16 @@ create table if not exists public.crm_accounts (
 );
 
 -- 2. PIPELINE COMERCIAL: OPORTUNIDADES (crm_opportunities)
+-- stage_weight: 1=SQL, 2=Discovery, 3=Demo, 4=Proposta/Negociação, 5=Fechado, 0=Perdido
 create table if not exists public.crm_opportunities (
   id uuid primary key default gen_random_uuid(),
   account_id uuid not null references public.crm_accounts(id) on delete cascade,
   title text not null,
   stage text not null default '1. Qualificado (SQL)',
-  stage_weight integer not null default 1, -- 1=SQL, 2=Discovery, 3=Demo, 4=Proposta/Negociação, 5=Fechado, 0=Perdido
+  stage_weight integer not null default 1 check (stage_weight between 0 and 5),
   negotiated_lives integer not null default 100,
   proposed_monthly_tpv numeric(14,2) not null default 0,
-  probability integer not null default 30 check (probability >= 0 and probability <= 100),
+  probability integer not null default 30 check (probability between 0 and 100),
   weighted_forecast_tpv numeric(14,2) generated always as (proposed_monthly_tpv * (probability::numeric / 100.0)) stored,
   wallets_included text[] default array['Refeição', 'Alimentação', 'Mobilidade', 'Saúde', 'Home Office', 'Educação', 'Premiação'],
   origin_channel text default 'Outbound Prospecção',
@@ -103,7 +105,7 @@ create table if not exists public.crm_follow_ups (
 );
 
 -- 5. PLANEJAMENTO DE ROTAS FIELD RJ (crm_routes_rj)
--- Enxuta (Correção #3 da Seção 9): sem duplicar endereço/sistema do CRM
+-- Enxuta: sem duplicar endereço/dados cadastrais (lidos de crm_accounts)
 create table if not exists public.crm_routes_rj (
   id uuid primary key default gen_random_uuid(),
   route_date date not null,
@@ -116,8 +118,38 @@ create table if not exists public.crm_routes_rj (
   created_at timestamptz not null default now()
 );
 
--- 6. VIEW CONSOLIDADA (SUBSTITUI ROLLUPS E FÓRMULAS DO NOTION)
-create or replace view public.v_crm_accounts_360 as
+-- Índices para as chaves estrangeiras (joins da view e filtros do app)
+create index if not exists crm_opportunities_account_id_idx on public.crm_opportunities(account_id);
+create index if not exists crm_follow_ups_account_id_idx on public.crm_follow_ups(account_id);
+create index if not exists crm_follow_ups_pending_idx on public.crm_follow_ups(account_id, due_date) where status = 'Pendente';
+create index if not exists crm_meetings_account_id_idx on public.crm_meetings(account_id);
+
+-- 6. updated_at automático
+create or replace function public.crm_set_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists crm_accounts_set_updated_at on public.crm_accounts;
+create trigger crm_accounts_set_updated_at
+  before update on public.crm_accounts
+  for each row execute function public.crm_set_updated_at();
+
+drop trigger if exists crm_opportunities_set_updated_at on public.crm_opportunities;
+create trigger crm_opportunities_set_updated_at
+  before update on public.crm_opportunities
+  for each row execute function public.crm_set_updated_at();
+
+-- 7. VIEW CONSOLIDADA 360° (SUBSTITUI ROLLUPS E FÓRMULAS DO NOTION)
+-- security_invoker = true: a view respeita o RLS de quem consulta.
+create or replace view public.v_crm_accounts_360
+with (security_invoker = true) as
 select
   a.*,
   coalesce(o.max_stage_weight, 0) as max_pipeline_weight,
@@ -126,7 +158,7 @@ select
   f.next_action_date,
   f.next_action_title,
   f.next_action_channel,
-  -- Etapa do Funil Calculada Automaticamente
+  -- Etapa do Funil calculada automaticamente
   case
     when a.status = 'Perdido ❌' then 'Perdido'
     when a.status = 'Fechado ✅' or coalesce(o.max_stage_weight, 0) = 5 then 'Cliente Ativo'
@@ -135,13 +167,13 @@ select
     when a.interest_level in ('Quente', 'Morno') then 'MQL'
     else 'Lead'
   end as funnel_stage,
-  -- Score Comercial ICP Swile (0 a 100)
+  -- Score Comercial ICP Swile (0 a 100) — mesma fórmula do app (computeCommercialScore)
   least(100, greatest(0,
-    (case when a.priority_icp = 'Alta' then 20 when a.priority_icp = 'Média' then 12 else 5 end) +
-    (case when a.active_card_users >= 400 then 20 when a.active_card_users >= 150 then 12 else 5 end) +
-    (case when a.interest_level = 'Quente' then 20 when a.interest_level = 'Morno' then 12 else 4 end) +
-    (case when a.current_provider in ('Caju', 'Pluxee (ex-Sodexo)', 'Alelo') then 15 else 8 end) +
-    (coalesce(o.max_stage_weight, 0) * 5)
+    (case when a.priority_icp = 'Alta' then 22 when a.priority_icp = 'Média' then 14 else 6 end) +
+    (case when a.active_card_users >= 450 then 22 when a.active_card_users >= 250 then 16 else 10 end) +
+    (case when a.interest_level = 'Quente' then 22 when a.interest_level = 'Morno' then 14 else 6 end) +
+    (case when a.current_provider in ('Caju', 'Pluxee (ex-Sodexo)', 'Alelo') then 16 else 10 end) +
+    (coalesce(o.max_stage_weight, 0) * 4)
   )) as commercial_score
 from public.crm_accounts a
 left join (
@@ -168,20 +200,44 @@ left join lateral (
   limit 1
 ) f on true;
 
--- 7. ROW LEVEL SECURITY (RLS) — PRONTO PARA SUPABASE FRONTEND
+-- 8. ROW LEVEL SECURITY (RLS)
 alter table public.crm_accounts enable row level security;
 alter table public.crm_opportunities enable row level security;
 alter table public.crm_meetings enable row level security;
 alter table public.crm_follow_ups enable row level security;
 alter table public.crm_routes_rj enable row level security;
 
-create policy "Permitir leitura e escrita autenticada ou anon demo em crm_accounts"
-  on public.crm_accounts for all using (true) with check (true);
-create policy "Permitir leitura e escrita autenticada ou anon demo em crm_opportunities"
-  on public.crm_opportunities for all using (true) with check (true);
-create policy "Permitir leitura e escrita autenticada ou anon demo em crm_meetings"
-  on public.crm_meetings for all using (true) with check (true);
-create policy "Permitir leitura e escrita autenticada ou anon demo em crm_follow_ups"
-  on public.crm_follow_ups for all using (true) with check (true);
-create policy "Permitir leitura e escrita autenticada ou anon demo em crm_routes_rj"
-  on public.crm_routes_rj for all using (true) with check (true);
+-- ATENÇÃO — MODO DEMO: as policies abaixo liberam leitura e escrita para
+-- QUALQUER pessoa que tenha a URL + chave pública (que fica visível no site).
+-- Para uso com dados reais de contatos, rode em seguida o arquivo
+-- supabase/security/secure_rls_authenticated.sql (exige login no app).
+drop policy if exists "Permitir leitura e escrita autenticada ou anon demo em crm_accounts" on public.crm_accounts;
+drop policy if exists "Permitir leitura e escrita autenticada ou anon demo em crm_opportunities" on public.crm_opportunities;
+drop policy if exists "Permitir leitura e escrita autenticada ou anon demo em crm_meetings" on public.crm_meetings;
+drop policy if exists "Permitir leitura e escrita autenticada ou anon demo em crm_follow_ups" on public.crm_follow_ups;
+drop policy if exists "Permitir leitura e escrita autenticada ou anon demo em crm_routes_rj" on public.crm_routes_rj;
+
+drop policy if exists "Public access crm_accounts" on public.crm_accounts;
+create policy "Public access crm_accounts" on public.crm_accounts for all using (true) with check (true);
+
+drop policy if exists "Public access crm_opportunities" on public.crm_opportunities;
+create policy "Public access crm_opportunities" on public.crm_opportunities for all using (true) with check (true);
+
+drop policy if exists "Public access crm_meetings" on public.crm_meetings;
+create policy "Public access crm_meetings" on public.crm_meetings for all using (true) with check (true);
+
+drop policy if exists "Public access crm_follow_ups" on public.crm_follow_ups;
+create policy "Public access crm_follow_ups" on public.crm_follow_ups for all using (true) with check (true);
+
+drop policy if exists "Public access crm_routes_rj" on public.crm_routes_rj;
+create policy "Public access crm_routes_rj" on public.crm_routes_rj for all using (true) with check (true);
+
+-- Permissões de API (PostgREST) para os papéis do Supabase
+grant select, insert, update, delete on
+  public.crm_accounts, public.crm_opportunities, public.crm_meetings,
+  public.crm_follow_ups, public.crm_routes_rj
+  to anon, authenticated;
+grant select on public.v_crm_accounts_360 to anon, authenticated;
+
+-- Recarrega o cache de schema do PostgREST (tabelas aparecem na API na hora)
+notify pgrst, 'reload schema';

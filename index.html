@@ -157,8 +157,8 @@
             <span>Potencial Recarga (TPV/Mês)</span>
             <span class="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-300 font-semibold">Taxa Zero Flex</span>
           </div>
-          <p id="kpiMonthlyTpv" class="mt-2 text-2xl font-extrabold text-emerald-400">R$ 5.976.700</p>
-          <p id="kpiAnnualTpvSub" class="mt-1 text-xs text-slate-400">Anualizado: R$ 71,72M / ano</p>
+          <p id="kpiMonthlyTpv" class="mt-2 text-2xl font-extrabold text-emerald-400">R$ 5.907.900</p>
+          <p id="kpiAnnualTpvSub" class="mt-1 text-xs text-slate-400">Anualizado: R$ 70,89M / ano</p>
         </div>
 
         <div class="card-surface rounded-2xl p-4">
@@ -490,7 +490,7 @@
           </div>
           <h2 class="text-base font-bold text-white">Conectar este CRM ao seu Projeto Supabase</h2>
           <p class="text-xs text-slate-300 leading-relaxed">
-            Este aplicativo já carrega o SDK oficial <code class="text-emerald-300">@supabase/supabase-js</code>. Ao colar a URL e a Anon Key do seu projeto Supabase abaixo, todas as 15 contas do RJ, oportunidades e follow-ups são sincronizados diretamente com o seu banco PostgreSQL na nuvem.
+            Este aplicativo já carrega o SDK oficial <code class="text-emerald-300">@supabase/supabase-js</code>. A URL e a chave pública do projeto já vêm preenchidas e o app tenta conectar sozinho ao abrir. Com as tabelas criadas, contas, oportunidades (Kanban) e follow-ups são lidos e gravados no PostgreSQL do Supabase; sem elas, tudo continua funcionando no cache local do navegador.
           </p>
 
           <div class="space-y-3">
@@ -499,8 +499,8 @@
               <input id="inputSupabaseUrl" type="url" placeholder="https://seu-projeto.supabase.co" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" />
             </div>
             <div>
-              <label for="inputSupabaseKey" class="block text-xs font-medium text-slate-300 mb-1">Supabase Anon / Public Key</label>
-              <input id="inputSupabaseKey" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" />
+              <label for="inputSupabaseKey" class="block text-xs font-medium text-slate-300 mb-1">Supabase Publishable Key (sb_publishable_…) ou Anon Key</label>
+              <input id="inputSupabaseKey" type="password" placeholder="sb_publishable_..." class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" />
             </div>
 
             <div class="flex flex-wrap gap-2 pt-1">
@@ -516,12 +516,30 @@
             </div>
           </div>
 
+          <div id="supabaseStatusBox" class="rounded-xl border border-slate-700 bg-slate-950/80 p-3.5 text-xs text-slate-300">
+            Ainda não conectado. Clique em <strong>⚡ Conectar &amp; Sincronizar</strong>.
+          </div>
+
           <div class="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 space-y-2 text-xs">
-            <p class="font-bold text-white">📦 Como subir para o seu GitHub em 3 passos:</p>
+            <p class="font-bold text-white">🔐 Login (necessário só no Modo Seguro)</p>
+            <p class="text-slate-400">Depois de rodar <code class="text-fuchsia-300">supabase/security/secure_rls_authenticated.sql</code>, apenas usuários logados leem e gravam no banco. Crie seu usuário em Authentication &gt; Users no painel do Supabase.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input id="inputAuthEmail" type="email" autocomplete="username" placeholder="seu@email.com" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" />
+              <input id="inputAuthPassword" type="password" autocomplete="current-password" placeholder="senha" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" />
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="btnAuthLogin" type="button" onclick="loginSupabase()" class="rounded-lg bg-violet-600 hover:bg-violet-500 px-3.5 py-1.5 text-xs font-semibold text-white transition">Entrar</button>
+              <button id="btnAuthLogout" type="button" onclick="logoutSupabase()" class="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs text-slate-300 transition">Sair</button>
+              <span id="authStatusLabel" class="text-[11px] text-slate-400">Não logado (modo demo/anon)</span>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 space-y-2 text-xs">
+            <p class="font-bold text-white">📦 Como publicar em 3 passos:</p>
             <ol class="list-decimal list-inside space-y-1 text-slate-300">
-              <li>Baixe o pacote <code class="text-fuchsia-300">swile_os_crm_supabase_github.zip</code> entregue no chat.</li>
-              <li>Rode o SQL ao lado no <strong>SQL Editor</strong> do seu projeto no Supabase.</li>
-              <li>Faça <code class="text-emerald-300">git push origin main</code> para o seu repositório GitHub — o GitHub Actions (<code class="text-fuchsia-300">.github/workflows/deploy.yml</code>) publica o CRM automaticamente no GitHub Pages!</li>
+              <li>Copie o SQL ao lado (schema + 15 contas) e rode no <a class="text-emerald-300 underline" href="https://supabase.com/dashboard/project/yjomvwnxqinbmoqyeyre/sql/new" target="_blank" rel="noopener">SQL Editor do Supabase</a>.</li>
+              <li>No GitHub: <strong>Settings → Pages → Source: GitHub Actions</strong>. Cada push na <code class="text-emerald-300">main</code> publica o CRM via <code class="text-fuchsia-300">.github/workflows/deploy.yml</code>.</li>
+              <li>Abra <code class="text-emerald-300">https://m14projetos-collab.github.io/crm-swile/</code> e clique em ⚡ Conectar.</li>
             </ol>
           </div>
         </div>
@@ -530,7 +548,7 @@
         <div class="lg:col-span-7 card-surface rounded-2xl p-5 space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 class="text-sm font-bold text-white">🗄️ Script SQL para o Supabase (Schema + View 360° + RLS)</h3>
+              <h3 class="text-sm font-bold text-white">🗄️ Script SQL para o Supabase (Schema + View 360° + RLS + Seed das 15 contas)</h3>
               <p class="text-xs text-slate-400">Cole no SQL Editor do Supabase para criar todas as tabelas e fórmulas no PostgreSQL</p>
             </div>
             <button id="btnCopySqlSchema" type="button" onclick="copySqlSchemaText()" class="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-white transition">
@@ -638,10 +656,12 @@
           <select id="accFormStatus" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-white">
             <option value="Lead Mapeado">Lead Mapeado</option>
             <option value="Outbound Iniciado">Outbound Iniciado</option>
+            <option value="Qualificado (SQL)">Qualificado (SQL)</option>
             <option value="Discovery RH/DP">Discovery RH/DP</option>
             <option value="Demo / Diagnóstico Agendado">Demo / Diagnóstico Agendado</option>
             <option value="Proposta & Simulação PAT">Proposta & Simulação PAT</option>
             <option value="Fechado ✅">Fechado ✅</option>
+            <option value="Perdido ❌">Perdido ❌</option>
           </select>
         </div>
       </div>
@@ -1163,34 +1183,30 @@
       {
         id: "rt-1",
         name: "Rota 01 — Centro & Porto Maravilha (Tech & Consultorias)",
-        polo: "Centro / Porto Maravilha",
+        polos: ["Centro / Porto Maravilha"],
         shift: "Terça-feira (Manhã + Tarde) • Metrô / VLT",
-        km: "14 km",
-        accounts: ["Nomus (Av. Prof. Pereira Reis, 76)", "Bemobi (Av. Barão de Tefé, 27)", "BIP Brasil (Av. Rio Branco, 128)", "Nasajon (Av. Mal. Floriano, 19)", "Future ATP (Centro)"]
+        km: "14 km"
       },
       {
         id: "rt-2",
         name: "Rota 02 — Barra da Tijuca (Eixo Av. das Américas / Península)",
-        polo: "Barra da Tijuca / Recreio",
+        polos: ["Barra da Tijuca / Recreio"],
         shift: "Quarta-feira (Manhã + Tarde) • Campo Carro",
-        km: "28 km",
-        accounts: ["RJZ Cyrela (Av. das Américas, 2480 / CEO Office)", "ICONIC Lubrificantes (Av. das Américas, 3434)", "Beep Saúde Hub Barra", "Zinzane BarraShopping"]
+        km: "28 km"
       },
       {
         id: "rt-3",
         name: "Rota 03 — Zona Sul (Botafogo & Flamengo)",
-        polo: "Zona Sul / Barra",
+        polos: ["Zona Sul / Barra"],
         shift: "Quinta-feira (Manhã) • Metrô / Uber Corporativo",
-        km: "12 km",
-        accounts: ["Beep Saúde Matriz (Botafogo)", "Grant Thornton RJ (Praia do Flamengo, 154)", "Zinzane Rio Sul (Botafogo)"]
+        km: "12 km"
       },
       {
         id: "rt-4",
         name: "Rota 04 — Eixo Zona Norte, Niterói & Zona Oeste Industrial",
-        polo: "Zona Norte / Del Castilho",
+        polos: ["Zona Norte / Del Castilho", "Niterói / Região Metropolitana", "Zona Oeste - Campo Grande"],
         shift: "Sexta-feira (Campo Estratégico)",
-        km: "46 km",
-        accounts: ["Vasco da Gama SAF (São Cristóvão)", "LAMSA Linha Amarela (Água Santa)", "Camorim Marítima (Ilha da Conceição - Niterói)", "Tursan Turismo (Campo Grande)"]
+        km: "46 km"
       }
     ];
 
@@ -1278,84 +1294,74 @@
       }
     ];
 
-    const SQL_SCHEMA_TEXT = `-- SWILE OS CRM — MIDDLE MARKET RJ (SUPABASE POSTGRESQL SCHEMA)
-create extension if not exists "pgcrypto";
-
-create table if not exists public.crm_accounts (
-  id uuid primary key default gen_random_uuid(),
-  code text unique not null,
-  company_name text not null,
-  website text,
-  sector text not null,
-  polo_rj text not null,
-  neighborhood text,
-  address text,
-  phone text,
-  email_rh text,
-  decision_maker_name text,
-  employees_count integer not null default 100,
-  active_card_users integer not null default 100,
-  avg_monthly_ticket numeric(12,2) not null default 800.00,
-  estimated_monthly_tpv numeric(14,2) generated always as (active_card_users * avg_monthly_ticket) stored,
-  estimated_annual_tpv numeric(14,2) generated always as (active_card_users * avg_monthly_ticket * 12) stored,
-  current_provider text not null default 'A Validar',
-  current_model text not null default 'Tradicional',
-  status text not null default 'Lead Mapeado',
-  priority_icp text not null default 'Alta',
-  interest_level text not null default 'Morno',
-  rh_pains text,
-  user_complaints text,
-  swile_trigger_2026 text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists public.crm_opportunities (
-  id uuid primary key default gen_random_uuid(),
-  account_id uuid not null references public.crm_accounts(id) on delete cascade,
-  stage_weight integer not null default 1, -- 1=SQL, 2=Discovery, 3=Demo, 4=Proposta, 5=Fechado
-  probability integer not null default 40,
-  close_date date,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.crm_follow_ups (
-  id uuid primary key default gen_random_uuid(),
-  account_id uuid not null references public.crm_accounts(id) on delete cascade,
-  action_title text not null,
-  due_date date not null,
-  channel text not null default 'WhatsApp',
-  status text not null default 'Pendente',
-  priority text not null default 'Alta',
-  created_at timestamptz not null default now()
-);
-
-alter table public.crm_accounts enable row level security;
-alter table public.crm_opportunities enable row level security;
-alter table public.crm_follow_ups enable row level security;
-
-create policy "Public access crm_accounts" on public.crm_accounts for all using (true) with check (true);
-create policy "Public access crm_opportunities" on public.crm_opportunities for all using (true) with check (true);
-create policy "Public access crm_follow_ups" on public.crm_follow_ups for all using (true) with check (true);`;
+    /* SQL:BEGIN (gerado por scripts/embed_sql.py — não edite à mão) */
+    const SQL_SCHEMA_TEXT = "-- =============================================================================\n-- SWILE OS CRM — MIDDLE MARKET RJ (SUPABASE POSTGRESQL SCHEMA)\n-- Evolução do Fields OS CRM (Takeat) -> Arquitetura Relacional Limpa\n-- Idempotente: pode ser executado mais de uma vez no SQL Editor sem erro.\n-- =============================================================================\n\ncreate extension if not exists \"pgcrypto\";\n\n-- 1. TABELA CENTRAL: CONTAS & CLIENTES (crm_accounts)\n-- Fonte Única de Verdade para geografia, decisores, vidas, cartão atual e TPV\ncreate table if not exists public.crm_accounts (\n  id uuid primary key default gen_random_uuid(),\n  code text unique not null,\n  company_name text not null,\n  cnpj text,\n  website text,\n  careers_url text,\n  sector text not null,\n  polo_rj text not null,\n  neighborhood text,\n  address text,\n  phone text,\n  email_rh text,\n  decision_maker_name text,\n  decision_maker_role text,\n  persona_chave text not null default 'RH Estratégico / Employer Branding',\n  employees_count integer not null default 100,\n  active_card_users integer not null default 100,\n  avg_monthly_ticket numeric(12,2) not null default 800.00,\n  -- TPV Mensal e Anual calculados pelo banco (Generated Columns)\n  estimated_monthly_tpv numeric(14,2) generated always as (active_card_users * avg_monthly_ticket) stored,\n  estimated_annual_tpv numeric(14,2) generated always as (active_card_users * avg_monthly_ticket * 12) stored,\n  current_provider text not null default 'A Validar',\n  current_model text not null default 'Tradicional',\n  status text not null default 'Lead Mapeado',\n  priority_icp text not null default 'Alta',\n  interest_level text not null default 'Morno',\n  preferred_channel text not null default 'LinkedIn',\n  rh_pains text,\n  user_complaints text,\n  provider_pros_cons text,\n  swile_trigger_2026 text,\n  contract_expiration_date date,\n  loss_reason text,\n  post_sales_phase text,\n  last_interaction_at timestamptz default now(),\n  created_at timestamptz not null default now(),\n  updated_at timestamptz not null default now()\n);\n\n-- 2. PIPELINE COMERCIAL: OPORTUNIDADES (crm_opportunities)\n-- stage_weight: 1=SQL, 2=Discovery, 3=Demo, 4=Proposta/Negociação, 5=Fechado, 0=Perdido\ncreate table if not exists public.crm_opportunities (\n  id uuid primary key default gen_random_uuid(),\n  account_id uuid not null references public.crm_accounts(id) on delete cascade,\n  title text not null,\n  stage text not null default '1. Qualificado (SQL)',\n  stage_weight integer not null default 1 check (stage_weight between 0 and 5),\n  negotiated_lives integer not null default 100,\n  proposed_monthly_tpv numeric(14,2) not null default 0,\n  probability integer not null default 30 check (probability between 0 and 100),\n  weighted_forecast_tpv numeric(14,2) generated always as (proposed_monthly_tpv * (probability::numeric / 100.0)) stored,\n  wallets_included text[] default array['Refeição', 'Alimentação', 'Mobilidade', 'Saúde', 'Home Office', 'Educação', 'Premiação'],\n  origin_channel text default 'Outbound Prospecção',\n  expected_close_date date,\n  proposal_sent_date date,\n  closed_date date,\n  loss_category text,\n  loss_details text,\n  notes text,\n  created_at timestamptz not null default now(),\n  updated_at timestamptz not null default now()\n);\n\n-- 3. AGENDA DE REUNIÕES & VISITAS (crm_meetings)\ncreate table if not exists public.crm_meetings (\n  id uuid primary key default gen_random_uuid(),\n  account_id uuid not null references public.crm_accounts(id) on delete cascade,\n  route_id uuid,\n  title text not null,\n  meeting_date timestamptz not null,\n  modality text not null default 'Videoconferência (Meet/Teams)',\n  meeting_type text not null default 'Discovery RH/DP',\n  status text not null default 'Agendada',\n  outcome text,\n  duration_minutes integer default 45,\n  notes text,\n  created_at timestamptz not null default now()\n);\n\n-- 4. FONTE ÚNICA DE PRÓXIMA AÇÃO: FOLLOW-UPS (crm_follow_ups)\ncreate table if not exists public.crm_follow_ups (\n  id uuid primary key default gen_random_uuid(),\n  account_id uuid not null references public.crm_accounts(id) on delete cascade,\n  opportunity_id uuid references public.crm_opportunities(id) on delete set null,\n  action_title text not null,\n  due_date date not null,\n  completed_date date,\n  status text not null default 'Pendente',\n  channel text not null default 'WhatsApp',\n  priority text not null default 'Alta',\n  trigger_used text,\n  notes text,\n  created_at timestamptz not null default now()\n);\n\n-- 5. PLANEJAMENTO DE ROTAS FIELD RJ (crm_routes_rj)\n-- Enxuta: sem duplicar endereço/dados cadastrais (lidos de crm_accounts)\ncreate table if not exists public.crm_routes_rj (\n  id uuid primary key default gen_random_uuid(),\n  route_date date not null,\n  shift text not null default 'Manhã + Tarde',\n  polo_rj text not null,\n  work_mode text not null default 'Campo (Field RJ)',\n  status text not null default 'Planejada',\n  estimated_km numeric(6,1) default 25.0,\n  logistics_notes text,\n  created_at timestamptz not null default now()\n);\n\n-- Índices para as chaves estrangeiras (joins da view e filtros do app)\ncreate index if not exists crm_opportunities_account_id_idx on public.crm_opportunities(account_id);\ncreate index if not exists crm_follow_ups_account_id_idx on public.crm_follow_ups(account_id);\ncreate index if not exists crm_follow_ups_pending_idx on public.crm_follow_ups(account_id, due_date) where status = 'Pendente';\ncreate index if not exists crm_meetings_account_id_idx on public.crm_meetings(account_id);\n\n-- 6. updated_at automático\ncreate or replace function public.crm_set_updated_at()\nreturns trigger\nlanguage plpgsql\nset search_path = ''\nas $$\nbegin\n  new.updated_at = now();\n  return new;\nend;\n$$;\n\ndrop trigger if exists crm_accounts_set_updated_at on public.crm_accounts;\ncreate trigger crm_accounts_set_updated_at\n  before update on public.crm_accounts\n  for each row execute function public.crm_set_updated_at();\n\ndrop trigger if exists crm_opportunities_set_updated_at on public.crm_opportunities;\ncreate trigger crm_opportunities_set_updated_at\n  before update on public.crm_opportunities\n  for each row execute function public.crm_set_updated_at();\n\n-- 7. VIEW CONSOLIDADA 360° (SUBSTITUI ROLLUPS E FÓRMULAS DO NOTION)\n-- security_invoker = true: a view respeita o RLS de quem consulta.\ncreate or replace view public.v_crm_accounts_360\nwith (security_invoker = true) as\nselect\n  a.*,\n  coalesce(o.max_stage_weight, 0) as max_pipeline_weight,\n  coalesce(o.open_opportunities_count, 0) as open_opportunities_count,\n  coalesce(m.meetings_count, 0) as meetings_count,\n  f.next_action_date,\n  f.next_action_title,\n  f.next_action_channel,\n  -- Etapa do Funil calculada automaticamente\n  case\n    when a.status = 'Perdido ❌' then 'Perdido'\n    when a.status = 'Fechado ✅' or coalesce(o.max_stage_weight, 0) = 5 then 'Cliente Ativo'\n    when coalesce(o.max_stage_weight, 0) >= 3 then 'Oportunidade'\n    when coalesce(o.max_stage_weight, 0) >= 1 then 'SQL'\n    when a.interest_level in ('Quente', 'Morno') then 'MQL'\n    else 'Lead'\n  end as funnel_stage,\n  -- Score Comercial ICP Swile (0 a 100) — mesma fórmula do app (computeCommercialScore)\n  least(100, greatest(0,\n    (case when a.priority_icp = 'Alta' then 22 when a.priority_icp = 'Média' then 14 else 6 end) +\n    (case when a.active_card_users >= 450 then 22 when a.active_card_users >= 250 then 16 else 10 end) +\n    (case when a.interest_level = 'Quente' then 22 when a.interest_level = 'Morno' then 14 else 6 end) +\n    (case when a.current_provider in ('Caju', 'Pluxee (ex-Sodexo)', 'Alelo') then 16 else 10 end) +\n    (coalesce(o.max_stage_weight, 0) * 4)\n  )) as commercial_score\nfrom public.crm_accounts a\nleft join (\n  select\n    account_id,\n    max(stage_weight) as max_stage_weight,\n    count(*) filter (where stage_weight between 1 and 4) as open_opportunities_count\n  from public.crm_opportunities\n  group by account_id\n) o on o.account_id = a.id\nleft join (\n  select account_id, count(*) as meetings_count\n  from public.crm_meetings\n  group by account_id\n) m on m.account_id = a.id\nleft join lateral (\n  select\n    fu.due_date as next_action_date,\n    fu.action_title as next_action_title,\n    fu.channel as next_action_channel\n  from public.crm_follow_ups fu\n  where fu.account_id = a.id and fu.status = 'Pendente'\n  order by fu.due_date asc\n  limit 1\n) f on true;\n\n-- 8. ROW LEVEL SECURITY (RLS)\nalter table public.crm_accounts enable row level security;\nalter table public.crm_opportunities enable row level security;\nalter table public.crm_meetings enable row level security;\nalter table public.crm_follow_ups enable row level security;\nalter table public.crm_routes_rj enable row level security;\n\n-- ATENÇÃO — MODO DEMO: as policies abaixo liberam leitura e escrita para\n-- QUALQUER pessoa que tenha a URL + chave pública (que fica visível no site).\n-- Para uso com dados reais de contatos, rode em seguida o arquivo\n-- supabase/security/secure_rls_authenticated.sql (exige login no app).\ndrop policy if exists \"Permitir leitura e escrita autenticada ou anon demo em crm_accounts\" on public.crm_accounts;\ndrop policy if exists \"Permitir leitura e escrita autenticada ou anon demo em crm_opportunities\" on public.crm_opportunities;\ndrop policy if exists \"Permitir leitura e escrita autenticada ou anon demo em crm_meetings\" on public.crm_meetings;\ndrop policy if exists \"Permitir leitura e escrita autenticada ou anon demo em crm_follow_ups\" on public.crm_follow_ups;\ndrop policy if exists \"Permitir leitura e escrita autenticada ou anon demo em crm_routes_rj\" on public.crm_routes_rj;\n\ndrop policy if exists \"Public access crm_accounts\" on public.crm_accounts;\ncreate policy \"Public access crm_accounts\" on public.crm_accounts for all using (true) with check (true);\n\ndrop policy if exists \"Public access crm_opportunities\" on public.crm_opportunities;\ncreate policy \"Public access crm_opportunities\" on public.crm_opportunities for all using (true) with check (true);\n\ndrop policy if exists \"Public access crm_meetings\" on public.crm_meetings;\ncreate policy \"Public access crm_meetings\" on public.crm_meetings for all using (true) with check (true);\n\ndrop policy if exists \"Public access crm_follow_ups\" on public.crm_follow_ups;\ncreate policy \"Public access crm_follow_ups\" on public.crm_follow_ups for all using (true) with check (true);\n\ndrop policy if exists \"Public access crm_routes_rj\" on public.crm_routes_rj;\ncreate policy \"Public access crm_routes_rj\" on public.crm_routes_rj for all using (true) with check (true);\n\n-- Permissões de API (PostgREST) para os papéis do Supabase\ngrant select, insert, update, delete on\n  public.crm_accounts, public.crm_opportunities, public.crm_meetings,\n  public.crm_follow_ups, public.crm_routes_rj\n  to anon, authenticated;\ngrant select on public.v_crm_accounts_360 to anon, authenticated;\n\n-- Recarrega o cache de schema do PostgREST (tabelas aparecem na API na hora)\nnotify pgrst, 'reload schema';\n\n-- =============================================================================\n-- SEED (supabase/seed.sql)\n-- =============================================================================\n-- SEED DATA — 15 CONTAS REAIS MIDDLE MARKET RIO DE JANEIRO (SWILE OS CRM)\n-- Idempotente: pode ser executado mais de uma vez (não duplica nem sobrescreve edições).\n-- Rode DEPOIS da migration supabase/migrations/20261029000000_swile_os_crm_schema.sql\n-- =============================================================================\n\ninsert into public.crm_accounts (\n  code, company_name, website, careers_url, sector, polo_rj, neighborhood, address, phone, email_rh,\n  decision_maker_name, decision_maker_role, persona_chave, employees_count, active_card_users, avg_monthly_ticket,\n  current_provider, current_model, status, priority_icp, interest_level, preferred_channel,\n  rh_pains, user_complaints, provider_pros_cons, swile_trigger_2026\n) values\n('LD-01', 'Nomus', 'https://www.nomus.com.br/', 'https://nomus.gupy.io/', 'Tecnologia / SaaS ERP', 'Centro / Porto Maravilha', 'Centro', 'Av. Prof. Pereira Reis, 76 - Centro, Rio de Janeiro - RJ, 20220-800', '+55 21 2018-0633', 'comercial@nomus.com.br', 'Head de Pessoas & Cultura', 'Head de People & Culture', 'RH Estratégico / Employer Branding', 180, 170, 920.00, 'Caju', 'Multibenefícios (Visa)', 'Outbound Iniciado', 'Alta', 'Quente', 'LinkedIn', 'Gestão híbrida (RJ + remoto); retenção de devs; incerteza após venda da Caju para o iFood (20/10/2026).', 'Bloqueios preventivos pontuais na bandeira Visa e ausência de clube robusto de descontos.', 'Prós: UX intuitiva. Contras: Adquirida pelo iFood em out/2026 e sem Mastercard Surpreenda.', 'Gatilho M&A Caju+iFood (20/10/2026): posicionar Swile B-Corp + X-Pay + Swile Shop.'),\n('LD-02', 'Beep Saúde', 'https://beepsaude.com.br/', 'https://beepsaude.gupy.io/', 'HealthTech / Saúde Domiciliar', 'Zona Sul / Barra', 'Botafogo / Barra da Tijuca', 'Rua Voluntários da Pátria / Hub Barra da Tijuca, Rio de Janeiro - RJ', '+55 21 3577-3231', 'gente@beepsaude.com.br', 'Diretora de Gente & Gestão', 'Diretora de RH / DHO', 'DP Operacional / Folha & PAT', 950, 900, 880.00, 'iFood Benefícios', 'Multibenefícios (Elo/Visa)', 'Discovery RH/DP', 'Alta', 'Quente', 'WhatsApp', 'Operação intensiva de campo (enfermeiras/frota) + time de BI; alto giro exige cartão virtual imediato.', 'Foco excessivo em delivery/restaurantes do app e menor flexibilidade para mobilidade/combustível e farmácia.', 'Prós: Cashback delivery. Contras: Categorias não-alimentação limitadas; fusão com Caju no CADE.', 'Operação mista campo+escritório: unificar VA/VR + Mobilidade/Combustível + Saúde no Swile Mastercard.'),\n('LD-03', 'RJZ Cyrela', 'https://www.cyrela.com.br/', 'https://cyrela.gupy.io/', 'Incorporação & Construção Civil', 'Barra da Tijuca / Recreio', 'Barra da Tijuca', 'Av. das Américas, 2480 / Av. José Silva de Azevedo Neto, 850 - Barra da Tijuca, RJ', '+55 21 3550-2501', 'pessoas.rj@cyrela.com.br', 'Gerente Pessoas & Performance RJ', 'Gerente de RH Regional', 'DP Operacional / Folha & PAT', 550, 520, 810.00, 'Flash', 'Multibenefícios (Mastercard/Visa)', 'Demo / Diagnóstico Agendado', 'Alta', 'Quente', 'Visita Presencial RJ', 'Gestão descentralizada entre escritório na Barra e canteiros de obras no RJ (VR atual R$ 36,65/dia).', 'Demora/cobrança em 2ª via de cartão físico em obras e atendimento robotizado no suporte.', 'Prós: Marca conhecida. Contras: Cobrança de módulos extras de RH e menor foco em clube de descontos.', 'Conectar com programa CuideCy: mostrar Taxa Zero real + Swile Shop (+1.000 lojas) e entrega por obra.'),\n('LD-04', 'Bemobi', 'https://www.bemobi.com/', 'https://bemobi.gupy.io/', 'Tecnologia / FinTech Pagamentos', 'Centro / Porto Maravilha', 'Saúde (Porto Maravilha)', 'Av. Barão de Tefé, 27 - Saúde, Rio de Janeiro - RJ, 20220-460', '+55 21 3529-9001', 'people@bemobi.com', 'VP / Head de People & Culture', 'Head de People & Culture', 'RH Estratégico / Employer Branding', 480, 460, 1150.00, 'Flash', 'Multibenefícios Flexível', 'Proposta & Simulação PAT', 'Alta', 'Quente', 'LinkedIn', 'Empresa GPTW com VR/VA nas férias, Home Office e programa interno BeInspired; busca engajamento.', 'Time tech sente falta de reconhecimento social integrado e descontos em tecnologia/educação.', 'Prós: Saldo flexível. Contras: Sem camada social/gamificada para o programa BeInspired.', 'Conectar o BeInspired às carteiras de Premiação Livre + recursos sociais da Swile (B-Corp).'),\n('LD-05', 'BIP Brasil (Unidade RJ)', 'http://bipbrasil.com.br/', 'https://vemprabip.gupy.io/', 'Consultoria de Negócios & Tech', 'Centro / Porto Maravilha', 'Centro', 'Av. Rio Branco, 128 - 12º andar - Centro, Rio de Janeiro - RJ, 20040-900', '+55 21 3513-6410', 'people.br@bip-group.com', 'Head de People Brasil', 'Diretora de RH', 'RH Estratégico / Employer Branding', 420, 400, 1050.00, 'Alelo', 'Tradicional c/ Flex (Elo)', 'Outbound Iniciado', 'Alta', 'Morno', 'LinkedIn', 'Tenta oferecer benefícios flexíveis mas presa ao modelo tradicional Alelo (Elo); consultores híbridos no Centro.', 'Rigidez das travas da bandeira Elo em plataformas online/educação e interface antiga do Meu Alelo.', 'Prós: Clube Alelo. Contras: Bandeira Elo menos aceita online que Mastercard e múltiplos contratos.', 'Gancho Interoperabilidade PAT (nov/2026): migrar de Elo para Mastercard Swile com 8 carteiras reais.'),\n('LD-06', 'LAMSA (Linha Amarela S/A)', 'http://www.lamsa.com.br/', 'https://trabalheconosco.vagas.com.br/lamsa', 'Infraestrutura & Concessões', 'Zona Norte / Del Castilho', 'Água Santa / Del Castilho', 'Linha Amarela, s/n - Água Santa, Rio de Janeiro - RJ, 20745-150', '+55 800 024 2355', 'rh@lamsa.com.br', 'Gerente de RH e Administração', 'Gerente de RH / DP', 'DP Operacional / Folha & PAT', 680, 650, 740.00, 'Alelo', 'Tradicional (VA/VR Separados)', 'Lead Mapeado', 'Média', 'Morno', 'Ligação', 'Operação 24/7 na Linha Amarela; alto giro operacional e gestão manual de 2ª via de cartões VA e VR separados.', 'Saldo acaba no VR e sobra no VA sem transferência possível entre categorias.', 'Prós: Rede tradicional. Contras: Dois plásticos separados e burocracia para o DP.', 'Reduzir retrabalho do DP unificando VA e VR em 1 único cartão Mastercard 100% dentro do PAT.'),\n('LD-07', 'Vasco da Gama SAF', 'https://www.vasco.com.br/', 'https://vascodagamasaf.vagas.solides.com.br/', 'Esportes & Entretenimento', 'Zona Norte / Del Castilho', 'São Cristóvão', 'Av. Roberto Dinamite, 10 - Vasco da Gama, Rio de Janeiro - RJ, 20921-060', '+55 21 2176-7373', 'rh@vasco.com.br', 'Head de RH / CFO SAF', 'Head de RH', 'CFO / Compras & Redução de Custos', 450, 430, 780.00, 'Pluxee (ex-Sodexo)', 'Tradicional (Elo)', 'Outbound Iniciado', 'Alta', 'Quente', 'WhatsApp', 'Profissionalização da gestão da SAF; necessidade de modernizar DP e pacote para staff técnico e administrativo.', 'Confusão pós-rebranding Sodexo->Pluxee, lentidão no app e falta de Apple/Google Pay.', 'Prós: Rede antiga. Contras: Nota 4,2/5, cartões separados e sem X-Pay.', 'Modernização digital da SAF: trocar Pluxee tradicional por Swile Mastercard Taxa Zero + X-Pay.'),\n('LD-08', 'Future Technologies (Future ATP)', 'https://futurevagas.vagas.solides.com.br/', 'https://futurevagas.vagas.solides.com.br/', 'Tecnologia da Informação & Redes', 'Centro / Porto Maravilha', 'Centro', 'Centro Empresarial Rio de Janeiro - RJ', '+55 21 3500-0000', 'rh@future.com.br', 'Gerente de Talentos & Pessoas', 'Gerente de RH', 'RH Estratégico / Employer Branding', 310, 300, 960.00, 'Pluxee (ex-Sodexo)', 'Tradicional (VA/VR Elo)', 'Discovery RH/DP', 'Alta', 'Quente', 'LinkedIn', 'Contrata Arquitetos de Soluções e Engenheiros de TI no RJ usando vale tradicional Pluxee, perdendo atratividade.', 'Time de TI em regime híbrido critica falta de Home Office e Educação no mesmo cartão.', 'Prós: Básico PAT. Contras: Desalinhado com talentos tech; sem Educação/Home Office.', 'Destravar 8 categorias (incluindo Educação p/ certificações de TI e Home Office) a Taxa Zero.'),\n('LD-09', 'Fattu do Brasil (Unidade RJ)', 'https://fattu.gupy.io/', 'https://fattu.gupy.io/', 'Distribuição & Suprimentos', 'Zona Norte / Del Castilho', 'Região Metropolitana RJ', 'Unidade Logística e Comercial Rio de Janeiro - RJ', '+55 21 3000-0000', 'dho@fattu.com.br', 'Coordenadora de DHO', 'Coordenadora de DHO', 'RH Estratégico / Employer Branding', 290, 280, 750.00, 'Caju', 'Multibenefícios (Visa)', 'Lead Mapeado', 'Alta', 'Morno', 'WhatsApp', '9x GPTW com programas Estilo Fattu e Baby Fattu; usa Caju + SalaryFits separado e quer centralizar mimos.', 'Motoristas enfrentam bloqueios pontuais na estrada e sentem falta de descontos em grandes redes.', 'Prós: Cultura jovem. Contras: Venda da Caju para o iFood gera incerteza no DHO.', 'Unificar Estilo Fattu e Baby Fattu na carteira de Premiação Swile + Swile Shop em um só Mastercard.'),\n('LD-10', 'Nasajon Sistemas', 'http://www.nasajon.com.br/', 'http://www.nasajon.com.br/', 'Tecnologia / ERP & Folha', 'Centro / Porto Maravilha', 'Centro', 'Av. Mal. Floriano, 19 - Sl 1003 - Centro, Rio de Janeiro - RJ, 20080-003', '+55 21 2213-9300', 'rh@nasajon.com.br', 'Diretora de Gente & Cultura', 'Diretora de RH', 'RH Estratégico / Employer Branding', 240, 230, 900.00, 'VR Benefícios', 'Tradicional / Transição', 'Outbound Iniciado', 'Alta', 'Quente', 'Visita Presencial RJ', 'Referência carioca em software de folha/contábil (GPTW); busca experiência moderna para o time Boa Gente Boa.', 'Colaboradores híbridos no Centro querem Apple/Google Pay e uso amplo em farmácias e cursos.', 'Prós: Tradição contábil. Contras: Menor agilidade no app e rede menor que Mastercard.', 'Duplo gancho: fechar as 230 vidas da Nasajon e abrir parceria de indicação na base de clientes de folha.'),\n('LD-11', 'Zinzane (Sede & Lojas RJ)', 'http://www.zinzane.com.br/', 'http://www.zinzane.com.br/', 'Varejo de Moda & E-commerce', 'Zona Sul / Barra', 'Centro / Botafogo / Barra', 'Rua Gonçalves Lédo, 101 - Centro / Rio Sul / BarraShopping, Rio de Janeiro - RJ', '+55 21 99211-4065', 'rh@zinzane.com.br', 'Head de Gente & Gestão', 'Head de RH', 'DP Operacional / Folha & PAT', 850, 780, 680.00, 'Ticket', 'Tradicional (Elo)', 'Lead Mapeado', 'Alta', 'Morno', 'WhatsApp', 'Dezenas de lojas no RJ; alto giro de vendedoras exige emissão instantânea e pagamento de premiação de metas.', 'Equipes de shopping reclamam de taxas/demora de 2ª via e de não receberem bônus de vendas no mesmo cartão.', 'Prós: Praças de alimentação. Contras: Taxas adm. altas e sem carteira de premiação integrada.', 'Unificar VR/VA + Premiação de Metas de Loja no mesmo Swile Card Mastercard com cartão virtual no dia 1.'),\n('LD-12', 'ICONIC Lubrificantes (Sede RJ)', 'https://www.iconiclubrificantes.com.br/', 'https://www.iconiclubrificantes.com.br/', 'Indústria Química & Energia', 'Barra da Tijuca / Recreio', 'Barra da Tijuca / São Cristóvão', 'Av. das Américas, 3434 - Bl 7, 4° andar - Barra da Tijuca, Rio de Janeiro - RJ', '+55 21 3906-1515', 'rh@iconic.com.br', 'Gerente de Remuneração e Benefícios', 'Gerente de Benefícios', 'CFO / Compras & Redução de Custos', 620, 600, 1020.00, 'Pluxee (ex-Sodexo)', 'Tradicional Corporativo', 'Lead Mapeado', 'Média', 'Frio', 'E-mail', 'Operação dividida entre escritório híbrido na Barra da Tijuca e fábricas em São Cristóvão e Duque de Caxias.', 'Público corporativo da Barra quer mobilidade e home office; fábrica prioriza atacadistas e farmácia.', 'Prós: Contrato antigo. Contras: Zero flexibilidade para o time híbrido da Barra.', 'Políticas customizadas por grupo no Dash RH: perfil Barra (híbrido) e perfil Planta Industrial na mesma fatura.'),\n('LD-13', 'Grant Thornton Brasil (RJ)', 'https://www.grantthornton.com.br/onde-estamos/rio-de-janeiro/', 'https://www.grantthornton.com.br/', 'Auditoria & Consultoria', 'Zona Sul / Barra', 'Flamengo', 'Praia do Flamengo, 154 - Conjuntos 401/402 - Flamengo, Rio de Janeiro - RJ', '+55 21 3512-4100', 'pessoas.rj@br.gt.com', 'Gerente de Pessoas & Cultura RJ', 'Gerente de RH', 'RH Estratégico / Employer Branding', 260, 250, 1100.00, 'Alelo', 'Tradicional (VA/VR)', 'Lead Mapeado', 'Média', 'Morno', 'LinkedIn', 'Auditores jovens com alta demanda por cursos/idiomas e deslocamento constante entre clientes no RJ.', 'Auditores reclamam que cartão Elo não entra no Apple Pay e não permite usar saldo em Educação/Mobilidade.', 'Prós: Tradição em auditoria. Contras: Sem autonomia de saldo nem X-Pay.', 'Retenção de auditores: bandeira Mastercard + X-Pay + carteiras Educação e Mobilidade com compliance PAT.'),\n('LD-14', 'Camorim Serviços Marítimos', 'http://www.camorim.com.br/', 'http://www.camorim.com.br/', 'Logística Portuária & Offshore', 'Niterói / Região Metropolitana', 'Ilha da Conceição (Niterói)', 'R. Mario Trilha, 136 - Ilha da Conceição, Niterói - RJ, 24050-190', '+55 21 3906-0450', 'rh@camorim.com.br', 'Gerente de RH / DP Marítimo', 'Gerente de DP', 'DP Operacional / Folha & PAT', 520, 490, 850.00, 'VR Benefícios', 'Tradicional (VA/VR)', 'Lead Mapeado', 'Média', 'Morno', 'Ligação', 'Forte ritmo de contratações em Niterói; escala de embarque exige flexibilidade entre VA (família) e VR.', 'Marítimos embarcados ficam com saldo preso em VR sem conseguir transferir para supermercado da família.', 'Prós: Conhecido no setor naval. Contras: Rigidez entre VA e VR na escala.', 'Flexibilidade inteligente dentro do PAT (VA/VR no mesmo cartão Mastercard aceito em +4 milhões de locais).'),\n('LD-15', 'Tursan Turismo', 'https://tursan.com.br/', 'https://tursan.com.br/', 'Transporte & Fretamento', 'Zona Oeste - Campo Grande', 'Campo Grande', 'Av. Brasil, 49389 - Campo Grande, Rio de Janeiro - RJ, 23065-480', '+55 21 3554-8000', 'vagas@tursan.com.br', 'Gerente de RH / DP', 'Gerente de DP', 'CFO / Compras & Redução de Custos', 380, 360, 650.00, 'VR Benefícios', 'Tradicional + Premiação separada', 'Outbound Iniciado', 'Alta', 'Quente', 'E-mail', 'Expansão de frota na Zona Oeste; opera vale alimentação e vale premiação de assiduidade em cartões separados.', 'Motoristas em rotas pela ZO, ZN e Serra enfrentam recusas de bandeira fechada e carregam 2 cartões.', 'Prós: Tradicional. Contras: Gestão duplicada entre alimentação e premiação.', 'Unificar Vale Alimentação + Vale Premiação de assiduidade dos motoristas em 1 único Swile Mastercard Taxa Zero.')\non conflict (code) do nothing;\n\n-- -----------------------------------------------------------------------------\n-- PIPELINE INICIAL (7 oportunidades) — mesmo conteúdo do modo local do app\n-- -----------------------------------------------------------------------------\ninsert into public.crm_opportunities (account_id, title, stage, stage_weight, negotiated_lives, proposed_monthly_tpv, probability, expected_close_date)\nselect a.id, 'Swile — ' || a.company_name, v.stage, v.stage_weight, a.active_card_users, a.estimated_monthly_tpv, v.probability, v.close_date::date\nfrom (values\n  ('LD-04', '4. Proposta & Simulação PAT', 4, 75, '2026-11-12'),\n  ('LD-03', '3. Demo Dash RH & App',       3, 60, '2026-11-18'),\n  ('LD-02', '2. Discovery & Vidas',        2, 50, '2026-11-25'),\n  ('LD-08', '2. Discovery & Vidas',        2, 45, '2026-11-28'),\n  ('LD-01', '1. Qualificado (SQL)',        1, 35, '2026-12-04'),\n  ('LD-07', '1. Qualificado (SQL)',        1, 35, '2026-12-08'),\n  ('LD-10', '1. Qualificado (SQL)',        1, 30, '2026-12-10')\n) as v(code, stage, stage_weight, probability, close_date)\njoin public.crm_accounts a on a.code = v.code\nwhere not exists (\n  select 1 from public.crm_opportunities o where o.account_id = a.id\n);\n\n-- -----------------------------------------------------------------------------\n-- FOLLOW-UPS INICIAIS (Fonte Única de Próxima Ação)\n-- -----------------------------------------------------------------------------\ninsert into public.crm_follow_ups (account_id, action_title, due_date, channel, status, priority)\nselect a.id, v.action_title, v.due_date::date, v.channel, 'Pendente', v.priority\nfrom (values\n  ('LD-01', 'Abordar Head de People sobre compra da Caju pelo iFood (20/10) + enviar comparativo Swile Shop', '2026-10-30', 'LinkedIn', 'Alta'),\n  ('LD-02', 'Apresentar simulação VA/VR + Mobilidade Frota (900 vidas) para Diretora de Gente da Beep Saúde', '2026-10-30', 'WhatsApp', 'Alta'),\n  ('LD-03', 'Confirmar Demo presencial no CEO Office Barra (RJZ Cyrela) — foco em logística de cartões p/ obras', '2026-10-31', 'Visita Presencial', 'Alta'),\n  ('LD-04', 'Validar minuta Taxa Zero + carteira Premiação BeInspired com People & Compras da Bemobi', '2026-10-31', 'E-mail', 'Alta'),\n  ('LD-07', 'Enviar vídeo de 60s mostrando X-Pay (Apple/Google Pay) para o RH da Vasco da Gama SAF', '2026-11-02', 'WhatsApp', 'Alta'),\n  ('LD-15', 'Ligar p/ RH da Tursan em Campo Grande sobre unificação do Vale Alimentação + Vale Premiação', '2026-11-03', 'Ligação', 'Média')\n) as v(code, action_title, due_date, channel, priority)\njoin public.crm_accounts a on a.code = v.code\nwhere not exists (\n  select 1 from public.crm_follow_ups f where f.account_id = a.id and f.action_title = v.action_title\n);\n";
+    /* SQL:END */
 
     // 2. STATE MANAGEMENT (WITH SAFE LOCALSTORAGE + SUPABASE CLIENT)
+    const SB_DEFAULT_URL = "https://yjomvwnxqinbmoqyeyre.supabase.co";
+    const SB_DEFAULT_KEY = "sb_publishable_aCmPJrOjlt_PSQQGH9WtNA_xTxD2oiJ";
+    const SB_SQL_EDITOR_URL = "https://supabase.com/dashboard/project/yjomvwnxqinbmoqyeyre/sql/new";
+    const STORAGE_KEY = "swile_os_crm_rj_v1";
+
     let state = {
       accounts: [],
       opportunities: [],
       followups: [],
-      supabaseUrl: "https://yjomvwnxqinbmoqyeyre.supabase.co",
-      supabaseKey: "sb_publishable_aCmPJrOjlt_PSQQGH9WtNA_xTxD2oiJ",
-      supabaseConnected: false
+      supabaseUrl: SB_DEFAULT_URL,
+      supabaseKey: SB_DEFAULT_KEY,
+      supabaseConnected: false,
+      autoConnect: true
     };
 
-    let supabaseClient = null;
     let chartProvidersInstance = null;
     let chartPolosInstance = null;
+
+    // Escapa texto antes de inserir via innerHTML (dados vêm do banco e podem ser editados por terceiros)
+    function esc(v) {
+      return String(v === null || v === undefined ? "" : v)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function isUuid(v) {
+      return typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+    }
+
+    function newUuid() {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+    }
+
+    function todayIso() {
+      const d = new Date();
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    }
+
+    // Remove "/rest/v1/" do fim da URL para o SDK não duplicar a rota (/rest/v1/rest/v1/)
+    function normalizeSupabaseUrl(u) {
+      return String(u || "").trim().replace(/\/+$/, "").replace(/\/rest\/v1$/i, "");
+    }
+
+    function nextAccountCode() {
+      let maxN = 0;
+      for (let i = 0; i < state.accounts.length; i++) {
+        const m = /^LD-(\d+)$/.exec(state.accounts[i].code || "");
+        if (m) maxN = Math.max(maxN, Number(m[1]));
+      }
+      return "LD-" + String(maxN + 1).padStart(2, "0");
+    }
 
     function loadInitialState() {
       let saved = null;
       try {
-        const raw = localStorage.getItem("swile_os_crm_rj_v1");
+        const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) saved = JSON.parse(raw);
       } catch (e) {
         saved = null;
@@ -1363,26 +1369,28 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
 
       if (saved && Array.isArray(saved.accounts) && saved.accounts.length > 0) {
         state.accounts = saved.accounts;
-        state.opportunities = saved.opportunities || INITIAL_OPPORTUNITIES;
-        state.followups = saved.followups || INITIAL_FOLLOWUPS;
-        state.supabaseUrl = saved.supabaseUrl || "https://yjomvwnxqinbmoqyeyre.supabase.co";
-        state.supabaseKey = saved.supabaseKey || "sb_publishable_aCmPJrOjlt_PSQQGH9WtNA_xTxD2oiJ";
+        state.opportunities = saved.opportunities || JSON.parse(JSON.stringify(INITIAL_OPPORTUNITIES));
+        state.followups = saved.followups || JSON.parse(JSON.stringify(INITIAL_FOLLOWUPS));
+        state.supabaseUrl = saved.supabaseUrl || SB_DEFAULT_URL;
+        state.supabaseKey = saved.supabaseKey || SB_DEFAULT_KEY;
+        state.autoConnect = saved.autoConnect !== false;
       } else {
         state.accounts = JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
         state.opportunities = JSON.parse(JSON.stringify(INITIAL_OPPORTUNITIES));
         state.followups = JSON.parse(JSON.stringify(INITIAL_FOLLOWUPS));
       }
+      state.supabaseConnected = false;
 
       const sqlBox = document.getElementById("sqlSchemaTextarea");
       if (sqlBox) sqlBox.value = SQL_SCHEMA_TEXT;
 
-      if (state.supabaseUrl) document.getElementById("inputSupabaseUrl").value = state.supabaseUrl;
-      if (state.supabaseKey) document.getElementById("inputSupabaseKey").value = state.supabaseKey;
+      document.getElementById("inputSupabaseUrl").value = state.supabaseUrl || "";
+      document.getElementById("inputSupabaseKey").value = state.supabaseKey || "";
     }
 
     function persistState() {
       try {
-        localStorage.setItem("swile_os_crm_rj_v1", JSON.stringify(state));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch (e) {
         // Ignore storage quota or iframe restrictions
       }
@@ -1581,13 +1589,13 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
           html += '<div class="flex items-start justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-3">' +
             '<div class="space-y-1">' +
               '<div class="flex items-center gap-2">' +
-                '<span class="font-bold text-white text-xs">' + compName + '</span>' +
-                '<span class="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-fuchsia-300">' + prov + '</span>' +
-                '<span class="text-[10px] text-slate-400">' + f.channel + ' • ' + f.due_date + '</span>' +
+                '<span class="font-bold text-white text-xs">' + esc(compName) + '</span>' +
+                '<span class="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-fuchsia-300">' + esc(prov) + '</span>' +
+                '<span class="text-[10px] text-slate-400">' + esc(f.channel) + ' • ' + esc(f.due_date) + '</span>' +
               '</div>' +
-              '<p class="text-xs text-slate-300">' + f.action_title + '</p>' +
+              '<p class="text-xs text-slate-300">' + esc(f.action_title) + '</p>' +
             '</div>' +
-            '<button type="button" onclick="completeFollowup(\'' + f.id + '\')" class="shrink-0 rounded-lg bg-emerald-600/20 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-600/30 transition">✓ Concluir</button>' +
+            '<button type="button" onclick="completeFollowup(\'' + esc(f.id) + '\')" class="shrink-0 rounded-lg bg-emerald-600/20 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-600/30 transition">✓ Concluir</button>' +
           '</div>';
         }
         fuContainer.innerHTML = html;
@@ -1607,14 +1615,14 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
         topHtml += '<div class="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-3">' +
           '<div class="space-y-0.5">' +
             '<div class="flex items-center gap-2">' +
-              '<span class="font-bold text-white text-xs">' + a.company_name + '</span>' +
-              '<span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] text-amber-300 font-semibold">Cartão: ' + a.current_provider + '</span>' +
+              '<span class="font-bold text-white text-xs">' + esc(a.company_name) + '</span>' +
+              '<span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] text-amber-300 font-semibold">Cartão: ' + esc(a.current_provider) + '</span>' +
             '</div>' +
-            '<p class="text-[11px] text-slate-400">' + a.polo_rj + ' • ' + a.active_card_users + ' vidas • TPV: ' + formatCurrencyBRL(tpv) + '/mês</p>' +
+            '<p class="text-[11px] text-slate-400">' + esc(a.polo_rj) + ' • ' + esc(a.active_card_users) + ' vidas • TPV: ' + formatCurrencyBRL(tpv) + '/mês</p>' +
           '</div>' +
           '<div class="flex items-center gap-2">' +
             '<span class="rounded-lg bg-fuchsia-500/20 border border-fuchsia-500/40 px-2.5 py-1 text-xs font-extrabold text-fuchsia-300">' + sc + ' pts</span>' +
-            '<button type="button" onclick="openAccountModal(\'' + a.id + '\')" class="rounded-lg bg-slate-800 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-700">Raio-X</button>' +
+            '<button type="button" onclick="openAccountModal(\'' + esc(a.id) + '\')" class="rounded-lg bg-slate-800 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-700">Raio-X</button>' +
           '</div>' +
         '</div>';
       }
@@ -1732,35 +1740,35 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
         html += '<tr class="hover:bg-slate-800/50 transition">' +
           '<td class="py-3 px-3">' +
             '<div class="font-bold text-white flex items-center gap-1.5">' +
-              '<span>' + a.company_name + '</span>' +
+              '<span>' + esc(a.company_name) + '</span>' +
               prioBadge +
             '</div>' +
-            '<div class="text-[11px] text-slate-400">' + a.sector + '</div>' +
+            '<div class="text-[11px] text-slate-400">' + esc(a.sector) + '</div>' +
           '</td>' +
           '<td class="py-3 px-3">' +
-            '<div class="font-medium text-slate-200">' + a.polo_rj + '</div>' +
-            '<div class="text-[11px] text-slate-400">' + a.neighborhood + '</div>' +
+            '<div class="font-medium text-slate-200">' + esc(a.polo_rj) + '</div>' +
+            '<div class="text-[11px] text-slate-400">' + esc(a.neighborhood) + '</div>' +
           '</td>' +
           '<td class="py-3 px-3">' +
-            '<div class="font-medium text-slate-200">' + a.decision_maker_name + '</div>' +
-            '<div class="text-[11px] text-slate-400">' + a.phone + '</div>' +
+            '<div class="font-medium text-slate-200">' + esc(a.decision_maker_name) + '</div>' +
+            '<div class="text-[11px] text-slate-400">' + esc(a.phone) + '</div>' +
           '</td>' +
           '<td class="py-3 px-3 text-right font-bold text-white">' + Number(a.active_card_users).toLocaleString("pt-BR") + '</td>' +
           '<td class="py-3 px-3 text-right">' +
             '<div class="font-bold text-emerald-400">' + formatCurrencyBRL(tpv) + '</div>' +
-            '<div class="text-[10px] text-slate-400">Ticket: R$ ' + a.avg_monthly_ticket + '</div>' +
+            '<div class="text-[10px] text-slate-400">Ticket: R$ ' + esc(a.avg_monthly_ticket) + '</div>' +
           '</td>' +
           '<td class="py-3 px-3">' +
-            '<span class="rounded-md bg-slate-800 border border-slate-700 px-2 py-1 text-[11px] font-semibold text-fuchsia-300">' + a.current_provider + '</span>' +
+            '<span class="rounded-md bg-slate-800 border border-slate-700 px-2 py-1 text-[11px] font-semibold text-fuchsia-300">' + esc(a.current_provider) + '</span>' +
           '</td>' +
           '<td class="py-3 px-3 text-center">' +
             '<span class="inline-block rounded-lg bg-violet-500/20 border border-violet-500/40 px-2.5 py-1 font-extrabold text-violet-300">' + sc + '</span>' +
           '</td>' +
           '<td class="py-3 px-3 max-w-xs">' +
-            '<p class="text-[11px] text-slate-300 line-clamp-2">' + nextAct + '</p>' +
+            '<p class="text-[11px] text-slate-300 line-clamp-2">' + esc(nextAct) + '</p>' +
           '</td>' +
           '<td class="py-3 px-3 text-right whitespace-nowrap">' +
-            '<button type="button" onclick="openAccountModal(\'' + a.id + '\')" class="rounded-lg swile-gradient px-2.5 py-1 text-[11px] font-semibold text-white hover:opacity-90">Raio-X 360°</button>' +
+            '<button type="button" onclick="openAccountModal(\'' + esc(a.id) + '\')" class="rounded-lg swile-gradient px-2.5 py-1 text-[11px] font-semibold text-white hover:opacity-90">Raio-X 360°</button>' +
           '</td>' +
         '</tr>';
       }
@@ -1811,19 +1819,19 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
 
           html += '<div class="rounded-xl border border-slate-700/80 bg-slate-900/90 p-3 space-y-2 shadow">' +
             '<div class="flex items-start justify-between gap-1">' +
-              '<button type="button" onclick="openAccountModal(\'' + acc.id + '\')" class="text-left font-bold text-xs text-white hover:text-fuchsia-300">' + acc.company_name + '</button>' +
-              '<span class="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-fuchsia-300">' + acc.current_provider + '</span>' +
+              '<button type="button" onclick="openAccountModal(\'' + esc(acc.id) + '\')" class="text-left font-bold text-xs text-white hover:text-fuchsia-300">' + esc(acc.company_name) + '</button>' +
+              '<span class="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-fuchsia-300">' + esc(acc.current_provider) + '</span>' +
             '</div>' +
             '<div class="text-[11px] text-slate-300">' +
-              '<div>👥 <strong>' + acc.active_card_users + ' vidas</strong> • TPV: ' + formatCurrencyBRL(tpv) + '</div>' +
-              '<div class="text-slate-400">Prob: ' + opp.probability + '% • Forecast: ' + formatCurrencyBRL(weighted) + '</div>' +
+              '<div>👥 <strong>' + esc(acc.active_card_users) + ' vidas</strong> • TPV: ' + formatCurrencyBRL(tpv) + '</div>' +
+              '<div class="text-slate-400">Prob: ' + esc(opp.probability) + '% • Forecast: ' + formatCurrencyBRL(weighted) + '</div>' +
             '</div>' +
             '<div class="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px]">' +
               (st.weight > 1
-                ? '<button type="button" onclick="moveOpportunityStage(\'' + opp.id + '\', -1)" class="rounded bg-slate-800 px-2 py-0.5 text-slate-300 hover:bg-slate-700">← Voltar</button>'
+                ? '<button type="button" onclick="moveOpportunityStage(\'' + esc(opp.id) + '\', -1)" class="rounded bg-slate-800 px-2 py-0.5 text-slate-300 hover:bg-slate-700">← Voltar</button>'
                 : '<span></span>') +
               (st.weight < 5
-                ? '<button type="button" onclick="moveOpportunityStage(\'' + opp.id + '\', 1)" class="rounded bg-fuchsia-600/30 border border-fuchsia-500/40 px-2 py-0.5 font-semibold text-fuchsia-200 hover:bg-fuchsia-600/50">Avançar →</button>'
+                ? '<button type="button" onclick="moveOpportunityStage(\'' + esc(opp.id) + '\', 1)" class="rounded bg-fuchsia-600/30 border border-fuchsia-500/40 px-2 py-0.5 font-semibold text-fuchsia-200 hover:bg-fuchsia-600/50">Avançar →</button>'
                 : '<span class="text-emerald-400 font-bold">🎉 Ganho!</span>') +
             '</div>' +
           '</div>';
@@ -1842,6 +1850,7 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
       opp.stage_weight = nextW;
       const probs = { 1: 30, 2: 50, 3: 65, 4: 80, 5: 100 };
       opp.probability = probs[nextW] || opp.probability;
+      opp.stage = STAGE_LABELS[nextW];
 
       const acc = state.accounts.find(function (a) { return a.id === opp.account_id; });
       if (acc) {
@@ -1849,10 +1858,16 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
         else if (nextW === 4) acc.status = "Proposta & Simulação PAT";
         else if (nextW === 3) acc.status = "Demo / Diagnóstico Agendado";
         else if (nextW === 2) acc.status = "Discovery RH/DP";
+        else if (nextW === 1) acc.status = "Qualificado (SQL)";
       }
 
       refreshAllViews();
-      showToast("Estágio atualizado no Kanban e sincronizado com o CRM!", "📊");
+      showToast("Estágio atualizado no Kanban e no CRM!", "📊");
+      remoteWrite("Kanban", async function () {
+        const r1 = await db.update("crm_opportunities", opp.id, { stage_weight: opp.stage_weight, probability: opp.probability, stage: opp.stage });
+        if (r1.error || !acc) return r1;
+        return db.update("crm_accounts", acc.id, { status: acc.status });
+      });
     }
 
     function renderFollowupsTab() {
@@ -1875,16 +1890,16 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
         html += '<div class="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/90 p-3 text-xs">' +
           '<div class="space-y-1">' +
             '<div class="flex items-center gap-2">' +
-              '<span class="font-bold text-white">' + compName + '</span>' +
-              '<span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] text-fuchsia-300">' + f.channel + '</span>' +
-              '<span class="text-[11px] text-slate-400">Data: ' + f.due_date + '</span>' +
+              '<span class="font-bold text-white">' + esc(compName) + '</span>' +
+              '<span class="rounded bg-slate-800 px-2 py-0.5 text-[10px] text-fuchsia-300">' + esc(f.channel) + '</span>' +
+              '<span class="text-[11px] text-slate-400">Data: ' + esc(f.due_date) + '</span>' +
             '</div>' +
-            '<p class="' + (isDone ? 'line-through text-slate-500' : 'text-slate-200') + '">' + f.action_title + '</p>' +
+            '<p class="' + (isDone ? 'line-through text-slate-500' : 'text-slate-200') + '">' + esc(f.action_title) + '</p>' +
           '</div>' +
           '<div>' +
             (isDone
               ? '<span class="rounded bg-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-300">✅ Concluído</span>'
-              : '<button type="button" onclick="completeFollowup(\'' + f.id + '\')" class="rounded-lg bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white hover:bg-emerald-500">Concluir</button>') +
+              : '<button type="button" onclick="completeFollowup(\'' + esc(f.id) + '\')" class="rounded-lg bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white hover:bg-emerald-500">Concluir</button>') +
           '</div>' +
         '</div>';
       }
@@ -1896,6 +1911,8 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
         let rHtml = "";
         for (let i = 0; i < ROUTES_RJ.length; i++) {
           const r = ROUTES_RJ[i];
+          // Lê as contas do polo direto de crm_accounts (sem duplicar endereço na rota)
+          const routeAccs = state.accounts.filter(function (a) { return r.polos.indexOf(a.polo_rj) >= 0; });
           rHtml += '<div class="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-2 text-xs">' +
             '<div class="flex items-center justify-between">' +
               '<span class="font-bold text-white">' + r.name + '</span>' +
@@ -1903,7 +1920,9 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
             '</div>' +
             '<p class="text-[11px] text-slate-400">' + r.shift + '</p>' +
             '<ul class="list-disc list-inside space-y-0.5 text-[11px] text-slate-300">' +
-              r.accounts.map(function (c) { return '<li>' + c + '</li>'; }).join("") +
+              (routeAccs.length
+                ? routeAccs.map(function (c) { return '<li>' + esc(c.company_name) + (c.neighborhood ? ' <span class="text-slate-500">(' + esc(c.neighborhood) + ')</span>' : '') + '</li>'; }).join("")
+                : '<li class="text-slate-500">Nenhuma conta neste polo</li>') +
             '</ul>' +
           '</div>';
         }
@@ -1915,8 +1934,12 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
       const f = state.followups.find(function (x) { return x.id === fuId; });
       if (f) {
         f.status = "Concluído";
+        f.completed_date = todayIso();
         refreshAllViews();
         showToast("Follow-up marcado como concluído!", "✅");
+        remoteWrite("Follow-up", function () {
+          return db.update("crm_follow_ups", f.id, { status: f.status, completed_date: f.completed_date });
+        });
       }
     }
 
@@ -2018,25 +2041,41 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
         : "Cadastrar Nova Conta Middle Market RJ";
 
       document.getElementById("accFormId").value = acc ? acc.id : "";
-      document.getElementById("accFormCompany").value = acc ? acc.company_name : "";
-      document.getElementById("accFormSector").value = acc ? acc.sector : "Tecnologia / Serviços B2B";
-      document.getElementById("accFormPolo").value = acc ? acc.polo_rj : "Centro / Porto Maravilha";
-      document.getElementById("accFormProvider").value = acc ? acc.current_provider : "Caju";
+      document.getElementById("accFormCompany").value = acc ? (acc.company_name || "") : "";
+      document.getElementById("accFormSector").value = acc ? (acc.sector || "") : "Tecnologia / Serviços B2B";
+      setSelectValue("accFormPolo", acc ? acc.polo_rj : "Centro / Porto Maravilha");
+      setSelectValue("accFormProvider", acc ? acc.current_provider : "Caju");
       document.getElementById("accFormLives").value = acc ? acc.active_card_users : 250;
       document.getElementById("accFormTicket").value = acc ? acc.avg_monthly_ticket : 900;
-      document.getElementById("accFormDecisor").value = acc ? acc.decision_maker_name : "Head de Pessoas & Cultura";
-      document.getElementById("accFormPhone").value = acc ? acc.phone : "+55 21 ";
-      document.getElementById("accFormEmail").value = acc ? acc.email_rh : "";
-      document.getElementById("accFormPriority").value = acc ? acc.priority_icp : "Alta";
-      document.getElementById("accFormInterest").value = acc ? acc.interest_level : "Quente";
-      document.getElementById("accFormStatus").value = acc ? acc.status : "Lead Mapeado";
-      document.getElementById("accFormAddress").value = acc ? acc.address : "Rio de Janeiro - RJ";
-      document.getElementById("accFormWebsite").value = acc ? acc.website : "https://";
-      document.getElementById("accFormRhPains").value = acc ? acc.rh_pains : "";
-      document.getElementById("accFormUserPains").value = acc ? acc.user_complaints : "";
-      document.getElementById("accFormTrigger").value = acc ? acc.swile_trigger_2026 : "";
+      document.getElementById("accFormDecisor").value = acc ? (acc.decision_maker_name || "") : "Head de Pessoas & Cultura";
+      document.getElementById("accFormPhone").value = acc ? (acc.phone || "") : "+55 21 ";
+      document.getElementById("accFormEmail").value = acc ? (acc.email_rh || "") : "";
+      setSelectValue("accFormPriority", acc ? acc.priority_icp : "Alta");
+      setSelectValue("accFormInterest", acc ? acc.interest_level : "Quente");
+      setSelectValue("accFormStatus", acc ? acc.status : "Lead Mapeado");
+      document.getElementById("accFormAddress").value = acc ? (acc.address || "") : "Rio de Janeiro - RJ";
+      document.getElementById("accFormWebsite").value = acc ? (acc.website || "") : "https://";
+      document.getElementById("accFormRhPains").value = acc ? (acc.rh_pains || "") : "";
+      document.getElementById("accFormUserPains").value = acc ? (acc.user_complaints || "") : "";
+      document.getElementById("accFormTrigger").value = acc ? (acc.swile_trigger_2026 || "") : "";
 
       modal.classList.remove("hidden");
+    }
+
+    // Define o valor de um <select>; se o valor vier do banco e não existir na lista, cria a opção (evita perder o dado ao salvar)
+    function setSelectValue(selectId, value) {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      const v = value === null || value === undefined ? "" : String(value);
+      let found = false;
+      for (let i = 0; i < sel.options.length; i++) if (sel.options[i].value === v) found = true;
+      if (!found && v) {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        sel.appendChild(opt);
+      }
+      sel.value = v;
     }
 
     function closeAccountModal() {
@@ -2051,17 +2090,14 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
         return;
       }
 
+      const existing = id ? state.accounts.find(function (a) { return a.id === id; }) : null;
+      const lives = Number(document.getElementById("accFormLives").value) || 100;
       const payload = {
-        id: id || ("acc-" + Date.now()),
-        code: id ? undefined : ("LD-" + (state.accounts.length + 1)),
         company_name: comp,
         sector: document.getElementById("accFormSector").value,
         polo_rj: document.getElementById("accFormPolo").value,
-        neighborhood: document.getElementById("accFormPolo").value.split("/")[0].trim(),
         current_provider: document.getElementById("accFormProvider").value,
-        current_model: "Mapeado no CRM",
-        active_card_users: Number(document.getElementById("accFormLives").value) || 100,
-        employees_count: Number(document.getElementById("accFormLives").value) || 100,
+        active_card_users: lives,
         avg_monthly_ticket: Number(document.getElementById("accFormTicket").value) || 850,
         decision_maker_name: document.getElementById("accFormDecisor").value,
         phone: document.getElementById("accFormPhone").value,
@@ -2076,19 +2112,31 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
         swile_trigger_2026: document.getElementById("accFormTrigger").value
       };
 
-      if (id) {
-        const idx = state.accounts.findIndex(function (a) { return a.id === id; });
-        if (idx >= 0) {
-          payload.code = state.accounts[idx].code;
-          state.accounts[idx] = payload;
-        }
+      let record;
+      if (existing) {
+        record = Object.assign(existing, payload);
       } else {
-        state.accounts.unshift(payload);
+        record = Object.assign({
+          id: newUuid(),
+          code: nextAccountCode(),
+          neighborhood: payload.polo_rj.split("/")[0].trim(),
+          current_model: "Mapeado no CRM",
+          employees_count: lives
+        }, payload);
+        state.accounts.unshift(record);
       }
 
       closeAccountModal();
       refreshAllViews();
       showToast("Conta salva e recalculada no CRM!", "💾");
+      remoteWrite("Conta", async function () {
+        const res = await db.upsert("crm_accounts", [accountToRow(record)], "code");
+        if (!res.error && res.data && res.data[0] && res.data[0].id && res.data[0].id !== record.id) {
+          remapAccountId(record.id, res.data[0].id);
+          refreshAllViews();
+        }
+        return res;
+      });
     }
 
     function copyPersonalizedPitchFromModal() {
@@ -2112,7 +2160,7 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
       const sel = document.getElementById(selectId);
       if (!sel) return;
       sel.innerHTML = state.accounts.map(function (a) {
-        return '<option value="' + a.id + '">' + a.company_name + ' (' + a.current_provider + ' • ' + a.active_card_users + ' vidas)</option>';
+        return '<option value="' + esc(a.id) + '">' + esc(a.company_name) + ' (' + esc(a.current_provider) + ' • ' + esc(a.active_card_users) + ' vidas)</option>';
       }).join("");
     }
 
@@ -2137,19 +2185,23 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
         return;
       }
 
-      state.followups.unshift({
-        id: "fu-" + Date.now(),
+      const fu = {
+        id: newUuid(),
         account_id: accId,
         action_title: title,
         due_date: due,
         channel: chan,
         status: "Pendente",
         priority: "Alta"
-      });
+      };
+      state.followups.unshift(fu);
 
       closeFollowupModal();
       refreshAllViews();
       showToast("Novo follow-up agendado como Próxima Ação!", "📅");
+      remoteWrite("Follow-up", function () {
+        return db.upsert("crm_follow_ups", [followupToRow(fu)], "id");
+      });
     }
 
     function openOpportunityModal() {
@@ -2167,133 +2219,490 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
       const prob = Number(document.getElementById("oppProbInput").value) || 40;
       const closeDate = document.getElementById("oppCloseDateInput").value || "2026-11-25";
 
-      state.opportunities.push({
-        id: "opp-" + Date.now(),
+      const opp = {
+        id: newUuid(),
         account_id: accId,
         stage_weight: stageW,
+        stage: STAGE_LABELS[stageW],
         probability: prob,
         close_date: closeDate
-      });
+      };
+      state.opportunities.push(opp);
 
       closeOpportunityModal();
       refreshAllViews();
       showToast("Oportunidade adicionada ao Kanban!", "📊");
+      remoteWrite("Oportunidade", function () {
+        return db.upsert("crm_opportunities", [opportunityToRow(opp)], "id");
+      });
     }
 
-    // 7. SUPABASE LIVE CONNECTION & CSV EXPORT
-    async function connectAndSyncSupabase() {
-      const rawUrl = (document.getElementById("inputSupabaseUrl").value || "").trim();
-      const url = rawUrl.replace(/\/rest\/v1\/?$/, "");
-      const key = (document.getElementById("inputSupabaseKey").value || "").trim();
-      if (!url || !key) {
-        showToast("Preencha a Supabase URL e a Anon Key primeiro.", "⚠️");
-        return;
-      }
+    // 7. SUPABASE LIVE CONNECTION (SDK + FALLBACK REST /rest/v1) & CSV EXPORT
+    const STAGE_LABELS = {
+      0: "Perdido ❌",
+      1: "1. Qualificado (SQL)",
+      2: "2. Discovery & Vidas",
+      3: "3. Demo Dash RH & App",
+      4: "4. Proposta & Simulação PAT",
+      5: "Fechado ✅"
+    };
 
+    // Colunas graváveis de crm_accounts (as colunas de TPV são geradas pelo banco)
+    const ACCOUNT_COLUMNS = [
+      "code", "company_name", "cnpj", "website", "careers_url", "sector", "polo_rj", "neighborhood", "address",
+      "phone", "email_rh", "decision_maker_name", "decision_maker_role", "persona_chave", "employees_count",
+      "active_card_users", "avg_monthly_ticket", "current_provider", "current_model", "status", "priority_icp",
+      "interest_level", "preferred_channel", "rh_pains", "user_complaints", "provider_pros_cons",
+      "swile_trigger_2026", "contract_expiration_date", "loss_reason", "post_sales_phase"
+    ];
+    const ACCOUNT_DEFAULTS = {
+      sector: "A Validar",
+      polo_rj: "Centro / Porto Maravilha",
+      persona_chave: "RH Estratégico / Employer Branding",
+      current_provider: "A Validar",
+      current_model: "Tradicional",
+      status: "Lead Mapeado",
+      priority_icp: "Alta",
+      interest_level: "Morno",
+      preferred_channel: "LinkedIn"
+    };
+
+    function accountToRow(a) {
+      const row = {};
+      for (let i = 0; i < ACCOUNT_COLUMNS.length; i++) {
+        const col = ACCOUNT_COLUMNS[i];
+        let v = a[col];
+        if (v === undefined || v === "") v = Object.prototype.hasOwnProperty.call(ACCOUNT_DEFAULTS, col) ? ACCOUNT_DEFAULTS[col] : null;
+        row[col] = v;
+      }
+      row.active_card_users = Number(a.active_card_users) || 100;
+      row.employees_count = Number(a.employees_count) || row.active_card_users;
+      row.avg_monthly_ticket = Number(a.avg_monthly_ticket) || 800;
+      if (isUuid(a.id)) row.id = a.id;
+      return row;
+    }
+
+    function rowToAccount(row) {
+      return Object.assign({}, row, {
+        employees_count: Number(row.employees_count) || 0,
+        active_card_users: Number(row.active_card_users) || 0,
+        avg_monthly_ticket: Number(row.avg_monthly_ticket) || 0
+      });
+    }
+
+    function opportunityToRow(o) {
+      const acc = state.accounts.find(function (a) { return a.id === o.account_id; });
+      const w = Number(o.stage_weight) || 1;
+      return {
+        id: o.id,
+        account_id: o.account_id,
+        title: o.title || ("Swile — " + (acc ? acc.company_name : "Conta")),
+        stage: o.stage || STAGE_LABELS[w],
+        stage_weight: w,
+        negotiated_lives: Number(o.negotiated_lives) || (acc ? Number(acc.active_card_users) || 100 : 100),
+        proposed_monthly_tpv: Number(o.proposed_monthly_tpv) || (acc ? computeMonthlyTpv(acc) : 0),
+        probability: Number(o.probability) || 0,
+        expected_close_date: o.close_date || null,
+        notes: o.notes || null
+      };
+    }
+
+    function rowToOpportunity(row) {
+      return Object.assign({}, row, {
+        stage_weight: Number(row.stage_weight) || 0,
+        probability: Number(row.probability) || 0,
+        close_date: row.expected_close_date || null
+      });
+    }
+
+    function followupToRow(f) {
+      return {
+        id: f.id,
+        account_id: f.account_id,
+        action_title: f.action_title,
+        due_date: f.due_date,
+        completed_date: f.completed_date || null,
+        status: f.status || "Pendente",
+        channel: f.channel || "WhatsApp",
+        priority: f.priority || "Alta"
+      };
+    }
+
+    // Adaptador de banco: usa o SDK @supabase/supabase-js e cai para fetch() direto no /rest/v1
+    // quando o SDK não carregou (CDN bloqueada) ou falhou por rede.
+    const db = {
+      url: "",
+      key: "",
+      client: null,
+      accessToken: null,
+      lastMode: "-",
+
+      init: function (url, key) {
+        this.url = normalizeSupabaseUrl(url);
+        this.key = String(key || "").trim();
+        this.client = null;
+        if (window.supabase && typeof window.supabase.createClient === "function") {
+          try {
+            this.client = window.supabase.createClient(this.url, this.key, {
+              auth: { persistSession: true, autoRefreshToken: true, storageKey: "swile-os-crm-auth" }
+            });
+          } catch (e) {
+            this.client = null;
+          }
+        }
+      },
+
+      restHeaders: function (extra) {
+        const h = { apikey: this.key, "Content-Type": "application/json" };
+        if (this.accessToken) h.Authorization = "Bearer " + this.accessToken;
+        return Object.assign(h, extra || {});
+      },
+
+      rest: async function (method, path, body, extraHeaders) {
+        this.lastMode = "REST";
+        const resp = await fetch(this.url + "/rest/v1/" + path, {
+          method: method,
+          headers: this.restHeaders(extraHeaders),
+          body: body === undefined ? undefined : JSON.stringify(body)
+        });
+        const text = await resp.text();
+        let json = null;
+        try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; }
+        if (!resp.ok) {
+          return { data: null, error: { status: resp.status, code: json && json.code, message: (json && (json.message || json.msg)) || ("HTTP " + resp.status) } };
+        }
+        return { data: json, error: null };
+      },
+
+      run: async function (sdkFn, restFn) {
+        if (this.client) {
+          try {
+            this.lastMode = "SDK";
+            const res = await sdkFn(this.client);
+            if (res.error) {
+              return { data: null, error: { status: res.status, code: res.error.code, message: res.error.message } };
+            }
+            return { data: res.data, error: null };
+          } catch (e) {
+            // Falha de rede/SDK: tenta o fallback REST
+          }
+        }
+        return restFn();
+      },
+
+      select: function (table, orderCol) {
+        const self = this;
+        return this.run(
+          function (c) { return c.from(table).select("*").order(orderCol, { ascending: true }); },
+          function () { return self.rest("GET", table + "?select=*&order=" + encodeURIComponent(orderCol) + ".asc"); }
+        );
+      },
+
+      upsert: function (table, rows, onConflict, ignoreDuplicates) {
+        const self = this;
+        return this.run(
+          function (c) { return c.from(table).upsert(rows, { onConflict: onConflict, ignoreDuplicates: !!ignoreDuplicates }).select(); },
+          function () {
+            return self.rest("POST", table + "?on_conflict=" + encodeURIComponent(onConflict), rows, {
+              Prefer: (ignoreDuplicates ? "resolution=ignore-duplicates" : "resolution=merge-duplicates") + ",return=representation"
+            });
+          }
+        );
+      },
+
+      update: function (table, id, patch) {
+        const self = this;
+        if (!isUuid(id)) {
+          return Promise.resolve({ data: null, error: { code: "LOCAL_ID", message: "registro ainda não enviado ao banco (use ⬆️ Enviar Contas)" } });
+        }
+        return this.run(
+          function (c) { return c.from(table).update(patch).eq("id", id).select(); },
+          function () {
+            return self.rest("PATCH", table + "?id=eq." + encodeURIComponent(id), patch, { Prefer: "return=representation" });
+          }
+        );
+      },
+
+      signIn: async function (email, password) {
+        if (this.client) {
+          const res = await this.client.auth.signInWithPassword({ email: email, password: password });
+          if (res.error) return { error: res.error };
+          this.accessToken = res.data.session ? res.data.session.access_token : null;
+          return { user: res.data.user };
+        }
+        const resp = await fetch(this.url + "/auth/v1/token?grant_type=password", {
+          method: "POST",
+          headers: { apikey: this.key, "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email, password: password })
+        });
+        const json = await resp.json().catch(function () { return {}; });
+        if (!resp.ok) return { error: { message: json.error_description || json.msg || ("HTTP " + resp.status) } };
+        this.accessToken = json.access_token;
+        return { user: json.user };
+      },
+
+      signOut: async function () {
+        this.accessToken = null;
+        if (this.client) {
+          try { await this.client.auth.signOut(); } catch (e) { /* ignore */ }
+        }
+      },
+
+      restoreSession: async function () {
+        if (!this.client) return null;
+        try {
+          const res = await this.client.auth.getSession();
+          const sess = res && res.data ? res.data.session : null;
+          this.accessToken = sess ? sess.access_token : null;
+          return sess ? sess.user : null;
+        } catch (e) {
+          return null;
+        }
+      }
+    };
+
+    function isMissingTableError(err) {
+      if (!err) return false;
+      return err.code === "PGRST205" || err.code === "42P01" || err.status === 404 ||
+        /does not exist|could not find the table/i.test(err.message || "");
+    }
+
+    function setDbStatus(kind, html) {
+      const labels = {
+        connected: ["Supabase Cloud Conectado", "Status: Sincronizado c/ Supabase", "border-emerald-500/50"],
+        missing: ["Modo Local • Tabelas pendentes", "Status: Tabelas não encontradas", "border-amber-500/50"],
+        error: ["Modo Local • Erro Supabase", "Status: Erro de conexão", "border-rose-500/50"],
+        local: ["Modo Local + Supabase Ready", "Status: Cache Local Ativo", "border-slate-700"],
+        busy: ["Conectando ao Supabase…", "Status: Conectando…", "border-violet-500/50"]
+      };
+      const l = labels[kind] || labels.local;
+      const top = document.getElementById("dbStatusLabel");
+      const badge = document.getElementById("supabaseConnBadge");
+      const box = document.getElementById("supabaseStatusBox");
+      if (top) top.textContent = l[0];
+      if (badge) badge.textContent = l[1];
+      if (box) {
+        box.className = "rounded-xl border bg-slate-950/80 p-3.5 text-xs text-slate-300 space-y-1 " + l[2];
+        box.innerHTML = html || "";
+      }
+    }
+
+    function setAuthLabel(user) {
+      const el = document.getElementById("authStatusLabel");
+      if (el) el.textContent = user && user.email ? ("Logado como " + user.email) : "Não logado (modo demo/anon)";
+    }
+
+    function remapAccountId(oldId, newId) {
+      if (!oldId || !newId || oldId === newId) return;
+      for (let i = 0; i < state.accounts.length; i++) if (state.accounts[i].id === oldId) state.accounts[i].id = newId;
+      for (let i = 0; i < state.opportunities.length; i++) if (state.opportunities[i].account_id === oldId) state.opportunities[i].account_id = newId;
+      for (let i = 0; i < state.followups.length; i++) if (state.followups[i].account_id === oldId) state.followups[i].account_id = newId;
+    }
+
+    // Grava no Supabase em segundo plano quando conectado; o estado local já foi atualizado.
+    async function remoteWrite(label, fn) {
+      if (!state.supabaseConnected) return;
+      try {
+        const res = await fn();
+        if (res && res.error) {
+          showToast(label + " salvo localmente, mas o Supabase recusou: " + res.error.message, "⚠️");
+        }
+      } catch (e) {
+        showToast(label + " salvo localmente; sem rede para gravar no Supabase.", "⚠️");
+      }
+    }
+
+    function readSupabaseInputs() {
+      const url = normalizeSupabaseUrl(document.getElementById("inputSupabaseUrl").value);
+      const key = (document.getElementById("inputSupabaseKey").value || "").trim();
+      document.getElementById("inputSupabaseUrl").value = url;
       state.supabaseUrl = url;
       state.supabaseKey = key;
+      return { url: url, key: key };
+    }
+
+    async function loadRemoteData() {
+      const accRes = await db.select("crm_accounts", "code");
+      if (accRes.error) return { error: accRes.error };
+      const oppRes = await db.select("crm_opportunities", "created_at");
+      const fuRes = await db.select("crm_follow_ups", "due_date");
+      return {
+        accounts: accRes.data || [],
+        opportunities: oppRes.error ? null : (oppRes.data || []),
+        followups: fuRes.error ? null : (fuRes.data || []),
+        partialError: oppRes.error || fuRes.error || null
+      };
+    }
+
+    function applyRemoteData(remote) {
+      state.accounts = remote.accounts.map(rowToAccount);
+      if (remote.opportunities) state.opportunities = remote.opportunities.map(rowToOpportunity);
+      if (remote.followups) state.followups = remote.followups.map(function (r) { return Object.assign({}, r); });
+    }
+
+    async function connectAndSyncSupabase(opts) {
+      const silent = opts && opts.silent;
+      const cfg = readSupabaseInputs();
+      if (!cfg.url || !cfg.key) {
+        showToast("Preencha a Supabase URL e a chave pública primeiro.", "⚠️");
+        return;
+      }
+      state.autoConnect = true;
       persistState();
+      setDbStatus("busy", "Conectando a <code>" + esc(cfg.url) + "</code>…");
 
       try {
-        if (typeof window.supabase === "undefined") {
-          showToast("SDK Supabase não carregado; mantendo modo local.", "⚠️");
+        db.init(cfg.url, cfg.key);
+        setAuthLabel(await db.restoreSession());
+
+        let remote = await loadRemoteData();
+        if (remote.error) {
+          state.supabaseConnected = false;
+          if (isMissingTableError(remote.error)) {
+            setDbStatus("missing",
+              "<p class='font-bold text-amber-300'>O projeto respondeu, mas as tabelas do CRM ainda não existem.</p>" +
+              "<p>1. Clique em <strong>📋 Copiar SQL Completo</strong> (ao lado).<br>2. Cole e rode no <a class='text-emerald-300 underline' target='_blank' rel='noopener' href='" + SB_SQL_EDITOR_URL + "'>SQL Editor do Supabase</a>.<br>3. Volte aqui e clique em ⚡ Conectar.</p>" +
+              "<p class='text-slate-500'>Enquanto isso, o CRM segue funcionando no cache local.</p>");
+            if (!silent) {
+              showToast("Tabelas não encontradas: rode o SQL no SQL Editor do Supabase.", "⚡");
+              switchTab("supabase");
+            }
+          } else {
+            setDbStatus("error", "<p class='font-bold text-rose-300'>Erro do Supabase:</p><p>" + esc(remote.error.message) + "</p><p class='text-slate-500'>Se você ativou o Modo Seguro, faça login abaixo.</p>");
+            if (!silent) showToast("Supabase: " + remote.error.message, "⚠️");
+          }
           return;
         }
-        supabaseClient = window.supabase.createClient(url, key);
-        const { data, error } = await supabaseClient.from("crm_accounts").select("*").order("created_at", { ascending: true });
-        if (error) {
-          showToast("Conectado ao projeto! Rode o SQL Schema no Supabase para criar a tabela crm_accounts.", "⚡");
-          return;
+
+        // Tabelas existem e estão vazias: envia automaticamente as contas locais (upsert)
+        if (remote.accounts.length === 0) {
+          const pushed = await pushLocalSeedToSupabase({ silent: true, alreadyInit: true });
+          if (!pushed) return;
+          remote = await loadRemoteData();
+          if (remote.error) return;
         }
-        if (Array.isArray(data) && data.length > 0) {
-          state.accounts = data.map(function (row, idx) {
-            return {
-              id: row.id || ("acc-sb-" + idx),
-              code: row.code || ("LD-" + (idx + 1)),
-              company_name: row.company_name,
-              website: row.website || "",
-              sector: row.sector || "",
-              polo_rj: row.polo_rj || "Centro / Porto Maravilha",
-              neighborhood: row.neighborhood || "",
-              address: row.address || "",
-              phone: row.phone || "",
-              email_rh: row.email_rh || "",
-              decision_maker_name: row.decision_maker_name || "",
-              employees_count: Number(row.employees_count) || 100,
-              active_card_users: Number(row.active_card_users) || 100,
-              avg_monthly_ticket: Number(row.avg_monthly_ticket) || 850,
-              current_provider: row.current_provider || "Caju",
-              current_model: row.current_model || "",
-              status: row.status || "Lead Mapeado",
-              priority_icp: row.priority_icp || "Alta",
-              interest_level: row.interest_level || "Quente",
-              rh_pains: row.rh_pains || "",
-              user_complaints: row.user_complaints || "",
-              swile_trigger_2026: row.swile_trigger_2026 || ""
-            };
-          });
-        }
+
+        applyRemoteData(remote);
         state.supabaseConnected = true;
-        document.getElementById("dbStatusLabel").textContent = "Supabase Cloud Conectado";
-        document.getElementById("supabaseConnBadge").textContent = "Status: Sincronizado c/ Supabase";
+        persistState();
+        setDbStatus("connected",
+          "<p class='font-bold text-emerald-300'>Conectado (" + esc(db.lastMode) + ").</p>" +
+          "<p>" + state.accounts.length + " contas, " + state.opportunities.length + " oportunidades e " + state.followups.length + " follow-ups carregados do banco. Alterações feitas no app são gravadas no Supabase.</p>" +
+          (remote.partialError ? "<p class='text-amber-300'>Aviso: " + esc(remote.partialError.message) + "</p>" : ""));
         refreshAllViews();
-        showToast("Sincronizado com seu banco PostgreSQL no Supabase!", "🚀");
+        if (!silent) showToast("Sincronizado com seu banco PostgreSQL no Supabase!", "🚀");
       } catch (err) {
-        showToast("Erro de rede ao conectar ao Supabase; modo local mantido.", "⚠️");
+        state.supabaseConnected = false;
+        setDbStatus("error", "<p class='font-bold text-rose-300'>Sem resposta do Supabase (rede).</p><p>O CRM segue no cache local.</p>");
+        if (!silent) showToast("Erro de rede ao conectar ao Supabase; modo local mantido.", "⚠️");
       }
     }
 
-    async function pushLocalSeedToSupabase() {
-      const rawUrl = (document.getElementById("inputSupabaseUrl").value || "").trim();
-      const url = rawUrl.replace(/\/rest\/v1\/?$/, "");
-      const key = (document.getElementById("inputSupabaseKey").value || "").trim();
-      if (!url || !key) {
-        showToast("Insira sua Supabase URL e Anon Key para enviar os dados.", "⚠️");
+    // Envia contas (upsert por code), oportunidades e follow-ups locais para o banco.
+    async function pushLocalSeedToSupabase(opts) {
+      const silent = opts && opts.silent;
+      if (!(opts && opts.alreadyInit)) {
+        const cfg = readSupabaseInputs();
+        if (!cfg.url || !cfg.key) {
+          showToast("Insira sua Supabase URL e chave pública para enviar os dados.", "⚠️");
+          return false;
+        }
+        db.init(cfg.url, cfg.key);
+        await db.restoreSession();
+      }
+
+      try {
+        // Se os dados locais não vieram do banco (modo local), o banco tem prioridade:
+        // contas que já existem lá não são sobrescritas, e o pipeline delas não é duplicado.
+        const localOnly = !state.supabaseConnected;
+        const existingRes = await db.select("crm_accounts", "code");
+        if (existingRes.error && isMissingTableError(existingRes.error)) {
+          showToast("Execute primeiro o SQL no SQL Editor do Supabase.", "⚠️");
+          return false;
+        }
+        const existingCodes = {};
+        (existingRes.data || []).forEach(function (r) { existingCodes[r.code] = r.id; });
+
+        const accRes = await db.upsert("crm_accounts", state.accounts.map(accountToRow), "code", localOnly);
+        if (accRes.error) {
+          if (isMissingTableError(accRes.error)) {
+            showToast("Execute primeiro o SQL no SQL Editor do Supabase.", "⚠️");
+          } else {
+            showToast("Supabase recusou o envio: " + accRes.error.message, "⚠️");
+            setDbStatus("error", "<p class='font-bold text-rose-300'>Envio recusado:</p><p>" + esc(accRes.error.message) + "</p><p class='text-slate-500'>No Modo Seguro é preciso fazer login antes.</p>");
+          }
+          return false;
+        }
+
+        // Adota os ids gerados pelo banco (casando por code)
+        const byCode = Object.assign({}, existingCodes);
+        (accRes.data || []).forEach(function (r) { byCode[r.code] = r.id; });
+        const skipAccountIds = {};
+        if (localOnly) {
+          Object.keys(existingCodes).forEach(function (code) { skipAccountIds[existingCodes[code]] = true; });
+        }
+        state.accounts.slice().forEach(function (a) {
+          if (byCode[a.code]) remapAccountId(a.id, byCode[a.code]);
+        });
+
+        state.opportunities.forEach(function (o) { if (!isUuid(o.id)) o.id = newUuid(); });
+        state.followups.forEach(function (f) { if (!isUuid(f.id)) f.id = newUuid(); });
+        const opps = state.opportunities.filter(function (o) { return isUuid(o.account_id) && !skipAccountIds[o.account_id]; });
+        const fus = state.followups.filter(function (f) { return isUuid(f.account_id) && !skipAccountIds[f.account_id]; });
+
+        const oppRes = opps.length ? await db.upsert("crm_opportunities", opps.map(opportunityToRow), "id") : { error: null };
+        const fuRes = fus.length ? await db.upsert("crm_follow_ups", fus.map(followupToRow), "id") : { error: null };
+        persistState();
+        refreshAllViews();
+
+        const errs = [oppRes.error, fuRes.error].filter(Boolean);
+        if (errs.length) {
+          showToast("Contas enviadas; erro em pipeline/follow-ups: " + errs[0].message, "⚠️");
+        } else if (!silent) {
+          showToast(state.accounts.length + " contas, " + opps.length + " oportunidades e " + fus.length + " follow-ups enviados ao Supabase!", "✅");
+        }
+        return true;
+      } catch (e) {
+        showToast("Falha de rede ao enviar dados para o Supabase.", "⚠️");
+        return false;
+      }
+    }
+
+    async function loginSupabase() {
+      const email = (document.getElementById("inputAuthEmail").value || "").trim();
+      const password = document.getElementById("inputAuthPassword").value || "";
+      if (!email || !password) {
+        showToast("Informe e-mail e senha.", "⚠️");
         return;
       }
+      const cfg = readSupabaseInputs();
+      db.init(cfg.url, cfg.key);
       try {
-        supabaseClient = window.supabase.createClient(url, key);
-        const rows = state.accounts.map(function (a, i) {
-          return {
-            code: a.code || ("LD-" + (i + 1)),
-            company_name: a.company_name,
-            website: a.website,
-            sector: a.sector,
-            polo_rj: a.polo_rj,
-            neighborhood: a.neighborhood,
-            address: a.address,
-            phone: a.phone,
-            email_rh: a.email_rh,
-            decision_maker_name: a.decision_maker_name,
-            employees_count: Number(a.employees_count) || 100,
-            active_card_users: Number(a.active_card_users) || 100,
-            avg_monthly_ticket: Number(a.avg_monthly_ticket) || 850,
-            current_provider: a.current_provider,
-            current_model: a.current_model,
-            status: a.status,
-            priority_icp: a.priority_icp,
-            interest_level: a.interest_level,
-            rh_pains: a.rh_pains,
-            user_complaints: a.user_complaints,
-            swile_trigger_2026: a.swile_trigger_2026
-          };
-        });
-        const { error } = await supabaseClient.from("crm_accounts").upsert(rows, { onConflict: "code" });
-        if (error) {
-          showToast("Execute primeiro o SQL Schema no SQL Editor do Supabase.", "⚠️");
+        const res = await db.signIn(email, password);
+        if (res.error) {
+          showToast("Login recusado: " + res.error.message, "⚠️");
           return;
         }
-        showToast("15 contas do RJ enviadas para o seu banco Supabase!", "✅");
+        document.getElementById("inputAuthPassword").value = "";
+        setAuthLabel(res.user);
+        showToast("Login feito. Sincronizando…", "🔐");
+        await connectAndSyncSupabase({ silent: false });
       } catch (e) {
-        showToast("Falha ao enviar seed para o Supabase.", "⚠️");
+        showToast("Falha de rede no login.", "⚠️");
       }
+    }
+
+    async function logoutSupabase() {
+      await db.signOut();
+      setAuthLabel(null);
+      showToast("Sessão encerrada.", "ℹ️");
     }
 
     function disconnectSupabase() {
       state.supabaseConnected = false;
-      supabaseClient = null;
-      document.getElementById("dbStatusLabel").textContent = "Modo Local + Supabase Ready";
-      document.getElementById("supabaseConnBadge").textContent = "Status: Cache Local Ativo";
+      state.autoConnect = false;
+      persistState();
+      setDbStatus("local", "Modo local ativo. Os dados ficam só neste navegador até você conectar de novo.");
       showToast("Alternado para armazenamento local.", "ℹ️");
     }
 
@@ -2341,6 +2750,10 @@ create policy "Public access crm_follow_ups" on public.crm_follow_ups for all us
     window.addEventListener("DOMContentLoaded", function () {
       loadInitialState();
       refreshAllViews();
+      // Pré-configuração zero-click: tenta conectar sozinho ao abrir
+      if (state.autoConnect && state.supabaseUrl && state.supabaseKey) {
+        connectAndSyncSupabase({ silent: true });
+      }
     });
   </script>
 </body>

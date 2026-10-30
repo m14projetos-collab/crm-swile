@@ -3181,14 +3181,15 @@
     const PB_TRIGGERS = [
       {
         title: "Decreto 12.712/2025: novas regras do PAT", status: "ok",
-        facts: "Publicado em 11/11/2025. Teto de 3,6% na taxa cobrada dos estabelecimentos (MDR), repasse em até 15 dias e interoperabilidade entre bandeiras em até um ano (por volta de nov/2026).",
-        source: "O Povo, 12/11/2025",
+        facts: "Publicado em 11/11/2025. Teto de 3,6% na taxa cobrada dos estabelecimentos (MDR) no vale-alimentação e no vale-refeição, liquidação em até 15 dias corridos e interoperabilidade (prazo de até um ano, por volta de nov/2026). Segundo o MTE, as regras valem para todas as empresas que concedem o benefício, inscritas ou não no PAT.",
+        source: "Portal do MTE (gov.br), 22/07/2026 · prazo da interoperabilidade: O Povo, 12/11/2025",
+        url: "https://www.gov.br/trabalho-e-emprego/pt-br/noticias-e-conteudo/2026/julho/regras-do-auxilio-alimentacao-e-do-auxilio-refeicao-passam-a-valer-para-todas-as-empresas",
         hook: "Oi {nome}! Com o Decreto 12.712 (novas regras do PAT: teto de taxa e repasse em 15 dias), muitas empresas do Rio estão revisando o contrato de benefícios. Posso te mostrar em 15 minutos o que muda para a {empresa}?"
       },
       {
         title: "iFood compra a Caju", status: "ok",
-        facts: "Anunciada em 20/10/2026. Ainda depende de aprovação do CADE e do Banco Central; valor não divulgado. A Caju tem cerca de 1,3 milhão de trabalhadores e 70 mil empresas; juntas, cerca de 3 milhões de usuários e 135 mil empresas.",
-        source: "O Povo, out/2026",
+        facts: "Anunciada em 20/10/2026. Ainda depende de aprovação do CADE e do Banco Central; até lá as empresas operam separadas. Valor não divulgado oficialmente. A Caju tem cerca de 1,3 milhão de trabalhadores e 70 mil empresas; juntas, cerca de 3 milhões de usuários e 135 mil empresas.",
+        source: "O Povo e Investidor10, 20/10/2026",
         hook: "Oi {nome}! Vi que a compra da Caju pelo iFood ainda depende de CADE e Banco Central. Se a {empresa} usa Caju, vale ter um plano B mapeado caso app, regras ou taxas mudem. Posso te mandar uma simulação sem compromisso?"
       },
       {
@@ -3208,7 +3209,8 @@
       { title: "Liderança", status: "ok", text: "Loïc Soubeyrand é fundador e CEO global da Swile. Júlio Brito lidera a operação no Brasil.", source: "Imprensa (checado em out/2026)" },
       { title: "Tamanho no mundo", status: "ok", text: "Mais de 85 mil empresas e 5,5 milhões de usuários. São números globais de 2024, não do Brasil.", source: "Dados públicos da Swile, 2024" },
       { title: "Tamanho no Brasil", status: "partial", text: "700 mil usuários em set/2024 (Bloomberg Línea). Uma manchete do Times Brasil fala em mais de 800 mil usuários ativos; a data exata não foi confirmada.", source: "Bloomberg Línea, set/2024; Times Brasil" },
-      { title: "Não verificado: use com cuidado", status: "no", text: "Selo B-Corp, eNPS acima de 75, número exato de carteiras e trava por CNAE na maquininha. Confirme no material oficial da Swile antes de citar ao cliente.", source: "Sem fonte pública encontrada" }
+      { title: "Empresa B certificada", status: "ok", text: "A Swile (Swile S.A.S. e subsidiárias) é B Corp, com nota 86,8 no B Impact Assessment (mínimo para certificar: 80).", source: "Relatório de impacto publicado pelo B Lab", url: "https://www.bcorporation.net/en-us/find-a-b-corp/company/swile/" },
+      { title: "Não verificado: use com cuidado", status: "no", text: "eNPS acima de 75, número exato de carteiras e trava por CNAE na maquininha. Confirme no material oficial da Swile antes de citar ao cliente.", source: "Sem fonte pública encontrada" }
     ];
     const PB_STATUS = {
       ok: { label: "Verificado", css: "chip chip-ok" },
@@ -3248,7 +3250,7 @@
         return '<div class="card p-4 space-y-2 text-xs">' +
           '<div class="flex items-start justify-between gap-2"><h3 class="card-title">' + esc(g.title) + '</h3>' + pbStatusChip(g.status) + '</div>' +
           '<p style="color:#c3c8d4">' + esc(g.facts) + '</p>' +
-          '<p style="color:var(--faint)">Fonte: ' + esc(g.source) + '</p>' +
+          '<p style="color:var(--faint)">Fonte: ' + esc(g.source) + (g.url ? ' · <a class="underline hover:text-white" href="' + esc(g.url) + '" target="_blank" rel="noopener">abrir</a>' : "") + '</p>' +
           '<div class="rounded-lg p-2.5" style="background:var(--surface-2)"><p style="color:var(--muted)">' + esc(g.hook) + '</p></div>' +
           '<button type="button" class="btn btn-sm" onclick="copyTriggerHook(' + i + ')">' + icon("copy") + 'Copiar gancho p/ WhatsApp</button>' +
         '</div>';
@@ -3258,7 +3260,7 @@
         return '<div class="card p-4 space-y-2 text-xs">' +
           '<div class="flex items-start justify-between gap-2"><h3 class="card-title">' + esc(x.title) + '</h3>' + pbStatusChip(x.status) + '</div>' +
           '<p style="color:#c3c8d4">' + esc(x.text) + '</p>' +
-          '<p style="color:var(--faint)">Fonte: ' + esc(x.source) + '</p></div>';
+          '<p style="color:var(--faint)">Fonte: ' + esc(x.source) + (x.url ? ' · <a class="underline hover:text-white" href="' + esc(x.url) + '" target="_blank" rel="noopener">abrir</a>' : "") + '</p></div>';
       }).join("");
     }
 

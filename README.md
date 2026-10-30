@@ -129,6 +129,17 @@ As preferências e os modelos ficam no `localStorage` deste navegador (não vão
 - **Playbook em sub-abas**: CHAVE & Objeções, Battlecards & Matriz (nota da Swile com fonte Benway; demais informadas pelo usuário), Gatilhos Regulatórios 2026 (com fonte e "Copiar gancho") e Raio-X Swile Brasil.
 - **Dados da Fattu e da Future**: informados pelo usuário (Fattu cita fattu.com.br/filiais e Econodata). Só substituem os valores provisórios antigos; não sobrescrevem algo editado.
 
+## Fase 4: Business Case RJ
+
+- **Regra do case:** foco em empresas com 200 vidas ou mais no RJ. Conta nova abre com 200 vidas e mostra um aviso abaixo disso. Faturamento = vidas × benefício. Metas: R$ 600 mil/mês e R$ 1,5 mi/trimestre.
+- **Pipeline em 6 fases do Salesforce + Perdida:** Não contactado (10%), Qualificando (20%), Em contato (40%), Negociando (65%), Contrato enviado (85%), Contrato assinado (100%).
+  - Sem mudança de schema: o banco aceita `stage_weight` de 0 a 5, então o app grava o peso limitado a 5 e usa o rótulo `stage` como fonte da verdade ("5. Contrato enviado" e "6. Contrato assinado ✅" gravam peso 5 e são diferenciados pelo rótulo).
+  - Oportunidades antigas (fases de 5 colunas) são convertidas na carga, no navegador e no Supabase (uma gravação por oportunidade convertida).
+  - A view SQL `crm_account_overview` ainda trata peso 5 como cliente ativo; ela não é usada pelo app.
+- **Contas › Abastecer Funil Semanal:** calculadora de gap e cobertura, catálogo de 10 empresas do RJ (cada campo mostra a origem: conferido com fonte, informado pelo usuário ou estimativa), busca pronta em Google/Gupy, LinkedIn e Econodata.
+- **Relatórios:** 3 sub-abas: Metas, Tendência & Simulador; Funil Salesforce & KPIs (Questões 3 e 5); Carteira & Operadoras. O PDF imprime as três.
+- **Playbook › Case RJ (7 Questões):** respostas Q1 a Q7, plano 30-60-90 e atalhos "Demonstrar no app".
+
 ## Sincronização com o Supabase
 
 - **Leitura:** ao conectar, contas, oportunidades e follow-ups são carregados do banco. O banco é a fonte da verdade.

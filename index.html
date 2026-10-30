@@ -118,7 +118,7 @@
     .tbl tbody tr:last-child td { border-bottom: 0; }
 
     /* Kanban */
-    .kanban-board { display: grid; grid-template-columns: repeat(5, minmax(12.5rem, 1fr)); gap: .75rem; overflow-x: auto; padding-bottom: .5rem; scroll-snap-type: x proximity; }
+    .kanban-board { display: grid; grid-template-columns: repeat(6, minmax(10.5rem, 1fr)); gap: .75rem; overflow-x: auto; padding-bottom: .5rem; scroll-snap-type: x proximity; }
     .kcol { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--kc, #64748b); border-radius: 14px; display: flex; flex-direction: column; min-height: 14rem; scroll-snap-align: start; }
     .kcol-head { background: color-mix(in srgb, var(--kc, #64748b) 10%, transparent); border-bottom: 1px solid var(--line); border-radius: 10px 10px 0 0; margin-bottom: .5rem; }
     .kcol .kcard { border-left: 3px solid var(--kc, #64748b); }
@@ -166,6 +166,9 @@
       #view-reports { position: absolute; left: 0; top: 0; width: 100%; display: block !important; animation: none !important; }
       .no-print { display: none !important; }
       .print-only { display: block !important; color: #111827; margin-bottom: 8px; }
+      #view-reports .rep-tab { display: block !important; break-before: page; }
+      #view-reports #rep-case { break-before: auto; }
+      #caseKpis { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 8px !important; }
       #view-reports .card { background: #fff !important; border-color: #d1d5db !important; box-shadow: none !important; }
       #view-reports .card-title, #view-reports .text-white, #view-reports h2 { color: #111827 !important; }
       #view-reports .card-sub, #view-reports .eyebrow, #view-reports p, #view-reports span { color: #374151 !important; }
@@ -447,8 +450,65 @@
               <h2 class="text-lg font-semibold text-white tracking-tight">Contas</h2>
               <p class="text-sm" style="color:var(--muted)">Clique numa linha para abrir a ficha completa com histórico.</p>
             </div>
-            <button id="btnNewAccountTable" type="button" onclick="openAccountModal()" class="btn btn-primary btn-sm"><svg class="ico"><use href="#i-plus"/></svg>Cadastrar empresa</button>
+            <div class="flex flex-wrap gap-2">
+              <button id="btnWeeklyFeed" type="button" onclick="toggleWeeklyFeed()" class="btn btn-sm"><svg class="ico"><use href="#i-plus"/></svg>Abastecer Funil Semanal (&gt;200v)</button>
+              <button id="btnNewAccountTable" type="button" onclick="openAccountModal()" class="btn btn-primary btn-sm"><svg class="ico"><use href="#i-plus"/></svg>Cadastrar empresa</button>
+            </div>
           </div>
+
+          <details id="weeklyFeed" class="card text-xs" ontoggle="if(this.open)renderWeeklyFeed()">
+            <summary class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 cursor-pointer">
+              <span class="card-title">Abastecimento Semanal de Contas (&gt;200 vidas · Rio de Janeiro)</span>
+              <span class="card-sub">Rotina: segundas e quintas</span>
+            </summary>
+            <div class="px-4 pb-4 space-y-4">
+              <div id="feedGap" class="grid grid-cols-2 lg:grid-cols-4 gap-2"></div>
+              <p id="feedGapNote" style="color:var(--muted)"></p>
+
+              <div class="space-y-2">
+                <div class="flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <h3 class="card-title">Catálogo de expansão RJ</h3>
+                    <p class="card-sub">Cada campo mostra de onde veio. Vidas, benefício e cartão atual são estimativas: confirme na 1ª conversa.</p>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <label for="feedPolo" class="sr-only">Polo</label>
+                    <select id="feedPolo" class="input h-8 w-auto text-[12px]" onchange="renderWeeklyFeed()"><option value="ALL">Todos os polos</option></select>
+                    <label for="feedSector" class="sr-only">Setor</label>
+                    <select id="feedSector" class="input h-8 w-auto text-[12px]" onchange="renderWeeklyFeed()"><option value="ALL">Todos os setores</option></select>
+                    <label for="feedProvider" class="sr-only">Operadora</label>
+                    <select id="feedProvider" class="input h-8 w-auto text-[12px]" onchange="renderWeeklyFeed()"><option value="ALL">Todas as operadoras</option></select>
+                    <label for="feedSize" class="sr-only">Porte</label>
+                    <select id="feedSize" class="input h-8 w-auto text-[12px]" onchange="renderWeeklyFeed()">
+                      <option value="200">≥ 200 vidas</option><option value="350">≥ 350 vidas</option><option value="500">≥ 500 vidas</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="feedCatalog" class="grid grid-cols-1 lg:grid-cols-2 gap-2"></div>
+              </div>
+
+              <div class="space-y-2">
+                <h3 class="card-title">Buscar novas contas</h3>
+                <p class="card-sub">Gera a busca pronta no Google (vagas na Gupy/Sólides mostram o cartão atual), no LinkedIn e na Econodata.</p>
+                <div class="flex flex-wrap gap-1.5 items-center">
+                  <label for="discPolo" class="sr-only">Polo</label>
+                  <select id="discPolo" class="input h-8 w-auto text-[12px]"></select>
+                  <label for="discSector" class="sr-only">Setor</label>
+                  <input id="discSector" type="text" class="input h-8 w-44 text-[12px]" placeholder="Setor (ex.: varejo, saúde)" />
+                  <label for="discProvider" class="sr-only">Operadora atual</label>
+                  <select id="discProvider" class="input h-8 w-auto text-[12px]">
+                    <option value="">Qualquer operadora</option><option>Alelo</option><option>Ticket</option><option>Pluxee</option><option>VR</option><option>Flash</option><option>Caju</option><option>iFood Benefícios</option>
+                  </select>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" class="btn btn-sm" onclick="openDiscovery('jobs')"><svg class="ico"><use href="#i-search"/></svg>Vagas com benefício no RJ</button>
+                  <button type="button" class="btn btn-sm" onclick="openDiscovery('linkedin')"><svg class="ico"><use href="#i-user"/></svg>Decisores RH/CFO no LinkedIn</button>
+                  <button type="button" class="btn btn-sm" onclick="openDiscovery('econodata')"><svg class="ico"><use href="#i-building"/></svg>Empresas na Econodata</button>
+                  <button id="btnDiscNewAccount" type="button" class="btn btn-primary btn-sm" onclick="newAccountFromDiscovery()"><svg class="ico"><use href="#i-plus"/></svg>Cadastrar conta encontrada</button>
+                </div>
+              </div>
+            </div>
+          </details>
 
           <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
             <div class="col-span-2 lg:col-span-2">
@@ -592,6 +652,7 @@
             <button id="pbBtn-matrix" type="button" aria-pressed="false" onclick="setPlaybookTab('matrix')">Battlecards &amp; Matriz</button>
             <button id="pbBtn-triggers" type="button" aria-pressed="false" onclick="setPlaybookTab('triggers')">Gatilhos Regulatórios 2026</button>
             <button id="pbBtn-xray" type="button" aria-pressed="false" onclick="setPlaybookTab('xray')">Raio-X Swile Brasil</button>
+            <button id="pbBtn-case" type="button" aria-pressed="false" onclick="setPlaybookTab('case')">Case RJ (7 Questões)</button>
           </div>
 
           <div id="pbTab-chave" class="space-y-4">
@@ -714,6 +775,15 @@
           <div id="pbTab-xray" class="hidden space-y-3">
             <div id="pbXrayList" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
           </div>
+
+          <div id="pbTab-case" class="hidden space-y-3">
+            <p class="text-xs" style="color:var(--muted)">Roteiro para a apresentação do case. Os números do funil são as metas do case; o que aparece como "CRM hoje" vem da sua carteira. Cada questão tem um atalho para mostrar a tela correspondente.</p>
+            <div id="pbCaseList" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
+            <div class="card p-4 text-xs space-y-3">
+              <h3 class="card-title">Plano 30-60-90 dias</h3>
+              <div id="pbCasePlan" class="grid grid-cols-1 lg:grid-cols-3 gap-3"></div>
+            </div>
+          </div>
         </section>
 
         <!-- =============================================================== -->
@@ -734,6 +804,7 @@
                 <option value="0">Todo o período</option>
               </select>
               <button type="button" class="btn btn-sm" onclick="exportReportPdf()"><svg class="ico"><use href="#i-download"/></svg>PDF</button>
+              <button type="button" class="btn btn-sm" onclick="exportCrmCsv()"><svg class="ico"><use href="#i-download"/></svg>CSV</button>
               <button type="button" class="btn btn-sm" onclick="exportExcel()"><svg class="ico"><use href="#i-download"/></svg>Excel</button>
               <button type="button" class="btn btn-sm" onclick="shareReport('wa')"><svg class="ico"><use href="#i-chat"/></svg>Enviar resumo</button>
               <button type="button" class="btn btn-sm" onclick="shareReport('mail')" aria-label="Enviar resumo por e-mail" title="Enviar resumo por e-mail"><svg class="ico"><use href="#i-mail"/></svg></button>
@@ -745,6 +816,59 @@
             <p id="reportPrintMeta" class="text-sm"></p>
           </div>
 
+          <div class="seg no-print" role="group" aria-label="Seções do relatório">
+            <button type="button" data-rtab="case" onclick="setReportTab('case')">Metas, Tendência &amp; Simulador (Case)</button>
+            <button type="button" data-rtab="funnel" onclick="setReportTab('funnel')">Funil Salesforce &amp; KPIs (Questões 3 e 5)</button>
+            <button type="button" data-rtab="carteira" onclick="setReportTab('carteira')">Carteira &amp; Operadoras</button>
+          </div>
+
+          <div id="rep-case" class="rep-tab space-y-4">
+            <div id="caseKpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div class="card p-4 lg:col-span-2 avoid-break">
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h3 class="card-title">Tendência do trimestre</h3>
+                    <p class="card-sub">Mês 1 e Mês 2 são premissas do case (editáveis). Mês 3 vem do CRM: assinado no mês e projeção com o pipeline de Negociando e Contrato enviado.</p>
+                  </div>
+                  <div class="flex gap-2 no-print">
+                    <div><label for="caseM1" class="label">Mês 1 (R$)</label><input id="caseM1" type="number" step="10000" min="0" class="input h-8 w-28 num" oninput="saveCasePremises()" /></div>
+                    <div><label for="caseM2" class="label">Mês 2 (R$)</label><input id="caseM2" type="number" step="10000" min="0" class="input h-8 w-28 num" oninput="saveCasePremises()" /></div>
+                  </div>
+                </div>
+                <div class="relative h-64 mt-3"><canvas id="chartCaseTrend" aria-label="Tendência do trimestre"></canvas></div>
+                <p id="caseTrendNote" class="text-[12px] mt-2" style="color:var(--muted)"></p>
+              </div>
+              <div class="card p-4 space-y-3 text-xs avoid-break">
+                <div>
+                  <h3 class="card-title">Simulador reverso</h3>
+                  <p class="card-sub">Da meta até a atividade do dia, com as taxas do funil do case.</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <div><label for="simGoal" class="label">Meta/mês (R$)</label><input id="simGoal" type="number" step="10000" min="0" class="input h-8 num" value="600000" oninput="renderCaseSimulator()" /></div>
+                  <div><label for="simLives" class="label">Média de vidas</label><input id="simLives" type="number" step="10" min="1" class="input h-8 num" value="280" oninput="renderCaseSimulator()" /></div>
+                  <div><label for="simBenefit" class="label">Benefício (R$)</label><input id="simBenefit" type="number" step="10" min="1" class="input h-8 num" value="800" oninput="renderCaseSimulator()" /></div>
+                </div>
+                <div id="simOut" class="space-y-1.5"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="rep-funnel" class="rep-tab space-y-4">
+            <div class="card overflow-hidden avoid-break">
+              <div class="card-head pb-3"><div><h3 class="card-title">Questão 5 · Funil mensal de referência × CRM hoje</h3><p class="card-sub">Volume por fase do Salesforce para fechar R$ 600 mil/mês. "CRM hoje" conta as oportunidades abertas em cada fase agora.</p></div></div>
+              <div class="overflow-x-auto"><table class="w-full text-[12px]"><thead><tr class="text-left" style="color:var(--faint)">
+                <th class="px-4 py-2 font-medium">Fase</th><th class="px-3 py-2 font-medium text-right">Prob.</th><th class="px-3 py-2 font-medium text-right">Referência/mês</th><th class="px-3 py-2 font-medium text-right">CRM hoje</th><th class="px-3 py-2 font-medium text-right">TPV no CRM</th><th class="px-4 py-2 font-medium text-right">Diferença</th>
+              </tr></thead><tbody id="caseFunnelTable"></tbody></table></div>
+            </div>
+            <div class="card p-4 avoid-break">
+              <h3 class="card-title">Questão 3 · KPIs de rotina</h3>
+              <p class="card-sub">Meta do case ao lado do que o CRM registrou neste mês. "Sem dados" quando o CRM ainda não tem o necessário para calcular.</p>
+              <div id="caseKpiGrid" class="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-3"></div>
+            </div>
+          </div>
+
+          <div id="rep-carteira" class="rep-tab space-y-4">
           <div id="reportKpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 report-grid">
@@ -768,6 +892,16 @@
               <p class="card-sub">Leads quentes, mornos e frios</p>
               <div class="relative h-60 mt-3"><canvas id="chartReportInterest" aria-label="Interesse das contas"></canvas></div>
             </div>
+            <div class="card p-4 avoid-break">
+              <h3 class="card-title">Carteira por operadora</h3>
+              <p class="card-sub">Contas e vidas por cartão atual</p>
+              <div class="relative h-60 mt-3"><canvas id="chartReportProvider" aria-label="Contas por operadora"></canvas></div>
+            </div>
+            <div class="card p-4 avoid-break">
+              <h3 class="card-title">Carteira por polo</h3>
+              <p class="card-sub">Contas e vidas por região do RJ</p>
+              <div class="relative h-60 mt-3"><canvas id="chartReportPolo" aria-label="Contas por polo"></canvas></div>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -779,6 +913,7 @@
               <div class="card-head pb-3"><div><h3 class="card-title">Ganhos e perdas</h3><p class="card-sub">No período selecionado, com motivos de perda</p></div></div>
               <div id="reportWinLoss"></div>
             </div>
+          </div>
           </div>
         </section>
 
@@ -1090,7 +1225,8 @@
             </div>
             <div>
               <label for="accFormLives" class="label">Vidas no cartão</label>
-              <input id="accFormLives" type="number" min="1" class="input num" />
+              <input id="accFormLives" type="number" min="1" class="input num" oninput="checkCaseLives()" />
+              <p id="accLivesWarn" class="hidden mt-1 text-[11px]" style="color:#fcd34d">Regra do Case RJ: foco exclusivo em empresas acima de 200 vidas.</p>
             </div>
             <div>
               <label for="accFormTicket" class="label">Ticket médio / vida (R$)</label>
@@ -1132,6 +1268,7 @@
                 <option value="Discovery RH/DP">Discovery RH/DP</option>
                 <option value="Demo / Diagnóstico Agendado">Demo / Diagnóstico Agendado</option>
                 <option value="Proposta & Simulação PAT">Proposta & Simulação PAT</option>
+                <option value="Contrato Enviado">Contrato Enviado</option>
                 <option value="Fechado ✅">Fechado ✅</option>
                 <option value="Perdido ❌">Perdido ❌</option>
               </select>
@@ -1175,7 +1312,7 @@
             <p class="font-medium text-white">Ao salvar, já deixar encaminhado</p>
             <label class="flex items-center gap-2 cursor-pointer" style="color:#c3c8d4">
               <input id="accAutoOpp" type="checkbox" checked class="accent-violet-500" />
-              Criar oportunidade no pipeline (estágio 1, fechamento previsto em 30 dias)
+              Criar oportunidade no pipeline (fase 1 · Não contactado, fechamento previsto em 30 dias)
             </label>
             <div class="flex flex-wrap items-center gap-2" style="color:#c3c8d4">
               <label class="flex items-center gap-2 cursor-pointer">
@@ -1372,11 +1509,12 @@
         <div>
           <label for="oppStageSelect" class="label">Estágio</label>
           <select id="oppStageSelect" class="input" onchange="syncOppProbabilityWithStage()">
-            <option value="1">1. Qualificado (SQL)</option>
-            <option value="2">2. Discovery & Vidas</option>
-            <option value="3">3. Demo Dash RH & App</option>
-            <option value="4">4. Proposta & Simulação PAT</option>
-            <option value="5">Fechado ✅</option>
+            <option value="1">1. Não contactado (10%)</option>
+            <option value="2">2. Qualificando (20%)</option>
+            <option value="3">3. Em contato (40%)</option>
+            <option value="4">4. Negociando (65%)</option>
+            <option value="5">5. Contrato enviado (85%)</option>
+            <option value="6">6. Contrato assinado ✅ (100%)</option>
           </select>
         </div>
         <div class="grid grid-cols-2 gap-2">
@@ -2045,6 +2183,10 @@
         state.followups = JSON.parse(JSON.stringify(INITIAL_FOLLOWUPS));
       }
       state.supabaseConnected = false;
+      // Pipeline de 5 etapas → 6 fases do Salesforce (uma vez; a versão nova é reconhecida pelo rótulo)
+      if (state.opportunities.filter(migrateOpportunityStage).length) persistState();
+      // Regra do Case RJ: Nomus passa de 170 para 210 vidas (pedido do usuário)
+      applyCaseRulePatch();
       // Completa preferências antigas com os campos novos sem apagar o que a pessoa editou
       const base = defaultIntegrations();
       const cur = state.integ || {};
@@ -2114,14 +2256,17 @@
     }
 
     // 3. REGRAS DE NEGÓCIO
-    const STAGE_PROBS = { 1: 30, 2: 50, 3: 65, 4: 80, 5: 100 };
+    const STAGE_WON = 6;
+    const STAGE_PROBS = { 0: 0, 1: 10, 2: 20, 3: 40, 4: 65, 5: 85, 6: 100 };
+    function isOpenStage(w) { w = Number(w); return w >= 1 && w < STAGE_WON; }
     const STAGE_ACCOUNT_STATUS = {
       0: "Perdido ❌",
-      1: "Qualificado (SQL)",
-      2: "Discovery RH/DP",
-      3: "Demo / Diagnóstico Agendado",
+      1: "Lead Mapeado",
+      2: "Qualificado (SQL)",
+      3: "Discovery RH/DP",
       4: "Proposta & Simulação PAT",
-      5: "Fechado ✅"
+      5: "Contrato Enviado",
+      6: "Fechado ✅"
     };
     const TAB_TITLES = {
       cockpit: "Hoje",
@@ -2267,14 +2412,18 @@
       "Discovery RH/DP": 3,
       "Demo / Diagnóstico Agendado": 4,
       "Proposta & Simulação PAT": 5,
-      "Fechado ✅": 6,
+      "Contrato Enviado": 6,
+      "Fechado ✅": 7,
       "Perdido ❌": -1
     };
     const STATUS_TO_STAGE = {
-      "Qualificado (SQL)": 1,
-      "Discovery RH/DP": 2,
+      "Lead Mapeado": 1,
+      "Outbound Iniciado": 2,
+      "Qualificado (SQL)": 2,
+      "Discovery RH/DP": 3,
       "Demo / Diagnóstico Agendado": 3,
-      "Proposta & Simulação PAT": 4
+      "Proposta & Simulação PAT": 4,
+      "Contrato Enviado": 5
     };
     const ACCOUNT_STATUSES = Object.keys(STATUS_RANK);
     const TEMPLATE_VARS = ["{nome}", "{empresa}", "{operadora}", "{vidas}", "{bairro}", "{vendedor}", "{link_agenda}", "{link_proposta}"];
@@ -2642,7 +2791,7 @@
       remoteWrite("Etapa", async function () {
         const r = await db.update("crm_accounts", acc.id, { status: acc.status });
         if (r.error || !opp) return r;
-        return db.update("crm_opportunities", opp.id, { stage_weight: opp.stage_weight, stage: opp.stage, probability: opp.probability });
+        return db.update("crm_opportunities", opp.id, { stage_weight: dbStageWeight(opp.stage_weight), stage: opp.stage, probability: opp.probability });
       });
       showToast("Etapa da conta: " + next + ".", "➡️");
       return true;
@@ -2655,7 +2804,7 @@
     // quando a pessoa muda o status da conta à mão: aí o card segue o status escolhido.
     // =====================================================================
     function openOppOf(accId) {
-      return state.opportunities.find(function (o) { const w = Number(o.stage_weight); return o.account_id === accId && w >= 1 && w <= 4; }) || null;
+      return state.opportunities.find(function (o) { const w = Number(o.stage_weight); return o.account_id === accId && w >= 1 && w < STAGE_WON; }) || null;
     }
 
     function autoFollowupData(acc, title, days, channel, notes) {
@@ -2678,15 +2827,16 @@
       if (trigger === "status") {
         if (info.prevStatus !== acc.status) {
           if (acc.status === "Perdido ❌") target = 0;
-          else if (acc.status === "Fechado ✅") target = 5;
+          else if (acc.status === "Fechado ✅") target = STAGE_WON;
           else if (STATUS_TO_STAGE[acc.status]) { target = STATUS_TO_STAGE[acc.status]; exact = true; }
           if (exact && cur && curW === target) { target = null; exact = false; }
+          if (target === 1 && !cur) { target = null; exact = false; }
         }
         // Lead esquentou: sai do 1 e vai para Discovery
-        if (target === null && acc.interest_level === "Quente" && info.prevInterest !== "Quente" && curW === 1) target = 2;
+        if (target === null && acc.interest_level === "Quente" && info.prevInterest !== "Quente" && (curW === 1 || curW === 2)) target = 3;
       } else if (trigger === "interaction") {
-        // Só conta já qualificada: o 1º toque num lead frio continua sendo prospecção
-        if (/^(Ligação|WhatsApp|E-mail)$/.test(info.type || "") && curW === 1 && (STATUS_RANK[acc.status] || 0) >= 2) target = 2;
+        // 1º toque tira o card de "Não contactado". "Em contato" só com conversa de verdade (reunião, atendeu, transcrição)
+        if (/^(Ligação|WhatsApp|E-mail)$/.test(info.type || "") && curW === 1) target = 2;
         else if (/^(Reunião|Visita)$/.test(info.type || "") && (curW >= 1 || (STATUS_RANK[acc.status] || 0) >= 2)) target = 3;
       } else if (trigger === "pat") {
         target = 4;
@@ -2713,8 +2863,8 @@
         let opp = cur;
         if (!opp) {
           // Sem oportunidade aberta: cria uma (só se a conta não estiver fechada/perdida por outro card)
-          const anyWon = state.opportunities.some(function (o) { return o.account_id === acc.id && Number(o.stage_weight) === 5; });
-          if (anyWon && target < 5) return null;
+          const anyWon = state.opportunities.some(function (o) { return o.account_id === acc.id && Number(o.stage_weight) === STAGE_WON; });
+          if (anyWon && target < STAGE_WON) return null;
           opp = { id: newUuid(), account_id: acc.id, stage_weight: 1, stage: STAGE_LABELS[1], probability: STAGE_PROBS[1], close_date: addDaysIso(30) };
           state.opportunities.push(opp);
           res.created = true;
@@ -2727,10 +2877,10 @@
         opp.stage_weight = target;
         opp.stage = STAGE_LABELS[target];
         opp.probability = exact ? STAGE_PROBS[target] : Math.max(Number(opp.probability) || 0, STAGE_PROBS[target]);
-        opp.closed_date = target === 5 ? todayIso() : null;
+        opp.closed_date = target === STAGE_WON ? todayIso() : null;
         res.opp = opp;
         applyStageToAccount(acc, target);
-        if (target === 5) {
+        if (target === STAGE_WON) {
           res.followups.push(autoFollowupData(acc, "Kickoff de onboarding e ativação do X-Pay", 2, "Visita Presencial", "Gerado pelo pipeline automático"));
         }
       }
@@ -2739,7 +2889,7 @@
       persistState();
       refreshAllViews();
       if (!info.defer) writeAutoAdvance(acc, res);
-      if (target === 5) emitEvent("deal.won", { account: accountPayload(acc), opportunity: opportunityToRow(res.opp) });
+      if (target === STAGE_WON) emitEvent("deal.won", { account: accountPayload(acc), opportunity: opportunityToRow(res.opp) });
       if (target === 0 && res.opp) emitEvent("deal.lost", { account: accountPayload(acc), opportunity: opportunityToRow(res.opp) });
       showToast("Pipeline atualizado automaticamente: " + acc.company_name + " → " + STAGE_LABELS[target] + (res.followups.length && target === 0 ? " (recontato em 90 dias)" : ""), "⚡");
       return res;
@@ -2780,6 +2930,298 @@
         }
       }
     ];
+    // Grava no Supabase as oportunidades convertidas para as 6 fases (rótulo novo + probabilidade)
+    function writeStageMigration() {
+      const list = pendingStageMigration.slice();
+      pendingStageMigration = [];
+      if (!list.length) return;
+      remoteWrite("Migração das fases", async function () {
+        for (let i = 0; i < list.length; i++) {
+          const o = list[i];
+          const r = await db.update("crm_opportunities", o.id, { stage: o.stage, stage_weight: dbStageWeight(o.stage_weight), probability: o.probability });
+          if (r && r.error) return r;
+        }
+        return { error: null };
+      });
+      showToast(list.length + " oportunidade(s) convertidas para as 6 fases do Salesforce.", "🔁");
+    }
+
+    // Regra do Case RJ (>= 200 vidas). Nomus: 170 → 210 vidas, ajuste pedido pelo usuário.
+    const CASE_MIN_LIVES = 200;
+
+    // =====================================================================
+    // FASE 4 · BUSINESS CASE RJ
+    // Regras: >= 200 vidas, faturamento = vidas × benefício, meta R$ 600 mil/mês e R$ 1,5 mi/trimestre
+    // =====================================================================
+    const CASE_TARGET_MONTH = 600000;
+    const CASE_TARGET_QUARTER = 1500000;
+    const CASE_COVERAGE = 4;
+    // Funil de referência da Questão 5 (por mês)
+    const CASE_FUNNEL = { 1: 90, 2: 50, 3: 25, 4: 12, 5: 6, 6: 3.5 };
+    const CASE_FUNNEL_LABEL = { 1: "90", 2: "50", 3: "25", 4: "12", 5: "6", 6: "3 a 4" };
+    const CASE_ACTIVITIES_MONTH = 1140;
+
+    function monthKey(iso) { return String(iso || "").slice(0, 7); }
+    function quarterOf(iso) { const d = String(iso || ""); const m = Number(d.slice(5, 7)); return d.slice(0, 4) + "-Q" + Math.ceil(m / 3); }
+    function oppTpv(o) { return computeMonthlyTpv(findAccount(o.account_id) || {}); }
+    function sumTpv(list) { return list.reduce(function (s, o) { return s + oppTpv(o); }, 0); }
+    function businessDaysElapsedThisMonth() {
+      const now = new Date();
+      let n = 0;
+      for (let d = 1; d <= now.getDate(); d++) {
+        const wd = new Date(now.getFullYear(), now.getMonth(), d).getDay();
+        if (wd !== 0 && wd !== 6) n++;
+      }
+      return Math.max(1, n);
+    }
+
+    function computeCaseMetrics() {
+      const today = todayIso();
+      const mk = monthKey(today);
+      const qk = quarterOf(today);
+      const opps = state.opportunities;
+      const won = opps.filter(function (o) { return Number(o.stage_weight) === STAGE_WON; });
+      const wonMonth = won.filter(function (o) { return monthKey(o.closed_date) === mk; });
+      const wonQuarter = won.filter(function (o) { return quarterOf(o.closed_date) === qk; });
+      const lost = opps.filter(function (o) { return Number(o.stage_weight) === 0; });
+      const byStage = {};
+      for (let w = 1; w <= STAGE_WON; w++) {
+        const list = opps.filter(function (o) { return Number(o.stage_weight) === w; });
+        byStage[w] = { count: list.length, tpv: sumTpv(list) };
+      }
+      const late = opps.filter(function (o) { const w = Number(o.stage_weight); return w === 4 || w === 5; });
+      const openAll = opps.filter(function (o) { return isOpenStage(o.stage_weight); });
+      const commit = byStage[5].tpv;
+      const coverageTpv = sumTpv(late);
+      const wonMonthTpv = sumTpv(wonMonth);
+      const projection = wonMonthTpv + late.reduce(function (s, o) { return s + oppTpv(o) * (Number(o.probability) || STAGE_PROBS[Number(o.stage_weight)] || 0) / 100; }, 0);
+      const acts = (state.interactions || []).filter(function (i) { return monthKey(i.at) === mk; });
+      const fuDone = state.followups.filter(function (f) { return f.status !== "Pendente" && monthKey(f.completed_date) === mk; });
+      const meetings = acts.filter(function (i) { return /Reunião|Visita/.test(i.type || ""); }).length;
+      const bd = businessDaysElapsedThisMonth();
+      const cycles = won.filter(function (o) { return o.created_at && o.closed_date; }).map(function (o) {
+        return Math.max(0, Math.round((new Date(o.closed_date + "T12:00:00") - new Date(o.created_at)) / 86400000));
+      });
+      return {
+        wonMonthTpv: wonMonthTpv,
+        wonQuarterTpv: sumTpv(wonQuarter),
+        commit: commit,
+        coverageTpv: coverageTpv,
+        coverage: coverageTpv / CASE_TARGET_MONTH,
+        openTpv: sumTpv(openAll),
+        projection: projection,
+        byStage: byStage,
+        activities: acts.length + fuDone.length,
+        activitiesPerDay: (acts.length + fuDone.length) / bd,
+        meetingsPerDay: meetings / bd,
+        winRate: won.length + lost.length ? won.length / (won.length + lost.length) : null,
+        avgTicket: won.length ? sumTpv(won) / won.length : null,
+        avgCycle: cycles.length ? cycles.reduce(function (a, b) { return a + b; }, 0) / cycles.length : null,
+        wonCount: won.length,
+        lostCount: lost.length
+      };
+    }
+
+    function fmtK(v) {
+      v = Number(v) || 0;
+      if (Math.abs(v) >= 1000000) return "R$ " + (v / 1000000).toFixed(2).replace(".", ",") + " mi";
+      if (Math.abs(v) >= 1000) return "R$ " + Math.round(v / 1000) + " mil";
+      return formatCurrencyBRL(v);
+    }
+
+    // ---------------------------------------------------------------------
+    // Catálogo de expansão RJ. Origem de cada dado:
+    //   ok   = conferido em fonte pública (src/url)
+    //   user = informado pelo usuário (não conferido aqui)
+    //   est  = estimativa informada pelo usuário
+    // ---------------------------------------------------------------------
+    const RJ_CATALOG = [
+      { key: "mag", name: "MAG Seguros (Grupo MAG)", polo: "Centro / Porto Maravilha", sector: "Seguros & Previdência", address: "Tv. Belas Artes, 15 - Centro, Rio de Janeiro - RJ", phone: "+55 21 3031-9300", channel: "grupomag.gupy.io | mag.com.br", website: "https://www.mag.com.br/", lives: 420, ticket: 950, provider: "Pluxee (ex-Sodexo)",
+        decisor: "Patrícia Campos (Diretora de Gente e Gestão)", decisorSrc: { kind: "ok", label: "CQCS, out/2025", url: "https://cqcs.com.br/noticia/grupo-mag-seguros-e-reconhecido-entre-as-melhores-empresas-para-trabalhar-no-brasil-pelo-gptw-2025/" } },
+      { key: "cataratas", name: "Grupo Cataratas (AquaRio e BioParque do Rio)", polo: "Centro / Porto Maravilha", sector: "Turismo & Entretenimento", address: "Praça Muhammad Ali, s/n - Gamboa, Rio de Janeiro - RJ, 20220-360", phone: "+55 21 3900-6670", channel: "grupocataratas.com | marketing@grupocataratas.com", website: "https://www.grupocataratas.com/", lives: 240, ticket: 800, provider: "Flash",
+        decisor: "Diretoria de Gente & Cultura (CEO: Pablo Morbis)", decisorSrc: { kind: "ok", label: "CEO confirmado: Diário do Turismo", url: "https://diariodoturismo.com.br/pablo-morbis-ceo-do-grupo-cataratas-consciencia-ambiental-cresceu-na-pandemia" } },
+      { key: "cacula", name: "Lojas Caçula (Matriz RJ)", polo: "Centro / Porto Maravilha", sector: "Varejo multilojas", address: "Rua Buenos Aires, 255 - Centro / Av. Ayrton Senna, 5500 - Barra da Tijuca, RJ", phone: "+55 21 4020-0220", channel: "lojascacula.com.br", website: "https://www.lojascacula.com.br/", lives: 525, ticket: 780, provider: "Alelo",
+        decisor: "Gerência Corporativa de RH & Diretoria Financeira", decisorSrc: { kind: "user" } },
+      { key: "aguasdorio", name: "Águas do Rio (Aegea)", polo: "Centro / Porto Maravilha", sector: "Infraestrutura & Saneamento", address: "Tv. do Comércio, 16 - Arco do Teles / Av. Rodrigues Alves, 4 - Centro, RJ", phone: "0800 195 0195", channel: "cedoc.rio1@aguasdorio.com.br | aguasdorio.com.br", website: "https://aguasdorio.com.br/", lives: 650, ticket: 850, provider: "Alelo",
+        decisor: "Diretoria de Gestão de Pessoas & Suprimentos (institucional: Adriano Chaves)", decisorSrc: { kind: "user" } },
+      { key: "guanabara", name: "Supermercados Guanabara (Matriz RJ)", polo: "Zona Oeste - Campo Grande", sector: "Varejo alimentar", address: "Estrada da Água Branca, 3400 - Realengo, Rio de Janeiro - RJ, 21720-161", phone: "", channel: "supermercadosguanabara.gupy.io | supermercadosguanabara.com.br", website: "https://www.supermercadosguanabara.com.br/", lives: 580, ticket: 740, provider: "Ticket",
+        decisor: "Superintendência de RH & DP", decisorSrc: { kind: "user" }, livesNote: "núcleo administrativo" },
+      { key: "granado", name: "Granado Pharmácias (Sede RJ)", polo: "Centro / Porto Maravilha", sector: "Indústria & varejo cosmético", address: "Rua Primeiro de Março, 14 - Centro, Rio de Janeiro - RJ", phone: "", channel: "granado.gupy.io | granado.com.br", website: "https://www.granado.com.br/", lives: 450, ticket: 850, provider: "Ticket",
+        decisor: "Diretoria de RH & CFO (diretoria: Sissi Freeman)", decisorSrc: { kind: "user" } },
+      { key: "frescatto", name: "Frescatto Company (RJ)", polo: "Niterói / Região Metropolitana", sector: "Indústria de alimentos", address: "Rod. Washington Luiz - Duque de Caxias / Porto Maravilha, RJ", phone: "", channel: "frescatto.com.br", website: "https://www.frescatto.com.br/", lives: 380, ticket: 780, provider: "Alelo",
+        decisor: "Diretoria de Gente & Operações (CEO: Thiago De Luca)", decisorSrc: { kind: "ok", label: "CEO confirmado: Brazil Journal", url: "https://braziljournal.com/frescatto-prime-o-ma-do-salmao-com-a-lagosta" } },
+      { key: "zonasul", name: "Supermercados Zona Sul (Sede e Logística RJ)", polo: "Zona Sul / Barra", sector: "Varejo alimentar", address: "Av. Brasil, 13150 - Penha / Botafogo, RJ", phone: "", channel: "zonasul.com.br", website: "https://www.zonasul.com.br/", lives: 620, ticket: 820, provider: "Ticket",
+        decisor: "Gerência Corporativa de Recursos Humanos", decisorSrc: { kind: "user" }, livesNote: "núcleo corporativo" },
+      { key: "adonai", name: "Adonai Supermercados (Grupo Adonai RJ)", polo: "Zona Oeste - Campo Grande", sector: "Varejo alimentar", address: "Campo Grande / Inhoaíba, Rio de Janeiro - RJ (CNPJ 29.080.946/0002-78)", phone: "", channel: "", website: "", lives: 320, ticket: 750, provider: "Alelo",
+        decisor: "Diretoria Executiva & RH (14 lojas na Zona Oeste)", decisorSrc: { kind: "user" } },
+      { key: "vtex", name: "VTEX Brasil (Hub Rio de Janeiro)", polo: "Zona Sul / Barra", sector: "Tecnologia", address: "Praia de Botafogo, 300 - Botafogo, Rio de Janeiro - RJ", phone: "", channel: "vtex.com/pt-br", website: "https://vtex.com/pt-br/", lives: 340, ticket: 1100, provider: "Flash",
+        decisor: "People Partner Director & Total Rewards", decisorSrc: { kind: "user" } }
+    ];
+
+    function srcChip(kind, label, url) {
+      if (kind === "ok") return url ? '<a class="chip chip-ok hover:text-white" href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(label || "conferido") + '</a>' : '<span class="chip chip-ok">' + esc(label || "conferido") + '</span>';
+      if (kind === "est") return '<span class="chip" style="color:#fcd34d">estimativa</span>';
+      return '<span class="chip" style="color:#c4b5fd">informado pelo usuário</span>';
+    }
+    const RJ_CATALOG_MATCH = { mag: "mag seguros", cataratas: "cataratas", cacula: "caçula", aguasdorio: "águas do rio", guanabara: "guanabara", granado: "granado", frescatto: "frescatto", zonasul: "zona sul", adonai: "adonai", vtex: "vtex" };
+    function catalogInCarteira(item) {
+      const token = RJ_CATALOG_MATCH[item.key] || item.name.toLowerCase();
+      return state.accounts.some(function (a) { return String(a.company_name || "").toLowerCase().indexOf(token) >= 0; });
+    }
+
+    function fillSelect(id, values, allLabel) {
+      const el = document.getElementById(id);
+      if (!el || el.options.length > 1) return;
+      values.forEach(function (v) { const o = document.createElement("option"); o.value = v; o.textContent = v; el.appendChild(o); });
+    }
+
+    function renderWeeklyFeed() {
+      const box = document.getElementById("feedCatalog");
+      if (!box) return;
+      const m = computeCaseMetrics();
+      const gap = Math.max(0, CASE_TARGET_MONTH - m.wonMonthTpv);
+      const top = (m.byStage[1] ? m.byStage[1].count : 0) + (m.byStage[2] ? m.byStage[2].count : 0);
+      const need = Math.ceil(CASE_FUNNEL[1] * (gap / CASE_TARGET_MONTH));
+      // Ritmo constante: o volume mensal do topo do funil dividido pelas ~4,3 semanas do mês
+      const week = top >= need ? 0 : Math.ceil(need / 4.33);
+      const tile = function (label, value, sub, color) {
+        return '<div class="rounded-xl border p-3" style="border-color:var(--line);background:var(--surface-2)"><p class="label">' + label + '</p><p class="num text-[15px] font-semibold" style="color:' + (color || "#fff") + '">' + value + '</p><p style="color:var(--faint)">' + sub + '</p></div>';
+      };
+      document.getElementById("feedGap").innerHTML =
+        tile("Falta para a meta do mês", fmtK(gap), "Meta " + fmtK(CASE_TARGET_MONTH) + " · assinado " + fmtK(m.wonMonthTpv), gap ? "#fca5a5" : "#6ee7b7") +
+        tile("Cobertura (Negociando + Contrato)", m.coverage.toFixed(1).replace(".", ",") + "x", "Meta " + CASE_COVERAGE + "x = " + fmtK(CASE_TARGET_MONTH * CASE_COVERAGE), m.coverage >= CASE_COVERAGE ? "#6ee7b7" : "#fcd34d") +
+        tile("Topo do funil hoje", String(top), "Não contactado + Qualificando · precisa de ~" + need) +
+        tile("Puxar nesta semana", String(week), week ? "≈ " + Math.ceil(week / 2) + " na segunda e " + Math.floor(week / 2) + " na quinta" : "Topo do funil em dia", week ? "#c4b5fd" : "#6ee7b7");
+      document.getElementById("feedGapNote").textContent = "Conta: o funil do case pede 90 contas mapeadas para 3 a 4 contratos por mês. Proporcional ao que falta da meta, são ~" + need + " contas no mês, ou ~" + Math.ceil(need / 4.33) + " por semana. Se o topo do funil já tem esse volume, a semana fica em dia.";
+
+      fillSelect("feedPolo", Array.from(new Set(RJ_CATALOG.map(function (c) { return c.polo; }))));
+      fillSelect("feedSector", Array.from(new Set(RJ_CATALOG.map(function (c) { return c.sector; }))));
+      fillSelect("feedProvider", Array.from(new Set(RJ_CATALOG.map(function (c) { return c.provider; }))));
+      const dp = document.getElementById("discPolo");
+      if (dp && !dp.options.length) {
+        dp.innerHTML = Array.from(document.getElementById("accFormPolo").options).map(function (o) { return '<option value="' + esc(o.value) + '">' + esc(o.textContent) + '</option>'; }).join("");
+      }
+
+      const fp = document.getElementById("feedPolo").value;
+      const fs = document.getElementById("feedSector").value;
+      const fv = document.getElementById("feedProvider").value;
+      const min = Number(document.getElementById("feedSize").value) || CASE_MIN_LIVES;
+      const items = RJ_CATALOG.filter(function (c) {
+        return (fp === "ALL" || c.polo === fp) && (fs === "ALL" || c.sector === fs) && (fv === "ALL" || c.provider === fv) && c.lives >= min;
+      });
+      box.innerHTML = items.length ? items.map(function (c) {
+        const inCart = catalogInCarteira(c);
+        return '<div class="rounded-xl border p-3 space-y-1.5" style="border-color:var(--line)">' +
+          '<div class="flex items-start justify-between gap-2"><div class="min-w-0"><p class="text-[13px] font-medium text-white">' + esc(c.name) + '</p>' +
+          '<p style="color:var(--muted)">' + esc(c.sector) + ' · ' + esc(c.polo) + '</p></div>' +
+          (inCart ? '<span class="chip chip-ok shrink-0">Na carteira</span>'
+            : '<button type="button" class="btn btn-primary btn-sm shrink-0" onclick="importCatalogAccount(\'' + c.key + '\')">' + icon("plus") + 'Adicionar</button>') + '</div>' +
+          '<p><span class="num text-white">' + c.lives + ' vidas</span>' + (c.livesNote ? ' (' + esc(c.livesNote) + ')' : '') + ' × ' + formatCurrencyBRL(c.ticket) + ' = <span class="num text-white">' + fmtK(c.lives * c.ticket) + '/mês</span> · cartão atual ' + esc(c.provider) + ' ' + srcChip("est") + '</p>' +
+          '<p>Decisor: <span class="text-white">' + esc(c.decisor) + '</span> ' + srcChip(c.decisorSrc.kind, c.decisorSrc.label, c.decisorSrc.url) + '</p>' +
+          '<p style="color:var(--muted)">' + esc(c.address) + (c.phone ? ' · ' + esc(c.phone) : '') + (c.channel ? ' · ' + esc(c.channel) : '') + ' ' + srcChip("user") + '</p>' +
+          '<div class="flex flex-wrap gap-1.5 pt-0.5">' +
+            '<button type="button" class="btn btn-sm" onclick="openCatalogLinkedin(\'' + c.key + '\')">' + icon("user") + 'Decisor no LinkedIn</button>' +
+            (c.website ? '<button type="button" class="btn btn-sm" onclick="openExternal(\'' + esc(c.website) + '\')">' + icon("link") + 'Site</button>' : '') +
+          '</div></div>';
+      }).join("") : '<div class="empty">Nenhuma empresa do catálogo com esses filtros.</div>';
+    }
+
+    function openCatalogLinkedin(key) {
+      const c = RJ_CATALOG.find(function (x) { return x.key === key; });
+      if (!c) return;
+      const company = c.name.replace(/\s*\(.*\)\s*/g, " ").trim();
+      const q = '"' + company + '" ("RH" OR "Recursos Humanos" OR "Pessoas" OR "Gente" OR "CFO" OR "Financeiro") "Rio de Janeiro"';
+      openExternal("https://www.linkedin.com/search/results/people/?keywords=" + encodeURIComponent(q));
+    }
+
+    function importCatalogAccount(key) {
+      const c = RJ_CATALOG.find(function (x) { return x.key === key; });
+      if (!c || catalogInCarteira(c)) return;
+      const record = {
+        id: newUuid(), code: nextAccountCode(), company_name: c.name, sector: c.sector, polo_rj: c.polo,
+        neighborhood: c.polo.split("/")[0].replace(/ - .*/, "").trim(), address: c.address, phone: c.phone, email_rh: c.channel, website: c.website,
+        decision_maker_name: c.decisor, employees_count: c.lives, active_card_users: c.lives, avg_monthly_ticket: c.ticket,
+        current_provider: c.provider, current_model: "A validar", status: "Lead Mapeado", priority_icp: c.lives >= 500 ? "Alta" : "Média",
+        interest_level: "Frio", rh_pains: "", user_complaints: "", swile_trigger_2026: ""
+      };
+      const opp = { id: newUuid(), account_id: record.id, stage_weight: 1, stage: STAGE_LABELS[1], probability: STAGE_PROBS[1], close_date: addDaysIso(45) };
+      state.accounts.unshift(record);
+      state.opportunities.push(opp);
+      persistState();
+      const note = "Importada do Abastecimento Semanal. Vidas, benefício e cartão atual: estimativa informada pelo usuário. Decisor: " +
+        (c.decisorSrc.kind === "ok" ? "nome conferido (" + c.decisorSrc.label + ")" : "informado pelo usuário") + ". Endereço, telefone e canais: informados pelo usuário.";
+      refreshAllViews();
+      emitEvent("account.created", { account: accountPayload(record) });
+      showToast(c.name + " entrou na carteira em Não contactado.", "➕");
+      if (!state.supabaseConnected) { logInteraction(record.id, "Nota", note, true, true); return; }
+      remoteWrite("Conta", async function () {
+        const res = await db.upsert("crm_accounts", [accountToRow(record)], "code");
+        if (res.error) return res;
+        if (res.data && res.data[0] && res.data[0].id && res.data[0].id !== record.id) { remapAccountId(record.id, res.data[0].id); refreshAllViews(); }
+        const r2 = await db.upsert("crm_opportunities", [opportunityToRow(opp)], "id");
+        logInteraction(record.id, "Nota", note, true, true);
+        return r2;
+      });
+    }
+
+    function discoveryParams() {
+      const polo = (document.getElementById("discPolo") || {}).value || "";
+      const sector = ((document.getElementById("discSector") || {}).value || "").trim();
+      const prov = (document.getElementById("discProvider") || {}).value || "";
+      const bairro = polo.split("/")[0].replace(/ - .*/, "").trim();
+      return { polo: polo, sector: sector, prov: prov, bairro: bairro };
+    }
+    function discoveryUrl(kind) {
+      const p = discoveryParams();
+      const provs = p.prov ? '"' + p.prov + '"' : '("Alelo" OR "Ticket" OR "Pluxee" OR "VR" OR "Flash" OR "Caju")';
+      if (kind === "jobs") {
+        const q = '(site:gupy.io OR site:vagas.solides.com.br) "Rio de Janeiro" ' + provs + (p.sector ? ' "' + p.sector + '"' : "") + (p.bairro ? ' "' + p.bairro + '"' : "");
+        return "https://www.google.com/search?q=" + encodeURIComponent(q);
+      }
+      if (kind === "linkedin") {
+        const q = '("Diretor de RH" OR "Gerente de RH" OR "Head de Pessoas" OR "Diretora de Gente" OR "CFO") "Rio de Janeiro"' + (p.sector ? ' "' + p.sector + '"' : "");
+        return "https://www.linkedin.com/search/results/people/?keywords=" + encodeURIComponent(q);
+      }
+      const q = 'site:econodata.com.br "Rio de Janeiro"' + (p.sector ? ' "' + p.sector + '"' : "") + (p.bairro ? ' "' + p.bairro + '"' : "");
+      return "https://www.google.com/search?q=" + encodeURIComponent(q);
+    }
+    function openDiscovery(kind) { openExternal(discoveryUrl(kind)); }
+    function newAccountFromDiscovery() {
+      const p = discoveryParams();
+      openAccountModal();
+      if (p.polo) setSelectValue("accFormPolo", p.polo);
+      if (p.sector) document.getElementById("accFormSector").value = p.sector;
+      if (p.prov) {
+        const map = { "Pluxee": "Pluxee (ex-Sodexo)", "VR": "VR Benefícios" };
+        setSelectValue("accFormProvider", map[p.prov] || p.prov);
+      }
+      checkCaseLives();
+    }
+
+    function checkCaseLives() {
+      const el = document.getElementById("accFormLives");
+      const warn = document.getElementById("accLivesWarn");
+      if (!el || !warn) return;
+      const v = Number(el.value);
+      warn.classList.toggle("hidden", !(v > 0 && v < CASE_MIN_LIVES));
+    }
+
+    function toggleWeeklyFeed() {
+      const d = document.getElementById("weeklyFeed");
+      d.open = !d.open;
+      if (d.open) { renderWeeklyFeed(); d.scrollIntoView({ behavior: "smooth", block: "start" }); }
+    }
+
+    function applyCaseRulePatch() {
+      const acc = state.accounts.find(function (a) { return /nomus/i.test(a.company_name || "") && Number(a.active_card_users) === 170; });
+      if (!acc) return;
+      acc.active_card_users = 210;
+      if (Number(acc.employees_count) < 210) acc.employees_count = 210;
+      persistState();
+      logInteraction(acc.id, "Nota", "Vidas ajustadas de 170 para 210 a pedido do usuário (regra do Case RJ: ≥ 200 vidas). Confirmar o número real com o RH.", true, true);
+      remoteWrite("Vidas", function () { return db.update("crm_accounts", acc.id, { active_card_users: acc.active_card_users, employees_count: acc.employees_count }); });
+    }
+
     function applyLeadDataPatch() {
       LEAD_DATA_PATCH.forEach(function (p) {
         const acc = state.accounts.find(function (a) { return a.code === p.code && p.match.test(a.company_name || ""); });
@@ -2873,8 +3315,7 @@
       let nextStage = null;
       if (temperature === "Perdido") nextStage = 0;
       else if (proposal) nextStage = 4;
-      else if (temperature === "Quente") nextStage = 3;
-      else if (temperature === "Morno") nextStage = 2;
+      else if (temperature === "Quente" || temperature === "Morno") nextStage = 3;
 
       const nome = firstName(acc && acc.decision_maker_name);
       const nextStep = nextStage === 4 ? "Vou te enviar a proposta com a simulação PAT ainda hoje."
@@ -2898,7 +3339,7 @@
         (acc ? acc.company_name + " (fornecedor atual: " + (acc.current_provider || "não informado") + ")" : "") +
         ". Responda SOMENTE em JSON com as chaves: temperature (Quente|Morno|Frio|Perdido), score (0-100), highlights (array com 3 frases curtas), " +
         "rebuttal (contorno da principal objeção, em português, sem inventar números), whatsapp (mensagem curta de follow-up pós-call), " +
-        "next_stage (0=perdido, 2=discovery, 3=demo, 4=proposta, ou null).\n\nTranscrição:\n" + String(transcript).slice(0, 12000);
+        "next_stage (0=perdida, 3=em contato, 4=negociando/proposta, ou null).\n\nTranscrição:\n" + String(transcript).slice(0, 12000);
       const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(geminiModel()) + ":generateContent";
       const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
       const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 20000) : null;
@@ -2922,7 +3363,7 @@
           highlights: (Array.isArray(out.highlights) ? out.highlights : []).slice(0, 3).map(String),
           rebuttal: String(out.rebuttal || ""),
           whatsapp: String(out.whatsapp || ""),
-          next_stage: [0, 2, 3, 4].indexOf(ns) >= 0 ? ns : null,
+          next_stage: [0, 3, 4].indexOf(ns) >= 0 ? ns : (ns === 2 ? 3 : null),
           source: "gemini"
         };
       } catch (e) {
@@ -3123,7 +3564,7 @@
       if (kind === "answered") {
         logInteraction(acc.id, "Ligação", "Ligação atendida", false, true);
         createFollowup({ account_id: acc.id, action_title: "Retorno pós-ligação: enviar resumo e confirmar demo", due_date: addDaysIso(3), channel: "WhatsApp" });
-        if (!autoAdvancePipelineFromAccount(acc, "outcome", { stage: 2 })) showToast("Ligação registrada. Retorno em 3 dias.", "📞");
+        if (!autoAdvancePipelineFromAccount(acc, "outcome", { stage: 3 })) showToast("Ligação registrada. Retorno em 3 dias.", "📞");
       } else if (kind === "proposal") {
         logInteraction(acc.id, "Ligação", "Lead pediu proposta", false, true);
         autoAdvancePipelineFromAccount(acc, "outcome", { stage: 4 }) || showToast("Ligação registrada.", "📞");
@@ -3160,8 +3601,8 @@
         return '<button type="button" class="rounded-lg border px-2 py-1.5 text-[11px] font-medium text-left" style="border-color:' + color + '55;background:' + color + '14;color:' + color + '" onclick="callOutcome(\'' + a + '\', \'' + kind + '\')">' + label + '</button>';
       };
       document.getElementById("accOutcomes").innerHTML =
-        pill("answered", "✅ Atendeu · Discovery + retorno 3d", "#34d399") +
-        pill("proposal", "📄 Pediu proposta · simular PAT", "#c084fc") +
+        pill("answered", "✅ Atendeu · Em contato + retorno 3d", "#34d399") +
+        pill("proposal", "📄 Pediu proposta · Negociando", "#c084fc") +
         pill("voicemail", "📵 Caixa postal · tentar em 2d", "#fbbf24") +
         pill("lost", "🚫 Sem interesse · recontato 90d", "#f87171");
       document.getElementById("accHomeOffice").classList.remove("hidden");
@@ -3222,10 +3663,110 @@
       user: { label: "Informado pelo usuário", css: "chip", style: "color:#c4b5fd" }
     };
 
+    // Playbook · Case RJ (7 questões). Respostas escritas como plano de trabalho, sem resultados passados inventados.
+    const PB_CASE = [
+      { q: "Q1", title: "Ferramentas, metodologia e rotina", demo: "agenda",
+        body: [
+          "Rotina em dois blocos: manhã para prospecção (ligações, WhatsApp e LinkedIn) e tarde para reuniões, propostas e follow-ups. Segunda e quinta abro o dia abastecendo o funil com contas acima de 200 vidas.",
+          "Método de conversa: CHAVE (Conexão, Hipótese, Ancoragem, Virada, Extensão), com a dor do RH e do usuário anotada na ficha de cada conta.",
+          "Nada fica só na cabeça: toda ligação, mensagem e reunião vira registro e próximo passo com data."
+        ] },
+      { q: "Q2", title: "Governança das 6 fases no CRM", demo: "pipeline",
+        body: [
+          "Cada fase tem critério de saída claro: Não contactado (10%) → Qualificando (20%, decisor e nº de vidas confirmados) → Em contato (40%, reunião feita) → Negociando (65%, proposta e simulação PAT entregues) → Contrato enviado (85%) → Contrato assinado (100%).",
+          "A oportunidade só avança com evidência registrada. Perdas exigem motivo, para que o funil ensine algo.",
+          "Revisão semanal do pipeline: o que está parado há mais de 7 dias ganha ação ou sai do forecast."
+        ] },
+      { q: "Q3", title: "KPIs de esforço, meio de funil e resultado", demo: "reports-funnel",
+        body: [
+          "Esforço: 55 atividades por dia útil e 4 a 5 reuniões por dia.",
+          "Meio de funil: cobertura de 4x a meta (R$ 2,4 mi em Negociando + Contrato enviado) e ciclo médio de 32 dias.",
+          "Resultado: win rate de 28% e ticket médio perto de R$ 210 mil por mês.",
+          "No app, cada meta aparece ao lado do número real do CRM, para a conversa ser sobre dados e não sobre impressão."
+        ] },
+      { q: "Q4", title: "Como virar os 2 concorrentes dominantes no RJ", demo: "playbook-matrix", dynamic: "competitors",
+        body: [
+          "Entrada \"Cavalo de Troia\" por Premiação: começar com um produto de incentivo, que não exige trocar o VA/VR no primeiro contrato. O RH testa a experiência sem risco e a Swile ganha o relacionamento antes da renovação. Confirmar com o time Swile as condições comerciais da Premiação.",
+          "Interoperabilidade do PAT (Decreto 12.712/2025, prazo por volta de nov/2026): o cartão atual deixa de ser uma vantagem de rede de aceitação, e a decisão passa a ser experiência, app e serviço.",
+          "Segurança jurídica com a SC COSIT 3/2026: para empresas no Lucro Real, o incentivo do PAT (15% do gasto, limitado a 4% do IRPJ devido) entra na simulação e ajuda a ancorar a conversa com o financeiro."
+        ] },
+      { q: "Q5", title: "Fechamento mensal no Salesforce", demo: "reports-funnel",
+        body: [
+          "Funil de referência por mês: 90 contas não contactadas → 50 qualificando → 25 em contato → 12 negociando (R$ 2,4 mi, 4x a meta) → 6 contratos enviados (R$ 1,2 mi) → 3 a 4 assinados (R$ 600 mil ou mais).",
+          "Isso pede cerca de 1.140 atividades registradas por mês.",
+          "Com média de 280 vidas e benefício de R$ 800, cada contrato vale cerca de R$ 224 mil por mês. Por isso 3 a 4 contratos fecham a meta."
+        ] },
+      { q: "Q6", title: "As 3 ferramentas", demo: "accounts-feed",
+        body: [
+          "Salesforce: fonte oficial de fases, forecast e atividades.",
+          "Sales Navigator e Econodata: encontrar empresas acima de 200 vidas no RJ e os decisores de RH e Financeiro.",
+          "Swile OS (este app): rotina do dia, abastecimento semanal, simulação PAT e preparação das reuniões, sempre com os dados levados de volta ao Salesforce."
+        ] },
+      { q: "Q7", title: "Crescer junto com o time", demo: "playbook-chave",
+        body: [
+          "Clareza de método: todo mundo usa as mesmas fases, os mesmos critérios e o mesmo CHAVE, então dá para comparar e ajudar.",
+          "Troca semanal de scripts: o que funcionou na semana (abordagem, objeção, gancho) vira modelo para o time.",
+          "Segurança psicológica: perda é dado, não culpa. Revisamos os motivos juntos para melhorar o funil de todos."
+        ] }
+    ];
+    const PB_CASE_PLAN = [
+      { title: "30 dias · Aprender e organizar", items: ["Dominar produto, regras do PAT e o processo no Salesforce.", "Montar a base de contas acima de 200 vidas no RJ por polo.", "Acompanhar reuniões de colegas e ajustar o CHAVE ao Middle Market RJ.", "Primeiras 90 contas mapeadas e cadência de abordagem rodando."] },
+      { title: "60 dias · Gerar pipeline", items: ["Rotina de 55 atividades por dia estabilizada.", "Cobertura chegando a 4x a meta mensal.", "Primeiros contratos enviados e assinados.", "Playbook de objeções por concorrente atualizado com o que aparecer em campo."] },
+      { title: "90 dias · Previsibilidade", items: ["Ritmo de 3 a 4 contratos por mês.", "Forecast confiável: Contrato enviado vira commit.", "Win rate e ciclo medidos e comparados com 28% e 32 dias.", "Scripts que funcionaram compartilhados com o time."] }
+    ];
+
+    function caseTopCompetitors() {
+      const counts = {};
+      state.accounts.forEach(function (a) {
+        if (a.status === "Fechado ✅") return;
+        const p = a.current_provider;
+        if (!p || p === "A Validar" || p === "A validar") return;
+        counts[p] = (counts[p] || 0) + 1;
+      });
+      return Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).slice(0, 2).map(function (k) { return { name: k, n: counts[k] }; });
+    }
+
+    function demoCase(target) {
+      if (target === "agenda") switchTab("followups");
+      else if (target === "pipeline") switchTab("pipeline");
+      else if (target === "reports-funnel") { reportTab = "funnel"; switchTab("reports"); setReportTab("funnel"); }
+      else if (target === "playbook-matrix") setPlaybookTab("matrix");
+      else if (target === "playbook-chave") setPlaybookTab("chave");
+      else if (target === "accounts-feed") {
+        switchTab("accounts");
+        const d = document.getElementById("weeklyFeed");
+        if (d && !d.open) toggleWeeklyFeed();
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderPlaybookCase() {
+      const list = document.getElementById("pbCaseList");
+      if (!list) return;
+      list.innerHTML = PB_CASE.map(function (c) {
+        let extra = "";
+        if (c.dynamic === "competitors") {
+          const top = caseTopCompetitors();
+          extra = '<p class="rounded-lg p-2.5" style="background:var(--surface-2);color:var(--muted)">Na sua carteira hoje, as operadoras mais presentes são: ' +
+            (top.length ? top.map(function (t) { return '<span class="text-white">' + esc(t.name) + '</span> (' + t.n + ' conta' + (t.n > 1 ? "s" : "") + ')'; }).join(" e ") : "sem dados") +
+            '. É a sua carteira, não a participação de mercado no RJ.</p>';
+        }
+        return '<div class="card p-4 space-y-2 text-xs">' +
+          '<div class="flex items-start justify-between gap-2"><h3 class="card-title"><span class="num" style="color:#c4b5fd">' + c.q + '</span> · ' + esc(c.title) + '</h3>' +
+          '<button type="button" class="btn btn-ghost btn-sm shrink-0" onclick="demoCase(\'' + c.demo + '\')">Demonstrar no app →</button></div>' +
+          '<ul class="space-y-1.5" style="color:#c3c8d4">' + c.body.map(function (b) { return '<li class="flex gap-2"><span style="color:var(--faint)">•</span><span>' + esc(b) + '</span></li>'; }).join("") + '</ul>' +
+          extra + '</div>';
+      }).join("");
+      document.getElementById("pbCasePlan").innerHTML = PB_CASE_PLAN.map(function (p) {
+        return '<div class="rounded-xl border p-3 space-y-1.5" style="border-color:var(--line);background:var(--surface-2)"><p class="font-medium text-white">' + esc(p.title) + '</p>' +
+          '<ul class="space-y-1" style="color:#c3c8d4">' + p.items.map(function (i) { return '<li class="flex gap-2"><span style="color:var(--faint)">•</span><span>' + esc(i) + '</span></li>'; }).join("") + '</ul></div>';
+      }).join("");
+    }
+
     let playbookTab = "chave";
     function setPlaybookTab(tab) {
       playbookTab = tab;
-      ["chave", "matrix", "triggers", "xray"].forEach(function (t) {
+      ["chave", "matrix", "triggers", "xray", "case"].forEach(function (t) {
         const el = document.getElementById("pbTab-" + t);
         if (el) el.classList.toggle("hidden", t !== tab);
         const b = document.getElementById("pbBtn-" + t);
@@ -3240,6 +3781,7 @@
     }
 
     function renderPlaybookExtras() {
+      renderPlaybookCase();
       const mb = document.getElementById("pbMatrixBody");
       if (mb) mb.innerHTML = PB_MATRIX.map(function (r) {
         const us = r.name === "Swile";
@@ -3582,13 +4124,15 @@
       updateCoachPromptPreview();
       renderNavCounts();
       if (currentTab === "reports") renderReports();
+      const feed = document.getElementById("weeklyFeed");
+      if (feed && feed.open) renderWeeklyFeed();
       persistState();
     }
 
     function renderNavCounts() {
       const pending = state.followups.filter(function (f) { return f.status === "Pendente"; });
       const urgent = pending.filter(function (f) { return daysFromToday(f.due_date) <= 0; }).length;
-      const openOpps = state.opportunities.filter(function (o) { const w = Number(o.stage_weight); return w >= 1 && w <= 4; }).length;
+      const openOpps = state.opportunities.filter(function (o) { const w = Number(o.stage_weight); return w >= 1 && w < STAGE_WON; }).length;
       const set = function (id, v) { const el = document.getElementById(id); if (el) el.textContent = v ? String(v) : ""; };
       set("navCountToday", urgent);
       set("navCountAccounts", state.accounts.length);
@@ -3735,7 +4279,7 @@
         const acc = findAccount(opp.account_id);
         if (acc) weightedForecast += computeMonthlyTpv(acc) * ((Number(opp.probability) || 0) / 100);
       }
-      const won = state.opportunities.filter(function (o) { return Number(o.stage_weight) === 5; }).length;
+      const won = state.opportunities.filter(function (o) { return Number(o.stage_weight) === STAGE_WON; }).length;
 
       document.getElementById("kpiTotalAccounts").textContent = String(totalAcc);
       document.getElementById("kpiHotAccountsSub").textContent = highPrio + " prioridade alta · " + hotCount + " quentes";
@@ -3991,11 +4535,12 @@
       if (!container) return;
 
       const stages = [
-        { weight: 1, name: "1. Qualificado (SQL)", color: "#38bdf8" },
-        { weight: 2, name: "2. Discovery & Vidas", color: "#8b5cf6" },
-        { weight: 3, name: "3. Demo Dash RH & App", color: "#d946ef" },
-        { weight: 4, name: "4. Proposta & PAT", color: "#f43f5e" },
-        { weight: 5, name: "Fechado ✅", color: "#10b981" }
+        { weight: 1, name: "1. Não contactado", color: "#94a3b8" },
+        { weight: 2, name: "2. Qualificando", color: "#38bdf8" },
+        { weight: 3, name: "3. Em contato", color: "#8b5cf6" },
+        { weight: 4, name: "4. Negociando", color: "#f43f5e" },
+        { weight: 5, name: "5. Contrato enviado", color: "#f59e0b" },
+        { weight: 6, name: "6. Contrato assinado ✅", color: "#10b981" }
       ];
 
       let html = "";
@@ -4010,7 +4555,7 @@
           const acc = findAccount(stageOpps[j].account_id);
           if (acc) {
             stageTpv += computeMonthlyTpv(acc);
-            if (st.weight < 5) {
+            if (st.weight < STAGE_WON) {
               openTotal += computeMonthlyTpv(acc);
               openWeighted += computeMonthlyTpv(acc) * ((Number(stageOpps[j].probability) || 0) / 100);
             }
@@ -4045,9 +4590,9 @@
             '<div class="text-[11px] num space-y-0.5" style="color:var(--muted)">' +
               '<div>' + esc(acc.current_provider) + ' · ' + Number(acc.active_card_users || 0).toLocaleString("pt-BR") + ' vidas</div>' +
               '<div><span class="text-slate-200">' + formatCurrencyBRL(tpv) + '</span> · ' + esc(opp.probability) + '% → ' + formatCompactBRL(weighted) + '</div>' +
-              (opp.close_date && st.weight < 5 ? '<div style="color:' + (closeN < 0 ? '#fca5a5' : 'var(--muted)') + '">Fecha ' + esc(formatDateShort(opp.close_date)) + (closeN < 0 ? ' (vencida)' : '') + '</div>' : '') +
+              (opp.close_date && st.weight < STAGE_WON ? '<div style="color:' + (closeN < 0 ? '#fca5a5' : 'var(--muted)') + '">Fecha ' + esc(formatDateShort(opp.close_date)) + (closeN < 0 ? ' (vencida)' : '') + '</div>' : '') +
             '</div>' +
-            (st.weight < 5
+            (st.weight < STAGE_WON
               ? (next
                 ? '<button type="button" onclick="editFollowup(\'' + esc(next.id) + '\')" class="w-full text-left text-[11px] rounded-md px-2 py-1 truncate" style="background:var(--surface);color:#aab2c3">' + icon("clock", "!w-3 !h-3 inline -mt-0.5 mr-1") + esc(relDateLabel(next.due_date)) + ' · ' + esc(next.action_title) + '</button>'
                 : '<button type="button" onclick="openFollowupModal(\'' + esc(acc.id) + '\')" class="w-full text-left text-[11px] rounded-md px-2 py-1" style="background:rgba(251,191,36,.08);color:#fcd34d">' + icon("alert", "!w-3 !h-3 inline -mt-0.5 mr-1") + 'Sem próximo passo · agendar</button>')
@@ -4056,10 +4601,10 @@
               (st.weight > 1
                 ? '<button type="button" onclick="moveOpportunityStage(\'' + esc(opp.id) + '\', -1)" class="icon-btn !w-7 !h-7" title="Voltar etapa" aria-label="Voltar etapa">' + icon("left") + '</button>'
                 : '<span></span>') +
-              (st.weight < 5
-                ? '<div class="flex items-center gap-1">' +
-                    '<button type="button" onclick="openLossModal(\'' + esc(opp.id) + '\')" class="btn btn-ghost btn-sm !h-7 !px-2 text-[11px]" title="Marcar como perdida">Perdida</button>' +
-                    '<button type="button" onclick="moveOpportunityStage(\'' + esc(opp.id) + '\', 1)" class="btn btn-sm !h-7">Avançar' + icon("right", "!w-3.5 !h-3.5") + '</button>' +
+              (st.weight < STAGE_WON
+                ? '<div class="flex items-center gap-0.5">' +
+                    '<button type="button" onclick="openLossModal(\'' + esc(opp.id) + '\')" class="btn btn-ghost btn-sm !h-7 !px-1.5 text-[11px]" title="Marcar como perdida">Perdida</button>' +
+                    '<button type="button" onclick="moveOpportunityStage(\'' + esc(opp.id) + '\', 1)" class="btn btn-sm !h-7 !px-2 text-[11px]" title="Avançar fase">Avançar' + icon("right", "!w-3 !h-3") + '</button>' +
                   '</div>'
                 : '<span class="chip chip-ok">Ganha</span>') +
             '</div>' +
@@ -4100,7 +4645,7 @@
     function writeOpportunityAndAccount(label, opp, acc) {
       remoteWrite(label, async function () {
         const r1 = await db.update("crm_opportunities", opp.id, {
-          stage_weight: opp.stage_weight,
+          stage_weight: dbStageWeight(opp.stage_weight),
           probability: opp.probability,
           stage: opp.stage,
           closed_date: opp.closed_date || null,
@@ -4115,11 +4660,11 @@
     function moveOpportunityStage(oppId, delta) {
       const opp = state.opportunities.find(function (o) { return o.id === oppId; });
       if (!opp) return;
-      const nextW = Math.min(5, Math.max(1, Number(opp.stage_weight) + delta));
+      const nextW = Math.min(STAGE_WON, Math.max(1, Number(opp.stage_weight) + delta));
       opp.stage_weight = nextW;
       opp.probability = STAGE_PROBS[nextW] || opp.probability;
       opp.stage = STAGE_LABELS[nextW];
-      opp.closed_date = nextW === 5 ? todayIso() : null;
+      opp.closed_date = nextW === STAGE_WON ? todayIso() : null;
 
       const acc = findAccount(opp.account_id);
       applyStageToAccount(acc, nextW);
@@ -4127,7 +4672,7 @@
       refreshAllViews();
       writeOpportunityAndAccount("Kanban", opp, acc);
 
-      if (nextW === 5 && acc) {
+      if (nextW === STAGE_WON && acc) {
         emitEvent("deal.won", { account: accountPayload(acc), opportunity: opportunityToRow(opp) });
         showToast("Negócio ganho! Agende o onboarding.", "🎉");
         openFollowupModal(acc.id, {
@@ -4180,15 +4725,15 @@
     function reopenOpportunity(oppId) {
       const opp = state.opportunities.find(function (o) { return o.id === oppId; });
       if (!opp) return;
-      opp.stage_weight = 1;
-      opp.probability = STAGE_PROBS[1];
-      opp.stage = STAGE_LABELS[1];
+      opp.stage_weight = 2;
+      opp.probability = STAGE_PROBS[2];
+      opp.stage = STAGE_LABELS[2];
       opp.closed_date = null;
       const acc = findAccount(opp.account_id);
-      applyStageToAccount(acc, 1);
+      applyStageToAccount(acc, 2);
       refreshAllViews();
       writeOpportunityAndAccount("Oportunidade", opp, acc);
-      showToast("Oportunidade reaberta em Qualificado.", "↩️");
+      showToast("Oportunidade reaberta em Qualificando.", "↩️");
     }
 
     function openLossModal(oppId) {
@@ -4476,7 +5021,7 @@
       document.getElementById("accFormSector").value = acc ? (acc.sector || "") : "";
       setSelectValue("accFormPolo", acc ? acc.polo_rj : "Centro / Porto Maravilha");
       setSelectValue("accFormProvider", acc ? acc.current_provider : "A Validar");
-      document.getElementById("accFormLives").value = acc ? acc.active_card_users : 250;
+      document.getElementById("accFormLives").value = acc ? acc.active_card_users : CASE_MIN_LIVES;
       document.getElementById("accFormTicket").value = acc ? acc.avg_monthly_ticket : 900;
       document.getElementById("accFormDecisor").value = acc ? (acc.decision_maker_name || "") : "";
       document.getElementById("accFormPhone").value = acc ? (acc.phone || "") : "";
@@ -4502,6 +5047,7 @@
       resetCopilot();
       document.getElementById("accCopilot").open = false;
       renderAccountSidePanel(acc);
+      checkCaseLives();
       modal.classList.remove("hidden");
       if (!acc) setTimeout(function () { document.getElementById("accFormCompany").focus(); }, 30);
     }
@@ -4569,7 +5115,7 @@
         const w = Number(o.stage_weight);
         html += '<button type="button" onclick="editOpportunity(\'' + esc(o.id) + '\')" class="w-full text-left rounded-lg border px-3 py-2 hover:border-violet-500/40 transition" style="border-color:var(--line)">' +
           '<div class="flex items-center justify-between gap-2"><span class="text-white font-medium">Oportunidade</span>' +
-          '<span class="chip ' + (w === 5 ? 'chip-ok' : w === 0 ? 'chip-bad' : 'chip-accent') + '">' + esc(STAGE_LABELS[w] || "") + '</span></div>' +
+          '<span class="chip ' + (w === STAGE_WON ? 'chip-ok' : w === 0 ? 'chip-bad' : 'chip-accent') + '">' + esc(STAGE_LABELS[w] || "") + '</span></div>' +
           '<p class="mt-1 num" style="color:var(--muted)">' + esc(o.probability) + '% · fecha ' + esc(formatDateShort(o.close_date)) + (o.loss_category ? ' · ' + esc(o.loss_category) : '') + '</p>' +
         '</button>';
       });
@@ -4684,7 +5230,6 @@
             close_date: addDaysIso(30)
           };
           state.opportunities.push(newOpp);
-          if (record.status === "Lead Mapeado") record.status = "Qualificado (SQL)";
         }
         if (document.getElementById("accAutoFu").checked) {
           const ch = document.getElementById("accAutoFuChannel").value;
@@ -4784,6 +5329,7 @@
       if (s === "Qualificado (SQL)" || s === "Discovery RH/DP") return ["Agendar demo do Dash RH", "Enviar simulação de TPV", "Mapear decisor financeiro"];
       if (s === "Demo / Diagnóstico Agendado") return ["Confirmar demo (D-1)", "Enviar resumo pós-demo", "Montar proposta e simulação PAT"];
       if (s === "Proposta & Simulação PAT") return ["Cobrar retorno da proposta", "Reunião com CFO/Compras", "Enviar minuta de contrato"];
+      if (s === "Contrato Enviado") return ["Cobrar assinatura do contrato", "Alinhar jurídico/compras", "Agendar kickoff de implantação"];
       if (s === "Fechado ✅") return ["Kickoff de onboarding", "Follow-up 7 dias pós-1ª carga", "Pedir indicação"];
       return ["Recontato"];
     }
@@ -4891,7 +5437,7 @@
         });
       } else {
         const acc = findAccount(accId);
-        const opp = state.opportunities.find(function (o) { return o.account_id === accId && Number(o.stage_weight) >= 1 && Number(o.stage_weight) <= 4; });
+        const opp = state.opportunities.find(function (o) { return o.account_id === accId && isOpenStage(o.stage_weight); });
         createFollowup({
           account_id: accId,
           opportunity_id: opp ? opp.id : null,
@@ -4949,7 +5495,7 @@
       document.getElementById("oppCloseDateInput").value = o.close_date || "";
       document.getElementById("oppNotesInput").value = o.notes || "";
       document.getElementById("btnSaveOppModal").textContent = "Salvar";
-      document.getElementById("btnLoseOpp").classList.toggle("hidden", w === 0 || w === 5);
+      document.getElementById("btnLoseOpp").classList.toggle("hidden", w === 0 || w === STAGE_WON);
       document.getElementById("opportunityModal").classList.remove("hidden");
     }
 
@@ -4967,14 +5513,14 @@
       const acc = findAccount(accId);
 
       if (!editId) {
-        const dupOpen = state.opportunities.find(function (o) { return o.account_id === accId && Number(o.stage_weight) >= 1 && Number(o.stage_weight) <= 4; });
+        const dupOpen = state.opportunities.find(function (o) { return o.account_id === accId && isOpenStage(o.stage_weight); });
         if (dupOpen && !(await uiConfirm((acc ? acc.company_name : "Esta conta") + " já tem uma oportunidade aberta. Criar outra?", { title: "Oportunidade duplicada", okLabel: "Criar outra", danger: false }))) return;
       }
 
       let opp = editId ? state.opportunities.find(function (o) { return o.id === editId; }) : null;
       if (opp) {
         Object.assign(opp, { account_id: accId, stage_weight: stageW, stage: STAGE_LABELS[stageW], probability: isNaN(prob) ? opp.probability : prob, close_date: closeDate, notes: notes || null });
-        if (stageW === 5 && !opp.closed_date) opp.closed_date = todayIso();
+        if (stageW === STAGE_WON && !opp.closed_date) opp.closed_date = todayIso();
       } else {
         opp = {
           id: newUuid(),
@@ -4983,7 +5529,7 @@
           stage: STAGE_LABELS[stageW],
           probability: isNaN(prob) ? STAGE_PROBS[stageW] : prob,
           close_date: closeDate,
-          closed_date: stageW === 5 ? todayIso() : null,
+          closed_date: stageW === STAGE_WON ? todayIso() : null,
           notes: notes || null
         };
         state.opportunities.push(opp);
@@ -5001,7 +5547,7 @@
       });
 
       // Oportunidade nova sem ação agendada: já pede o próximo passo
-      if (!editId && acc && stageW < 5 && !pendingFollowupsOf(acc.id).length) {
+      if (!editId && acc && stageW < STAGE_WON && !pendingFollowupsOf(acc.id).length) {
         openFollowupModal(acc.id, { nextStep: true, heading: "Qual o próximo passo com " + acc.company_name + "?" });
       }
     }
@@ -5317,8 +5863,8 @@
 
     // 7f. RELATÓRIOS: indicadores, gráficos, PDF (impressão) e Excel
     const reportCharts = {};
-    const REPORT_STATUS_ORDER = ["Lead Mapeado", "Outbound Iniciado", "Qualificado (SQL)", "Discovery RH/DP", "Demo / Diagnóstico Agendado", "Proposta & Simulação PAT", "Fechado ✅", "Perdido ❌"];
-    const REPORT_STAGE_NAMES = { 1: "Qualificado", 2: "Discovery", 3: "Demo", 4: "Proposta", 5: "Fechado" };
+    const REPORT_STATUS_ORDER = ["Lead Mapeado", "Outbound Iniciado", "Qualificado (SQL)", "Discovery RH/DP", "Demo / Diagnóstico Agendado", "Proposta & Simulação PAT", "Contrato Enviado", "Fechado ✅", "Perdido ❌"];
+    const REPORT_STAGE_NAMES = { 1: "Não contactado", 2: "Qualificando", 3: "Em contato", 4: "Negociando", 5: "Contrato enviado", 6: "Assinado" };
 
     function reportPeriodDays() {
       const el = document.getElementById("reportPeriod");
@@ -5342,15 +5888,15 @@
     function isClientAccount(acc) {
       if (!acc) return false;
       if (acc.status === "Fechado ✅") return true;
-      return state.opportunities.some(function (o) { return o.account_id === acc.id && Number(o.stage_weight) === 5; });
+      return state.opportunities.some(function (o) { return o.account_id === acc.id && Number(o.stage_weight) === STAGE_WON; });
     }
 
     function computeReportData() {
       const accounts = state.accounts;
       const opps = state.opportunities;
       const fus = state.followups;
-      const open = opps.filter(function (o) { const w = Number(o.stage_weight); return w >= 1 && w <= 4; });
-      const won = opps.filter(function (o) { return Number(o.stage_weight) === 5 && inReportPeriod(o.closed_date); });
+      const open = opps.filter(function (o) { const w = Number(o.stage_weight); return w >= 1 && w < STAGE_WON; });
+      const won = opps.filter(function (o) { return Number(o.stage_weight) === STAGE_WON && inReportPeriod(o.closed_date); });
       const lost = opps.filter(function (o) { return Number(o.stage_weight) === 0 && inReportPeriod(o.closed_date); });
       const clients = accounts.filter(isClientAccount);
       const hot = accounts.filter(function (a) { return a.interest_level === "Quente" && !isClientAccount(a) && a.status !== "Perdido ❌"; });
@@ -5375,6 +5921,151 @@
         lossReasons: lossReasons,
         lives: accounts.reduce(function (s, a) { return s + (Number(a.active_card_users) || 0); }, 0)
       };
+    }
+
+    // ---------------------------------------------------------------------
+    // Relatórios · sub-abas do Business Case
+    // ---------------------------------------------------------------------
+    const REPORT_TAB_KEY = "swile_crm_report_tab";
+    const CASE_PREM_KEY = "swile_crm_case_premises";
+    let reportTab = "case";
+    try { const t = localStorage.getItem(REPORT_TAB_KEY); if (t === "case" || t === "funnel" || t === "carteira") reportTab = t; } catch (e) { /* ignore */ }
+
+    function setReportTab(tab) {
+      reportTab = tab;
+      try { localStorage.setItem(REPORT_TAB_KEY, tab); } catch (e) { /* ignore */ }
+      applyReportTab();
+      renderReports();
+    }
+    function applyReportTab() {
+      ["case", "funnel", "carteira"].forEach(function (t) {
+        const el = document.getElementById("rep-" + t);
+        if (el) el.classList.toggle("hidden", t !== reportTab);
+      });
+      document.querySelectorAll("[data-rtab]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-rtab") === reportTab)); });
+    }
+
+    function loadCasePremises() {
+      let p = { m1: 380000, m2: 620000 };
+      try { const raw = JSON.parse(localStorage.getItem(CASE_PREM_KEY) || "null"); if (raw) p = { m1: Number(raw.m1) || 0, m2: Number(raw.m2) || 0 }; } catch (e) { /* ignore */ }
+      return p;
+    }
+    function saveCasePremises() {
+      const p = { m1: Number(document.getElementById("caseM1").value) || 0, m2: Number(document.getElementById("caseM2").value) || 0 };
+      try { localStorage.setItem(CASE_PREM_KEY, JSON.stringify(p)); } catch (e) { /* ignore */ }
+      renderCaseReports();
+    }
+
+    function computeReverseSim(goal, lives, benefit) {
+      const ticket = Math.max(1, lives * benefit);
+      const exact = goal / ticket;
+      const low = Math.max(1, Math.ceil(exact - 1e-9));
+      const high = low + 1;
+      const mid = (low + high) / 2; // planeja pelo meio da faixa
+      const per = function (stage) { return Math.ceil(mid * CASE_FUNNEL[stage] / CASE_FUNNEL[6] - 1e-9); };
+      return { ticket: ticket, exact: exact, low: low, high: high, sent: per(5), proposals: per(4), meetings: per(3), qualifying: per(2), mapped: per(1),
+        activitiesDay: Math.ceil(CASE_ACTIVITIES_MONTH * (mid / CASE_FUNNEL[6]) / 21 - 1e-9) };
+    }
+
+    function renderCaseSimulator() {
+      const out = document.getElementById("simOut");
+      if (!out) return;
+      const sim = computeReverseSim(Number(document.getElementById("simGoal").value) || 0, Number(document.getElementById("simLives").value) || 1, Number(document.getElementById("simBenefit").value) || 1);
+      const row = function (label, value, hint) {
+        return '<div class="flex items-center justify-between gap-2 rounded-lg px-3 py-2" style="background:var(--surface-2)"><span>' + label + (hint ? ' <span style="color:var(--faint)">· ' + hint + '</span>' : '') + '</span><span class="num text-white font-semibold">' + value + '</span></div>';
+      };
+      out.innerHTML =
+        row("Ticket por contrato", fmtK(sim.ticket) + "/mês", "vidas × benefício") +
+        row("Contratos assinados", sim.low + " a " + sim.high, "meta ÷ ticket = " + sim.exact.toFixed(1).replace(".", ",")) +
+        row("Contratos enviados", "~" + sim.sent) +
+        row("Propostas (Negociando)", "~" + sim.proposals) +
+        row("Reuniões (Em contato)", "~" + sim.meetings) +
+        row("Qualificando", "~" + sim.qualifying) +
+        row("Contas mapeadas", "~" + sim.mapped) +
+        row("Atividades por dia útil", "~" + sim.activitiesDay, "base 1.140/mês");
+    }
+
+    function renderCaseReports() {
+      const kbox = document.getElementById("caseKpis");
+      if (!kbox) return;
+      const m = computeCaseMetrics();
+      kbox.innerHTML = [
+        reportKpiHtml("Meta mensal", fmtK(CASE_TARGET_MONTH), "Assinado no mês: " + fmtK(m.wonMonthTpv) + " (" + Math.round(m.wonMonthTpv / CASE_TARGET_MONTH * 100) + "%)"),
+        reportKpiHtml("Meta trimestral", fmtK(CASE_TARGET_QUARTER), "Assinado no trimestre: " + fmtK(m.wonQuarterTpv)),
+        reportKpiHtml("Forecast commit", fmtK(m.commit), m.byStage[5].count + " em Contrato enviado (85%)"),
+        reportKpiHtml("Cobertura", m.coverage.toFixed(1).replace(".", ",") + "x", "Meta " + CASE_COVERAGE + "x = " + fmtK(CASE_TARGET_MONTH * CASE_COVERAGE) + " em Negociando + Contrato")
+      ].join("");
+
+      const prem = loadCasePremises();
+      const m1 = document.getElementById("caseM1"), m2 = document.getElementById("caseM2");
+      if (document.activeElement !== m1) m1.value = prem.m1;
+      if (document.activeElement !== m2) m2.value = prem.m2;
+      const proj = Math.max(m.wonMonthTpv, m.projection);
+      const accReal = prem.m1 + prem.m2 + m.wonMonthTpv;
+      const accProj = prem.m1 + prem.m2 + proj;
+      document.getElementById("caseTrendNote").textContent = "Acumulado do trimestre: " + fmtK(accReal) + " com o assinado até hoje, " + fmtK(accProj) + " com a projeção · meta " + fmtK(CASE_TARGET_QUARTER) +
+        (accProj >= CASE_TARGET_QUARTER ? ". A projeção bate a meta." : ". Faltam " + fmtK(CASE_TARGET_QUARTER - accProj) + " na projeção.");
+
+      if (typeof Chart !== "undefined") {
+        const el = document.getElementById("chartCaseTrend");
+        if (reportCharts.caseTrend) reportCharts.caseTrend.destroy();
+        const tick = { color: "#7c8497", font: { size: 11 } };
+        reportCharts.caseTrend = new Chart(el, {
+          type: "bar",
+          data: {
+            labels: ["Mês 1 · ramp-up (premissa)", "Mês 2 · tração (premissa)", "Mês 3 · assinado", "Mês 3 · projeção"],
+            datasets: [
+              { label: "Receita do mês", data: [prem.m1, prem.m2, m.wonMonthTpv, proj], backgroundColor: ["rgba(148,163,184,.45)", "rgba(148,163,184,.45)", "#10b981", "rgba(16,185,129,.35)"], borderRadius: 4, maxBarThickness: 46, order: 2 },
+              { label: "Acumulado", type: "line", data: [prem.m1, prem.m1 + prem.m2, accReal, accProj], borderColor: "#a78bfa", backgroundColor: "#a78bfa", pointRadius: 3, tension: 0.25, order: 1 },
+              { label: "Meta trimestral", type: "line", data: [CASE_TARGET_QUARTER, CASE_TARGET_QUARTER, CASE_TARGET_QUARTER, CASE_TARGET_QUARTER], borderColor: "#f43f5e", borderDash: [5, 4], pointRadius: 0, order: 0 },
+              { label: "Meta mensal", type: "line", data: [CASE_TARGET_MONTH, CASE_TARGET_MONTH, CASE_TARGET_MONTH, CASE_TARGET_MONTH], borderColor: "#f59e0b", borderDash: [2, 3], pointRadius: 0, order: 0 }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: { legend: { labels: { color: "#7c8497", boxWidth: 10, font: { size: 11 } } }, tooltip: { callbacks: { label: function (c) { return " " + c.dataset.label + ": " + formatCurrencyBRL(c.raw); } } } },
+            scales: {
+              x: { ticks: tick, grid: { display: false }, border: { display: false } },
+              y: { ticks: Object.assign({ callback: function (v) { return formatCompactBRL(v); } }, tick), grid: { color: "rgba(148,163,184,0.12)" }, border: { display: false }, beginAtZero: true }
+            }
+          }
+        });
+      }
+      renderCaseSimulator();
+
+      // Questão 5 · tabela por fase
+      const tb = document.getElementById("caseFunnelTable");
+      let html = "";
+      for (let w = 1; w <= STAGE_WON; w++) {
+        const st = m.byStage[w];
+        const ref = CASE_FUNNEL[w];
+        const diff = st.count - ref;
+        html += '<tr class="divider"><td class="px-4 py-2 text-slate-200">' + esc(STAGE_LABELS[w].replace(" ✅", "")) + '</td>' +
+          '<td class="px-3 py-2 text-right num">' + STAGE_PROBS[w] + '%</td>' +
+          '<td class="px-3 py-2 text-right num text-white">' + CASE_FUNNEL_LABEL[w] + (w === 4 ? ' <span style="color:var(--faint)">(' + fmtK(CASE_TARGET_MONTH * CASE_COVERAGE) + ')</span>' : w === 5 ? ' <span style="color:var(--faint)">(' + fmtK(CASE_TARGET_MONTH * 2) + ')</span>' : '') + '</td>' +
+          '<td class="px-3 py-2 text-right num text-white">' + st.count + (w === STAGE_WON ? ' <span style="color:var(--faint)">(total)</span>' : '') + '</td>' +
+          '<td class="px-3 py-2 text-right num">' + fmtK(st.tpv) + '</td>' +
+          '<td class="px-4 py-2 text-right num" style="color:' + (diff >= 0 ? "#6ee7b7" : "#fca5a5") + '">' + (diff >= 0 ? "+" : "") + (Math.round(diff * 10) / 10).toString().replace(".", ",") + '</td></tr>';
+      }
+      html += '<tr class="divider"><td class="px-4 py-2 text-slate-200">Atividades no mês</td><td></td><td class="px-3 py-2 text-right num text-white">' + CASE_ACTIVITIES_MONTH.toLocaleString("pt-BR") + '</td><td class="px-3 py-2 text-right num text-white">' + m.activities + '</td><td></td>' +
+        '<td class="px-4 py-2 text-right num" style="color:' + (m.activities >= CASE_ACTIVITIES_MONTH ? "#6ee7b7" : "#fca5a5") + '">' + (m.activities - CASE_ACTIVITIES_MONTH).toLocaleString("pt-BR") + '</td></tr>';
+      tb.innerHTML = html;
+
+      // Questão 3 · KPIs
+      const pct = function (v) { return v === null ? null : Math.round(v * 100) + "%"; };
+      const num1 = function (v) { return (Math.round(v * 10) / 10).toString().replace(".", ","); };
+      const tile = function (label, target, real, ok) {
+        return '<div class="rounded-xl border p-3 text-xs" style="border-color:var(--line);background:var(--surface-2)"><p class="eyebrow">' + label + '</p>' +
+          '<p class="mt-1 text-[15px] font-semibold text-white num">Meta ' + target + '</p>' +
+          '<p class="mt-0.5" style="color:' + (real === null ? "var(--faint)" : ok ? "#6ee7b7" : "#fcd34d") + '">CRM: ' + (real === null ? "sem dados" : real) + '</p></div>';
+      };
+      document.getElementById("caseKpiGrid").innerHTML =
+        tile("Atividades por dia útil", "55", num1(m.activitiesPerDay), m.activitiesPerDay >= 55) +
+        tile("Reuniões por dia", "4 a 5", num1(m.meetingsPerDay), m.meetingsPerDay >= 4) +
+        tile("Cobertura de pipeline", "4x", num1(m.coverage) + "x", m.coverage >= CASE_COVERAGE) +
+        tile("Ciclo de venda", "32 dias", m.avgCycle === null ? null : Math.round(m.avgCycle) + " dias", m.avgCycle !== null && m.avgCycle <= 32) +
+        tile("Win rate", "28%", pct(m.winRate), m.winRate !== null && m.winRate >= 0.28) +
+        tile("Ticket médio", "~R$ 210 mil", m.avgTicket === null ? null : fmtK(m.avgTicket), m.avgTicket !== null && m.avgTicket >= 210000);
     }
 
     function reportKpiHtml(label, value, sub) {
@@ -5442,6 +6133,8 @@
       }
 
       renderReportCharts(r);
+      applyReportTab();
+      renderCaseReports();
     }
 
     function renderReportCharts(r) {
@@ -5458,7 +6151,7 @@
       };
 
       // Funil: oportunidades por etapa (barras) + TPV (linha)
-      const stages = [1, 2, 3, 4, 5];
+      const stages = [1, 2, 3, 4, 5, 6];
       const countBy = stages.map(function (w) { return state.opportunities.filter(function (o) { return Number(o.stage_weight) === w; }).length; });
       const tpvBy = stages.map(function (w) {
         return state.opportunities.filter(function (o) { return Number(o.stage_weight) === w; })
@@ -5469,7 +6162,7 @@
         data: {
           labels: stages.map(function (w) { return REPORT_STAGE_NAMES[w]; }),
           datasets: [
-            { label: "Oportunidades", data: countBy, backgroundColor: stages.map(function (w) { return w === 5 ? "#34d399" : "rgba(139,92,246,.6)"; }), borderRadius: 4, maxBarThickness: 40, yAxisID: "y" },
+            { label: "Oportunidades", data: countBy, backgroundColor: stages.map(function (w) { return w === STAGE_WON ? "#34d399" : "rgba(139,92,246,.6)"; }), borderRadius: 4, maxBarThickness: 40, yAxisID: "y" },
             { label: "TPV mensal", type: "line", data: tpvBy, borderColor: "#e879f9", backgroundColor: "#e879f9", pointRadius: 3, tension: 0.3, yAxisID: "y1" }
           ]
         },
@@ -5537,6 +6230,38 @@
         data: { labels: levels, datasets: [{ data: levelCounts, backgroundColor: ["#f472b6", "#a78bfa", "#64748b"], borderWidth: 0 }] },
         options: { cutout: "62%", plugins: { legend: { position: "right", labels: { color: "#7c8497", boxWidth: 10, font: { size: 12 } } }, tooltip: tooltip } }
       });
+
+      // Carteira por operadora e por polo: contas (barra) e vidas (linha)
+      const groupChart = function (key, id, field, color) {
+        const groups = {};
+        state.accounts.forEach(function (a) {
+          const k = a[field] || "A validar";
+          if (!groups[k]) groups[k] = { n: 0, lives: 0 };
+          groups[k].n++;
+          groups[k].lives += Number(a.active_card_users) || 0;
+        });
+        const labels = Object.keys(groups).sort(function (a, b) { return groups[b].n - groups[a].n; });
+        make(key, id, {
+          type: "bar",
+          data: {
+            labels: labels.map(function (l) { return l.replace(" (ex-Sodexo)", "").replace(" / Região Metropolitana", "").replace(" / Porto Maravilha", ""); }),
+            datasets: [
+              { label: "Contas", data: labels.map(function (l) { return groups[l].n; }), backgroundColor: color, borderRadius: 4, maxBarThickness: 30, yAxisID: "y" },
+              { label: "Vidas", type: "line", data: labels.map(function (l) { return groups[l].lives; }), borderColor: "#e879f9", backgroundColor: "#e879f9", pointRadius: 3, tension: 0.3, yAxisID: "y1" }
+            ]
+          },
+          options: {
+            plugins: { legend: { labels: { color: "#7c8497", boxWidth: 10, font: { size: 11 } } }, tooltip: tooltip },
+            scales: {
+              x: { ticks: tick, grid: { display: false }, border: { display: false } },
+              y: { ticks: Object.assign({ precision: 0 }, tick), grid: grid, border: { display: false }, beginAtZero: true },
+              y1: { position: "right", ticks: tick, grid: { display: false }, border: { display: false }, beginAtZero: true }
+            }
+          }
+        });
+      };
+      groupChart("provider", "chartReportProvider", "current_provider", "rgba(56,189,248,.6)");
+      groupChart("polo", "chartReportPolo", "polo_rj", "rgba(139,92,246,.6)");
     }
 
     function resizeReportCharts() {
@@ -5780,7 +6505,7 @@
       const acc = findAccount(patSimAccountId);
       if (!acc) return;
       const opps = state.opportunities.filter(function (o) { return o.account_id === acc.id; });
-      const opp = opps.find(function (o) { const w = Number(o.stage_weight); return w >= 1 && w <= 4; }) || opps[opps.length - 1];
+      const opp = opps.find(function (o) { const w = Number(o.stage_weight); return w >= 1 && w < STAGE_WON; }) || opps[opps.length - 1];
       if (!opp) { showToast("Esta conta ainda não tem oportunidade. Crie uma e salve de novo.", "⚠️"); return; }
       const block = "--- " + patSummaryText();
       opp.notes = (opp.notes ? String(opp.notes).trim() + "\n\n" : "") + block;
@@ -5949,14 +6674,47 @@
     }
 
     // 8. SUPABASE LIVE CONNECTION (SDK + FALLBACK REST /rest/v1) & CSV EXPORT
+    // 6 fases do Salesforce (Questão 5 do Case) + Perdida. O rótulo (stage) é a fonte da verdade:
+    // no banco, stage_weight continua limitado a 0..5, então "Contrato enviado" e "assinado" gravam 5
+    // e são diferenciados pelo texto de stage.
     const STAGE_LABELS = {
-      0: "Perdido ❌",
-      1: "1. Qualificado (SQL)",
-      2: "2. Discovery & Vidas",
-      3: "3. Demo Dash RH & App",
-      4: "4. Proposta & Simulação PAT",
-      5: "Fechado ✅"
+      0: "Perdida ❌",
+      1: "1. Não contactado",
+      2: "2. Qualificando",
+      3: "3. Em contato",
+      4: "4. Negociando",
+      5: "5. Contrato enviado",
+      6: "6. Contrato assinado ✅"
     };
+    // Rótulos da versão anterior (5 etapas) → nova fase
+    const LEGACY_STAGE_LABELS = {
+      "Perdido ❌": 0, "1. Qualificado (SQL)": 2, "2. Discovery & Vidas": 3, "3. Demo Dash RH & App": 3,
+      "4. Proposta & Simulação PAT": 4, "Fechado ✅": 6
+    };
+    const LEGACY_STAGE_WEIGHTS = { 0: 0, 1: 2, 2: 3, 3: 3, 4: 4, 5: 6 };
+    function stageFromLabel(label) {
+      const l = String(label || "");
+      for (const k in STAGE_LABELS) { if (STAGE_LABELS[k] === l) return Number(k); }
+      return null;
+    }
+    /** Converte uma oportunidade da versão de 5 etapas para as 6 fases. Retorna true se mudou. */
+    function migrateOpportunityStage(o) {
+      if (!o) return false;
+      const byNew = stageFromLabel(o.stage);
+      if (byNew !== null) {
+        if (Number(o.stage_weight) !== byNew) { o.stage_weight = byNew; return true; }
+        return false;
+      }
+      let w;
+      if (Object.prototype.hasOwnProperty.call(LEGACY_STAGE_LABELS, String(o.stage || ""))) w = LEGACY_STAGE_LABELS[o.stage];
+      else w = LEGACY_STAGE_WEIGHTS[Number(o.stage_weight)];
+      if (w === undefined) w = 1;
+      o.stage_weight = w;
+      o.stage = STAGE_LABELS[w];
+      o.probability = STAGE_PROBS[w];
+      return true;
+    }
+    function dbStageWeight(w) { return Math.max(0, Math.min(5, Number(w) || 0)); }
 
     // Colunas graváveis de crm_accounts (as colunas de TPV são geradas pelo banco)
     const ACCOUNT_COLUMNS = [
@@ -6009,7 +6767,7 @@
         account_id: o.account_id,
         title: o.title || ("Swile — " + (acc ? acc.company_name : "Conta")),
         stage: o.stage || STAGE_LABELS[w],
-        stage_weight: w,
+        stage_weight: dbStageWeight(w),
         negotiated_lives: Number(o.negotiated_lives) || (acc ? Number(acc.active_card_users) || 100 : 100),
         proposed_monthly_tpv: Number(o.proposed_monthly_tpv) || (acc ? computeMonthlyTpv(acc) : 0),
         probability: Number(o.probability) || 0,
@@ -6343,9 +7101,13 @@
       };
     }
 
+    let pendingStageMigration = [];
     function applyRemoteData(remote) {
       state.accounts = remote.accounts.map(rowToAccount);
-      if (remote.opportunities) state.opportunities = remote.opportunities.map(rowToOpportunity);
+      if (remote.opportunities) {
+        state.opportunities = remote.opportunities.map(rowToOpportunity);
+        pendingStageMigration = state.opportunities.filter(migrateOpportunityStage);
+      }
       if (remote.followups) {
         const remoteNotes = remote.followups.filter(isInteractionRow).map(rowToInteraction);
         const ids = {};
@@ -6411,6 +7173,8 @@
         persistState();
         syncPendingInteractions();
         applyLeadDataPatch();
+        applyCaseRulePatch();
+        writeStageMigration();
         setDbStatus("connected",
           "<p class='font-bold text-emerald-300'>Conectado (" + esc(db.lastMode) + ").</p>" +
           "<p>" + state.accounts.length + " contas, " + state.opportunities.length + " oportunidades e " + state.followups.length + " follow-ups carregados do banco. Alterações feitas no app são gravadas no Supabase.</p>" +

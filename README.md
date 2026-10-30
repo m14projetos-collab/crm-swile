@@ -126,8 +126,8 @@ As preferências e os modelos ficam no `localStorage` deste navegador (não vão
 - **Copiloto de call** (ficha da conta): transcrição por voz em pt-BR (Chrome/Edge) e análise local por palavras-sinal: temperatura, score, 3 destaques, contorno de objeção e WhatsApp pós-call. "Aplicar no lead" grava transcrição e resumo no histórico, atualiza o interesse e move o card. **A gravação só capta o seu microfone**: em call do Meet, cole a transcrição do Meet/Gemini/Tactiq.
 - **Gemini opcional** (Integrações): com chave do Google AI Studio, a análise vai para o Gemini e volta em JSON; se falhar, usa a análise local. A chave fica no `localStorage` deste navegador, fora do backup e do Supabase, e fica exposta a quem usar o computador.
 - **Home office**: na ficha, Ligar, chamada WhatsApp, Google Meet (abre a sala e copia o convite) e convite no Google Agenda com o decisor. Resultados de 1 clique: Atendeu, Pediu proposta, Caixa postal, Sem interesse. A Agenda tem os modos Home Office (fila remota do dia) e Campo (rotas).
-- **Playbook em sub-abas**: CHAVE & Objeções, Battlecards & Matriz (notas marcadas como não verificadas), Gatilhos Regulatórios 2026 (com fonte e "Copiar gancho") e Raio-X Swile Brasil.
-- **Dados da Fattu e da Future**: informados pelo Michel e não verificados. Só substituem os valores provisórios antigos; não sobrescrevem algo editado.
+- **Playbook em sub-abas**: CHAVE & Objeções, Battlecards & Matriz (nota da Swile com fonte Benway; demais informadas pelo usuário), Gatilhos Regulatórios 2026 (com fonte e "Copiar gancho") e Raio-X Swile Brasil.
+- **Dados da Fattu e da Future**: informados pelo usuário (Fattu cita fattu.com.br/filiais e Econodata). Só substituem os valores provisórios antigos; não sobrescrevem algo editado.
 
 ## Sincronização com o Supabase
 

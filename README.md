@@ -159,6 +159,12 @@ As preferências e os modelos ficam no `localStorage` deste navegador (não vão
 - **Sugerir empresas RJ via Gemini:** entram como "sugestão não verificada" e só viram conta depois de conferidas.
 - **Sem chave:** tudo funciona pelo motor local.
 
+### Nome na interface: M14 IA
+
+- Na tela, a camada de IA se chama **M14 IA** (rótulos, botões, toasts, chip de status). O campo Modelo mostra `M14 IA · Motor Comercial RJ` por padrão.
+- `resolveInternalModelId()` traduz o nome exibido para o modelo real: um nome que comece com `gemini-` passa direto; qualquer outro vira `gemini-2.5-flash`, com a troca automática para `gemini-3.8-flash` mantida. Mensagens de erro passam por `aiErr()`.
+- A transparência fica numa linha recolhível em Integrações ("Processamento por modelo de IA de terceiros (Google Gemini). A chave fica neste navegador.") e no aviso de consentimento antes de gravar, porque o áudio e os dados das contas saem do navegador para o Google (LGPD).
+
 ## Sincronização com o Supabase
 
 - **Leitura:** ao conectar, contas, oportunidades e follow-ups são carregados do banco. O banco é a fonte da verdade.

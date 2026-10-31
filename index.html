@@ -505,7 +505,7 @@
                   <button type="button" class="btn btn-sm" onclick="openDiscovery('linkedin')"><svg class="ico"><use href="#i-user"/></svg>Decisores RH/CFO no LinkedIn</button>
                   <button type="button" class="btn btn-sm" onclick="openDiscovery('econodata')"><svg class="ico"><use href="#i-building"/></svg>Empresas na Econodata</button>
                   <button id="btnDiscNewAccount" type="button" class="btn btn-primary btn-sm" onclick="newAccountFromDiscovery()"><svg class="ico"><use href="#i-plus"/></svg>Cadastrar conta encontrada</button>
-                  <button id="btnDiscGemini" type="button" class="btn btn-sm" onclick="suggestCompaniesGemini()"><svg class="ico"><use href="#i-spark"/></svg>Sugerir novas empresas RJ (&gt;200v) via Gemini</button>
+                  <button id="btnDiscGemini" type="button" class="btn btn-sm" onclick="suggestCompaniesGemini()"><svg class="ico"><use href="#i-spark"/></svg>Sugerir novas empresas RJ (&gt;200v) via M14 IA</button>
                 </div>
                 <div id="discSuggest" class="space-y-2"></div>
               </div>
@@ -961,23 +961,25 @@
 
             <div class="card p-4 space-y-3 text-xs lg:col-span-2">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="card-title flex items-center gap-2"><svg class="ico"><use href="#i-spark"/></svg>Copiloto de call · Gemini (opcional)</h3>
+                <h3 class="card-title flex items-center gap-2"><svg class="ico"><use href="#i-spark"/></svg>M14 IA · copiloto comercial (opcional)</h3>
                 <span id="geminiStatus" class="chip">Análise local</span>
               </div>
-              <p style="color:var(--muted)">Sem chave, tudo funciona com o motor local (briefings, diagnóstico do lead e análise da call por palavras-sinal, grátis e sem rede). Com uma chave do Google AI Studio, você pode aprofundar com o Gemini: briefings, diagnóstico do lead, transcrição da gravação, perguntas ao copiloto e sugestão de empresas. Se o Gemini falhar, o CRM volta ao motor local.</p>
-              <p class="rounded-lg p-2.5" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fde68a">Atenção: a chave fica guardada neste navegador, sem criptografia. Quem usar este computador ou rodar um script nesta página pode lê-la. Use uma chave só para isto, com limite de uso, e apague quando não precisar. Ela não entra no backup JSON nem vai para o Supabase. Transcrições, áudios gravados e dados das contas enviados ao Gemini saem do seu navegador para o Google.</p>
+              <p style="color:var(--muted)">Sem chave de ativação, tudo funciona com o motor local (briefings, diagnóstico do lead e análise da call por palavras-sinal, grátis e sem rede). Com a chave, a M14 IA aprofunda briefings, diagnóstico do lead, transcrição da gravação, perguntas ao copiloto e sugestão de empresas. Se ela falhar, o CRM volta ao motor local.</p>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
-                <div class="sm:col-span-2"><label for="geminiKeyInput" class="label">Chave da API Gemini</label><input id="geminiKeyInput" type="password" autocomplete="off" class="input" placeholder="Cole a chave do AI Studio" /></div>
-                <div><label for="geminiModelInput" class="label">Modelo</label><input id="geminiModelInput" type="text" class="input" value="gemini-2.5-flash" /></div>
+                <div class="sm:col-span-2"><label for="geminiKeyInput" class="label">Chave de Ativação · M14 IA</label><input id="geminiKeyInput" type="password" autocomplete="off" class="input" placeholder="Insira o token de ativação da M14 IA" /></div>
+                <div><label for="geminiModelInput" class="label">Modelo</label><input id="geminiModelInput" type="text" class="input" value="M14 IA · Motor Comercial RJ" /></div>
               </div>
               <div class="flex flex-wrap gap-2">
                 <button type="button" class="btn btn-primary btn-sm" onclick="saveGeminiKey()"><svg class="ico"><use href="#i-check"/></svg>Salvar chave</button>
                 <button type="button" class="btn btn-sm" onclick="clearGeminiKey()"><svg class="ico"><use href="#i-trash"/></svg>Apagar chave</button>
-                <button type="button" class="btn btn-sm" onclick="testGeminiKey()"><svg class="ico"><use href="#i-plug"/></svg>Testar chave Gemini</button>
-                <button type="button" class="btn btn-ghost btn-sm" onclick="openExternal('https://aistudio.google.com/app/apikey')"><svg class="ico"><use href="#i-link"/></svg>Criar chave no AI Studio</button>
+                <button id="btnValidateAi" type="button" class="btn btn-sm" onclick="testGeminiKey()">⚡ Validar Motor M14 IA</button>
               </div>
               <p id="geminiTestStatus" class="text-[11px]" style="color:var(--faint)"></p>
-              <p style="color:var(--faint)">Modelo padrão: gemini-2.5-flash. O Google limitou esse modelo a quem já o usava; se a sua chave não tiver acesso, o CRM tenta o gemini-3.8-flash, que o Google recomenda para projetos novos. Gravações de call vão em base64 dentro da requisição, que tem limite de 20 MB: o CRM encerra a gravação perto de 14 MB de áudio (cerca de 55 minutos).</p>
+              <p style="color:var(--faint)">M14 IA · assistente comercial do CRM: transcrição de calls até ~55 min, diagnóstico de leads e avanço de pipeline.</p>
+              <details id="aiDisclosure" class="text-[11px]" style="color:var(--faint)">
+                <summary class="cursor-pointer">ⓘ Processamento por modelo de IA de terceiros (Google Gemini). A chave fica neste navegador.</summary>
+                <p class="mt-1.5 leading-relaxed">A chave fica guardada sem criptografia: quem usar este computador ou rodar um script nesta página pode lê-la. Use uma chave só para isto, com limite de uso, e apague quando não precisar. Ela não entra no backup JSON nem vai para o Supabase. Transcrições, áudios gravados e dados das contas enviados à M14 IA saem do seu navegador para o Google. Modelo interno: gemini-2.5-flash, com troca automática para gemini-3.8-flash se a chave não tiver acesso. Cada requisição tem limite de 20 MB, por isso a gravação para perto de 14 MB de áudio (cerca de 55 minutos). A chave é criada no Google AI Studio (aistudio.google.com).</p>
+              </details>
             </div>
 
             <div class="card p-4 space-y-3 text-xs lg:col-span-2">
@@ -1404,11 +1406,11 @@
           </div>
           <details id="accCopilot" class="hidden rounded-xl border text-xs" style="border-color:var(--line)">
             <summary class="flex items-center justify-between gap-2 px-3.5 py-2.5 cursor-pointer">
-              <span class="font-medium text-white">Copiloto de call</span>
+              <span class="font-medium text-white">Copiloto M14 IA</span>
               <span id="copilotLiveWrap"></span><span id="copilotLive" class="hidden live-dot text-[11px] font-semibold" style="color:#f87171">Ouvindo</span>
             </summary>
             <div class="px-3.5 pb-3.5 space-y-2.5">
-              <p class="text-[11px] leading-relaxed" style="color:var(--faint)"><b>Ditado rápido</b> transcreve só a sua voz, no navegador. <b>Gravar call completa</b> grava o microfone e, se você quiser, o áudio da aba do Meet ou do WhatsApp Web; a transcrição com os dois lados é feita pelo Gemini. Você também pode colar a transcrição do Meet ou do Tactiq.</p>
+              <p class="text-[11px] leading-relaxed" style="color:var(--faint)"><b>Ditado rápido</b> transcreve só a sua voz, no navegador. <b>Gravar call completa</b> grava o microfone e, se você quiser, o áudio da aba do Meet ou do WhatsApp Web; a transcrição com os dois lados é feita pela M14 IA. Você também pode colar a transcrição do Meet ou do Tactiq.</p>
               <p id="copilotNoSpeech" class="hidden text-[11px]" style="color:#fcd34d">Este navegador não transcreve voz. Use Chrome ou Edge, ou cole a transcrição.</p>
               <label for="copilotTranscript" class="sr-only">Transcrição</label>
               <textarea id="copilotTranscript" rows="5" class="input text-[12px]" placeholder="Grave sua voz ou cole a transcrição da call…"></textarea>
@@ -1421,9 +1423,9 @@
               <label class="flex items-center gap-1.5" style="color:var(--muted)"><input id="callRecTab" type="checkbox" class="accent-violet-500" checked />Incluir o áudio da aba da reunião (Meet / WhatsApp Web)</label>
               <p id="callRecStatus" class="text-[11px]"></p>
               <div id="callRecActions" class="hidden flex flex-wrap items-center gap-1.5">
-                <button id="btnCallTranscribe" type="button" class="btn btn-primary btn-sm" onclick="transcribeCallWithGemini()"><svg class="ico"><use href="#i-spark"/></svg>Transcrever com Gemini</button>
+                <button id="btnCallTranscribe" type="button" class="btn btn-primary btn-sm" onclick="transcribeCallWithGemini()"><svg class="ico"><use href="#i-spark"/></svg>Transcrever com M14 IA</button>
                 <button type="button" class="btn btn-sm" onclick="downloadCallAudio()"><svg class="ico"><use href="#i-download"/></svg>Baixar áudio</button>
-                <span id="callNoKey" class="hidden text-[11px]" style="color:#fcd34d">Sem chave do Gemini a transcrição da gravação não é feita aqui. Baixe o áudio ou cole a transcrição.</span>
+                <span id="callNoKey" class="hidden text-[11px]" style="color:#fcd34d">Sem a chave da M14 IA a transcrição da gravação não é feita aqui. Baixe o áudio ou cole a transcrição.</span>
               </div>
               <div id="copilotResult" class="hidden rounded-lg p-3 space-y-2" style="background:var(--surface-2)"></div>
               <div class="space-y-1.5 pt-1 divider">
@@ -3414,7 +3416,24 @@
     }
 
     function geminiKey() { try { return localStorage.getItem("swile_crm_gemini_key") || ""; } catch (e) { return ""; } }
-    function geminiModel() { try { return localStorage.getItem("swile_crm_gemini_model") || "gemini-2.5-flash"; } catch (e) { return "gemini-2.5-flash"; } }
+    // White-label: na tela a IA se chama "M14 IA". O nome exibido é traduzido aqui
+    // para o modelo real do Google; o aviso de terceiros fica em Integrações (LGPD).
+    const AI_BRAND = "M14 IA";
+    const AI_DEFAULT_LABEL = "M14 IA · Motor Comercial RJ";
+    const GEMINI_PRIMARY_MODEL = "gemini-2.5-flash";
+    /** Nome exibido no campo Modelo (o antigo padrão "gemini-2.5-flash" vira o nome da marca). */
+    function geminiModel() {
+      let v = "";
+      try { v = (localStorage.getItem("swile_crm_gemini_model") || "").trim(); } catch (e) { /* ignore */ }
+      return !v || v === GEMINI_PRIMARY_MODEL ? AI_DEFAULT_LABEL : v;
+    }
+    /** Nome exibido → id real do modelo. Só um nome que comece com "gemini-" passa direto. */
+    function resolveInternalModelId(displayName) {
+      const raw = String(displayName || "").trim();
+      return /^gemini-[\w.\-]+$/i.test(raw) ? raw.toLowerCase() : GEMINI_PRIMARY_MODEL;
+    }
+    /** Tira nomes técnicos de mensagens de erro mostradas ao usuário. */
+    function aiErr(msg) { return String(msg || "falha").replace(/models\/[\w.\-]+/gi, "o modelo").replace(/gemini[\w.\-]*/gi, AI_BRAND).replace(/(google )?ai studio/gi, AI_BRAND); }
 
     const SF_STAGE_BY_NAME = { "nao contactado": 1, "qualificando": 2, "em contato": 3, "negociando": 4, "contrato enviado": 5, "contrato assinado": 6, "perdida": 0, "perdido": 0 };
     async function analyzeTranscriptGemini(transcript, acc) {
@@ -3481,10 +3500,10 @@
       opts = opts || {};
       const key = geminiKey();
       if (!key) return { ok: false, error: "sem chave" };
-      const models = [geminiModel()];
+      const models = [resolveInternalModelId(geminiModel())];
       if (models[0] !== GEMINI_FALLBACK_MODEL) models.push(GEMINI_FALLBACK_MODEL);
       const body = JSON.stringify({ contents: [{ role: "user", parts: parts }], generationConfig: Object.assign({ temperature: 0.3 }, opts.json ? { responseMimeType: "application/json" } : {}) });
-      if (body.length > GEMINI_INLINE_MAX_BYTES) return { ok: false, error: "conteúdo acima do limite de 20 MB do Gemini" };
+      if (body.length > GEMINI_INLINE_MAX_BYTES) return { ok: false, error: "conteúdo acima do limite de 20 MB por requisição" };
       let lastErr = "";
       for (let i = 0; i < models.length; i++) {
         const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -3493,11 +3512,11 @@
           const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(models[i]) + ":generateContent", {
             method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: body, signal: ctrl ? ctrl.signal : undefined
           });
-          if (r.status === 404 && i + 1 < models.length) { lastErr = "modelo " + models[i] + " indisponível para esta chave"; continue; }
+          if (r.status === 404 && i + 1 < models.length) { lastErr = "motor principal indisponível para esta chave"; continue; }
           if (!r.ok) {
             let msg = "erro " + r.status;
             try { const ej = await r.json(); if (ej && ej.error && ej.error.message) msg += ": " + String(ej.error.message).slice(0, 160); } catch (e) { /* ignore */ }
-            return { ok: false, error: msg, status: r.status };
+            return { ok: false, error: aiErr(msg), status: r.status };
           }
           const j = await r.json();
           const txt = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts &&
@@ -3518,12 +3537,13 @@
 
     async function testGeminiKey() {
       const st = document.getElementById("geminiTestStatus");
-      if (!geminiKey()) { st.textContent = "Salve uma chave antes de testar."; st.style.color = "#fcd34d"; return; }
-      st.textContent = "Testando…"; st.style.color = "var(--faint)";
+      if (!geminiKey()) { st.textContent = "Salve a chave de ativação antes de validar."; st.style.color = "#fcd34d"; return; }
+      st.textContent = "Validando o motor M14 IA…"; st.style.color = "var(--faint)";
       const r = await geminiRequest([{ text: "Responda apenas com a palavra OK." }], { timeout: 15000 });
       if (r.ok) {
-        st.textContent = "Chave funcionando com " + r.model + (r.model !== geminiModel() ? " (o modelo configurado não está disponível para esta chave)" : "") + ".";
+        st.textContent = "✅ Conexão com M14 IA validada com sucesso!" + (r.model !== resolveInternalModelId(geminiModel()) ? " (rodando no motor de contingência)" : "");
         st.style.color = "#6ee7b7";
+        showToast("Conexão com M14 IA validada com sucesso!", "✅");
       } else {
         st.textContent = "Falhou: " + r.error + ".";
         st.style.color = "#fca5a5";
@@ -3538,9 +3558,9 @@
       btn.disabled = true;
       let result = null;
       if (geminiKey()) {
-        btn.textContent = "Analisando com Gemini…";
+        btn.textContent = "Analisando com M14 IA…";
         result = await analyzeTranscriptGemini(text, acc);
-        if (!result) showToast("Gemini não respondeu. Usei a análise local.", "ℹ️");
+        if (!result) showToast("A M14 IA não respondeu. Usei a análise local.", "ℹ️");
       }
       if (!result) result = analyzeTranscriptLocal(text, acc);
       btn.disabled = false;
@@ -3560,7 +3580,7 @@
         '<div class="flex flex-wrap items-center gap-2">' +
           '<span class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '55">' + esc(r.temperature) + '</span>' +
           '<span class="num text-white">Score ' + r.score + '/100</span>' +
-          '<span style="color:var(--faint)">· ' + (r.source === "gemini" ? "Gemini · " + esc(r.model || geminiModel()) : "análise local") + '</span>' +
+          '<span style="color:var(--faint)">· ' + (r.source === "gemini" ? AI_BRAND : "análise local") + '</span>' +
         '</div>' +
         '<div class="h-1.5 rounded-full overflow-hidden" style="background:var(--surface-3,#1f2433)"><div style="height:100%;width:' + r.score + '%;background:' + c + '"></div></div>' +
         (r.objections && r.objections.length ? '<p style="color:#c3c8d4"><span style="color:var(--faint)">Objeções:</span> ' + esc(r.objections.join(" · ")) + '</p>' : "") +
@@ -3587,7 +3607,7 @@
       const r = copilotLast;
       if (!acc || !r) return;
       const transcript = (document.getElementById("copilotTranscript").value || "").trim();
-      const summary = "Call analisada (" + (r.source === "gemini" ? "Gemini" : "local") + "): " + r.temperature + ", score " + r.score + "/100." +
+      const summary = "Call analisada (" + (r.source === "gemini" ? AI_BRAND : "local") + "): " + r.temperature + ", score " + r.score + "/100." +
         (r.highlights.length ? " Destaques: " + r.highlights.join(" | ") + "." : "") +
         (r.objections && r.objections.length ? " Objeções: " + r.objections.join(", ") + "." : "");
       logInteraction(acc.id, "Ligação", summary + "\n\nTranscrição:\n" + transcript, false, true);
@@ -3632,7 +3652,7 @@
     async function startCallRecording() {
       if (callRec) return;
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || pickAudioMime() === null) { showToast("Este navegador não grava áudio. Use Chrome ou Edge no computador.", "⚠️"); return; }
-      const ok = await uiConfirm("Antes de gravar, avise o cliente que a conversa será gravada e transcrita, explique a finalidade (registro comercial) e peça o consentimento dele. Pela LGPD, sem esse aviso e o aceite, não grave. O áudio só sai do seu navegador se você mandar para o Gemini.", { title: "Consentimento para gravar", okLabel: "Cliente informado e de acordo", danger: false });
+      const ok = await uiConfirm("Antes de gravar, avise o cliente que a conversa será gravada e transcrita, explique a finalidade (registro comercial) e peça o consentimento dele. Pela LGPD, sem esse aviso e o aceite, não grave. O áudio só sai do seu navegador se você mandar transcrever pela M14 IA, que usa um modelo de IA de terceiros (Google Gemini).", { title: "Consentimento para gravar", okLabel: "Cliente informado e de acordo", danger: false });
       if (!ok) return;
       if (copilotListening) stopCopilotListening();
       const withTab = document.getElementById("callRecTab").checked;
@@ -3664,7 +3684,7 @@
       rec.hasTab = !!tab;
       rec.timer = setInterval(function () {
         updateCallRecUi();
-        if (callRecSize() > GEMINI_AUDIO_MAX_RAW) { showToast("Gravação chegou ao limite de tamanho do Gemini e foi encerrada.", "⚠️"); stopCallRecording(); }
+        if (callRecSize() > GEMINI_AUDIO_MAX_RAW) { showToast("Gravação chegou ao limite de tamanho (cerca de 55 min) e foi encerrada.", "⚠️"); stopCallRecording(); }
       }, 1000);
       callRec = rec;
       callAudio = null;
@@ -3754,10 +3774,10 @@
       try {
         parts.push({ inlineData: { mimeType: callAudio.mime, data: await blobToBase64(callAudio.mic) } });
         if (callAudio.tab) parts.push({ inlineData: { mimeType: callAudio.mime, data: await blobToBase64(callAudio.tab) } });
-      } catch (e) { btn.disabled = false; btn.innerHTML = icon("spark") + "Transcrever com Gemini"; showToast("Não consegui ler o áudio gravado.", "⚠️"); return; }
+      } catch (e) { btn.disabled = false; btn.innerHTML = icon("spark") + "Transcrever com M14 IA"; showToast("Não consegui ler o áudio gravado.", "⚠️"); return; }
       const r = await geminiRequest(parts, { timeout: 180000 });
       btn.disabled = false;
-      btn.innerHTML = icon("spark") + "Transcrever com Gemini";
+      btn.innerHTML = icon("spark") + "Transcrever com M14 IA";
       if (!r.ok) { showToast("Transcrição falhou (" + r.error + "). Baixe o áudio e tente de novo.", "⚠️"); return; }
       const ta = document.getElementById("copilotTranscript");
       ta.value = (ta.value ? ta.value.replace(/\s*$/, "\n\n") : "") + r.text.trim();
@@ -3801,10 +3821,10 @@
         const r = await geminiRequest([{ text: "Você é um coach de vendas B2B de benefícios corporativos (Swile, RJ). Responda em português, de forma prática e curta, sem inventar números ou fatos que não estejam no contexto.\n\nConta: " + JSON.stringify(ctx) +
           (transcript ? "\n\nTranscrição da call:\n" + transcript.slice(0, 15000) : "\n\n(Sem transcrição nesta sessão.)") +
           (copilotLast ? "\n\nAnálise da call: " + JSON.stringify(copilotLast) : "") + "\n\nPergunta: " + q }], { timeout: 45000 });
-        if (r.ok) { answer = r.text.trim(); src = "Gemini"; }
-        else showToast("Gemini não respondeu (" + r.error + "). Usei a análise local.", "ℹ️");
+        if (r.ok) { answer = r.text.trim(); src = AI_BRAND; }
+        else showToast("A M14 IA não respondeu (" + r.error + "). Usei a análise local.", "ℹ️");
       }
-      if (!answer) answer = kind ? copilotLocalAnswer(kind, acc, transcript) : "Sem a chave do Gemini, o copiloto responde só aos 3 atalhos. Configure a chave em Integrações para perguntas livres.";
+      if (!answer) answer = kind ? copilotLocalAnswer(kind, acc, transcript) : "Sem a chave da M14 IA, o copiloto responde só aos 3 atalhos. Configure a chave em Integrações para perguntas livres.";
       out.innerHTML = '<p class="label mb-1">' + esc(q) + ' · <span style="color:var(--faint)">' + src + '</span></p><p class="whitespace-pre-wrap" style="color:#c3c8d4">' + esc(answer) + '</p>' +
         '<button type="button" class="btn btn-ghost btn-sm mt-1" onclick="copyTextSafe(document.getElementById(\'copilotAnswer\').querySelector(\'.whitespace-pre-wrap\').textContent, \'Resposta copiada.\')">' + icon("copy") + 'Copiar</button>';
       if (!kind) input.value = "";
@@ -3816,19 +3836,19 @@
     let geminiSuggestions = [];
     async function suggestCompaniesGemini() {
       const box = document.getElementById("discSuggest");
-      if (!geminiKey()) { box.innerHTML = '<p style="color:#fcd34d">Configure a chave do Gemini em Integrações para usar as sugestões. Sem chave, use as buscas acima.</p>'; return; }
+      if (!geminiKey()) { box.innerHTML = '<p style="color:#fcd34d">Configure a chave de ativação da M14 IA em Integrações para usar as sugestões. Sem chave, use as buscas acima.</p>'; return; }
       const p = discoveryParams();
       const known = state.accounts.map(function (a) { return a.company_name; }).concat(RJ_CATALOG.map(function (c) { return c.name; }));
-      box.innerHTML = '<p style="color:var(--faint)">Consultando o Gemini…</p>';
+      box.innerHTML = '<p style="color:var(--faint)">Consultando a M14 IA…</p>';
       const prompt = "Liste até 8 empresas reais com operação no estado do Rio de Janeiro e, provavelmente, 200 colaboradores ou mais, que possam ser prospectadas para benefícios corporativos (vale-refeição/alimentação)." +
         (p.polo ? " Região preferida: " + p.polo + "." : "") + (p.sector ? " Setor: " + p.sector + "." : "") + (p.prov ? " Que provavelmente usem " + p.prov + "." : "") +
         " Não repita estas: " + known.join("; ") + ". Não invente nomes de pessoas, telefones ou endereços. Se não tiver certeza de que a empresa existe, não liste. " +
         "Responda em JSON: [{\"nome\": \"\", \"setor\": \"\", \"regiao\": \"\", \"porte_estimado\": \"faixa de colaboradores\", \"por_que\": \"1 frase\"}].";
       const r = await geminiRequest([{ text: prompt }], { json: true, timeout: 45000 });
-      if (!r.ok || !Array.isArray(r.data)) { box.innerHTML = '<p style="color:#fca5a5">Gemini não respondeu (' + esc(r.error || "formato inválido") + ').</p>'; return; }
+      if (!r.ok || !Array.isArray(r.data)) { box.innerHTML = '<p style="color:#fca5a5">A M14 IA não respondeu (' + esc(r.error || "formato inválido") + ').</p>'; return; }
       const lower = known.map(function (k) { return normalizeText(k); });
       geminiSuggestions = r.data.filter(function (s) { return s && s.nome && lower.indexOf(normalizeText(s.nome)) < 0; }).slice(0, 8);
-      box.innerHTML = '<p class="rounded-lg p-2.5" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fde68a">Sugestões geradas pelo Gemini (' + esc(r.model) + '). O modelo pode errar ou inventar empresas: confira cada uma no site, na Gupy ou na Econodata antes de cadastrar.</p>' +
+      box.innerHTML = '<p class="rounded-lg p-2.5" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fde68a">Sugestões geradas pela M14 IA. A IA pode errar ou inventar empresas: confira cada uma no site, na Gupy ou na Econodata antes de cadastrar.</p>' +
         (geminiSuggestions.length ? '<div class="grid grid-cols-1 lg:grid-cols-2 gap-2 mt-2">' + geminiSuggestions.map(function (s, i) {
           return '<div class="rounded-xl border p-3 space-y-1" style="border-color:var(--line)">' +
             '<div class="flex items-start justify-between gap-2"><p class="text-[13px] font-medium text-white">' + esc(s.nome) + '</p><span class="chip shrink-0" style="color:#fcd34d">sugestão não verificada</span></div>' +
@@ -3849,7 +3869,7 @@
       document.getElementById("accFormCompany").value = s.nome;
       if (s.setor) document.getElementById("accFormSector").value = s.setor;
       const trig = document.getElementById("accFormTrigger");
-      if (trig) trig.value = "Sugestão do Gemini, não verificada: " + (s.por_que || "") + " Confirmar porte (≥ 200 vidas) e operadora.";
+      if (trig) trig.value = "Sugestão da M14 IA, não verificada: " + (s.por_que || "") + " Confirmar porte (≥ 200 vidas) e operadora.";
     }
 
     function speechSupported() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
@@ -6124,14 +6144,14 @@
     // 7d. TELA DE INTEGRAÇÕES
     function saveGeminiKey() {
       const k = (document.getElementById("geminiKeyInput").value || "").trim();
-      const m = (document.getElementById("geminiModelInput").value || "").trim() || "gemini-2.5-flash";
+      const m = (document.getElementById("geminiModelInput").value || "").trim() || AI_DEFAULT_LABEL;
       try {
         if (k) localStorage.setItem("swile_crm_gemini_key", k);
         localStorage.setItem("swile_crm_gemini_model", m);
       } catch (e) { showToast("O navegador bloqueou o armazenamento local.", "⚠️"); return; }
       document.getElementById("geminiKeyInput").value = "";
       renderIntegrations();
-      showToast(k ? "Chave salva neste navegador. O copiloto vai usar o Gemini." : "Modelo salvo.", "🔑");
+      showToast(k ? "Chave salva neste navegador. O copiloto vai usar a M14 IA." : "Modelo salvo.", "🔑");
     }
     function clearGeminiKey() {
       try { localStorage.removeItem("swile_crm_gemini_key"); } catch (e) { /* ignore */ }
@@ -6615,14 +6635,14 @@
       const local = briefLocal(view);
       const cached = geminiCacheGet(briefCacheKey(view, local));
       const b = cached || local;
-      const src = cached ? "Gemini · em cache" : "motor local";
+      const src = cached ? AI_BRAND + " · em cache" : "motor local";
       el.innerHTML =
         '<div class="flex flex-wrap items-start gap-x-3 gap-y-1.5">' +
           '<p class="flex-1 min-w-[14rem] text-[12.5px] leading-relaxed" style="color:#c3c8d4"><span class="eyebrow mr-1.5">Briefing</span>' + esc(b.head) + '</p>' +
           '<div class="flex items-center gap-1.5 shrink-0">' +
             '<span class="text-[10.5px]" style="color:var(--faint)">' + src + '</span>' +
             '<button type="button" class="btn btn-ghost btn-sm" onclick="toggleBriefing(\'' + view + '\')">' + (briefOpen[view] ? "Fechar" : "Detalhar") + '</button>' +
-            '<button type="button" class="btn btn-sm" onclick="refreshBriefingGemini(\'' + view + '\')">' + icon("spark") + 'Atualizar com Gemini 2.5</button>' +
+            '<button type="button" class="btn btn-sm" onclick="refreshBriefingGemini(\'' + view + '\')">' + icon("spark") + 'Atualizar com M14 IA</button>' +
           '</div>' +
         '</div>' +
         (briefOpen[view] && b.points && b.points.length ? '<ul class="mt-2 space-y-1 text-[12px]" style="color:var(--muted)">' + b.points.map(function (p) { return '<li class="flex gap-2"><span style="color:var(--faint)">•</span><span>' + esc(p) + '</span></li>'; }).join("") + '</ul>' : '');
@@ -6638,16 +6658,16 @@
     };
 
     async function refreshBriefingGemini(view) {
-      if (!geminiKey()) { showToast("Sem chave do Gemini: o briefing usa o motor local. Configure a chave em Integrações.", "ℹ️"); return; }
+      if (!geminiKey()) { showToast("Sem a chave da M14 IA: o briefing usa o motor local. Configure a chave em Integrações.", "ℹ️"); return; }
       const local = briefLocal(view);
       const key = briefCacheKey(view, local);
       if (geminiCacheGet(key)) { briefOpen[view] = true; renderBriefing(view); return; }
       const el = document.getElementById("brief-" + view);
-      if (el) { const s = el.querySelector("span.text-\\[10\\.5px\\]"); if (s) s.textContent = "consultando Gemini…"; }
+      if (el) { const s = el.querySelector("span.text-\\[10\\.5px\\]"); if (s) s.textContent = "consultando M14 IA…"; }
       const prompt = "Você é um diretor comercial B2B de benefícios corporativos (Swile, Rio de Janeiro). Tom direto e sóbrio, sem emojis. " +
         BRIEF_PROMPTS[view] + " Use só os dados abaixo, sem inventar números ou nomes. Responda em JSON: {\"head\": \"1 a 2 frases\", \"points\": [\"até 5 tópicos curtos e práticos\"]}.\n\nDados:\n" + JSON.stringify(local.facts);
       const r = await geminiRequest([{ text: prompt }], { json: true });
-      if (!r.ok || !r.data || !r.data.head) { showToast("Gemini não respondeu (" + (r.error || "formato inválido") + "). Mantive o motor local.", "ℹ️"); renderBriefing(view); return; }
+      if (!r.ok || !r.data || !r.data.head) { showToast("A M14 IA não respondeu (" + (r.error || "formato inválido") + "). Mantive o motor local.", "ℹ️"); renderBriefing(view); return; }
       geminiCacheSet(key, { head: String(r.data.head), points: (Array.isArray(r.data.points) ? r.data.points : []).slice(0, 5).map(String) });
       briefOpen[view] = true;
       renderBriefing(view);
@@ -6714,13 +6734,13 @@
       const c = colors[d.level] || "#c4b5fd";
       box.innerHTML =
         '<div class="flex items-center justify-between gap-2"><p class="font-medium text-white">Diagnóstico do lead &amp; próximo passo</p>' +
-          '<span class="text-[10.5px]" style="color:var(--faint)">' + (cached ? "Gemini · em cache" : "motor local") + '</span></div>' +
+          '<span class="text-[10.5px]" style="color:var(--faint)">' + (cached ? AI_BRAND + " · em cache" : "motor local") + '</span></div>' +
         '<p><span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '55">' + esc(d.level) + '</span> <span style="color:#c3c8d4">' + esc(d.why) + '</span></p>' +
         '<p style="color:#c3c8d4"><span style="color:var(--faint)">Dor/gatilho:</span> ' + esc(d.pain) + '</p>' +
         '<p style="color:#c3c8d4"><span style="color:var(--faint)">Como trabalhar agora:</span> ' + esc(d.how) + '</p>' +
         '<div class="flex flex-wrap gap-1.5 pt-0.5">' +
           '<button type="button" class="btn btn-primary btn-sm" onclick="' + local.action.run + '">' + esc(local.action.label) + '</button>' +
-          '<button type="button" class="btn btn-sm" onclick="refreshLeadDiagnosisGemini()">' + icon("spark") + 'Atualizar com Gemini 2.5</button>' +
+          '<button type="button" class="btn btn-sm" onclick="refreshLeadDiagnosisGemini()">' + icon("spark") + 'Atualizar com M14 IA</button>' +
         '</div>';
       box.classList.remove("hidden");
     }
@@ -6728,16 +6748,16 @@
     async function refreshLeadDiagnosisGemini() {
       const acc = findAccount(document.getElementById("accFormId").value);
       if (!acc) return;
-      if (!geminiKey()) { showToast("Sem chave do Gemini: o diagnóstico usa o motor local. Configure a chave em Integrações.", "ℹ️"); return; }
+      if (!geminiKey()) { showToast("Sem a chave da M14 IA: o diagnóstico usa o motor local. Configure a chave em Integrações.", "ℹ️"); return; }
       const local = leadDiagnosisLocal(acc);
       const key = "lead_" + acc.id + "_" + hashText(JSON.stringify(local.facts));
       if (!geminiCacheGet(key)) {
-        showToast("Consultando o Gemini…", "⏳");
+        showToast("Consultando a M14 IA…", "⏳");
         const prompt = "Você é um diretor comercial B2B de benefícios (Swile, RJ). Analise o lead abaixo e responda em JSON: " +
           "{\"level\": \"Quente|Morno|Frio|Em risco de perda\", \"why\": \"1 frase\", \"pain\": \"dor ou gatilho principal, 1 frase\", \"how\": \"como trabalhar agora: argumento, quem envolver (RH ou CFO) e a ação, 1 a 2 frases\"}. " +
           "Use só os dados, sem inventar números, nomes ou fatos.\n\nDados:\n" + JSON.stringify(local.facts);
         const r = await geminiRequest([{ text: prompt }], { json: true });
-        if (!r.ok || !r.data || !r.data.how) { showToast("Gemini não respondeu (" + (r.error || "formato inválido") + "). Mantive o motor local.", "ℹ️"); return; }
+        if (!r.ok || !r.data || !r.data.how) { showToast("A M14 IA não respondeu (" + (r.error || "formato inválido") + "). Mantive o motor local.", "ℹ️"); return; }
         const lv = ["Quente", "Morno", "Frio", "Em risco de perda"].indexOf(r.data.level) >= 0 ? r.data.level : local.level;
         geminiCacheSet(key, { level: lv, why: String(r.data.why || local.why), pain: String(r.data.pain || local.pain), how: String(r.data.how) });
       }
@@ -6748,7 +6768,7 @@
       const cfg = integ();
       renderSfPayload();
       const gs = document.getElementById("geminiStatus");
-      if (gs) { gs.textContent = geminiKey() ? "Gemini ativo · " + geminiModel() : "Análise local"; gs.className = geminiKey() ? "chip chip-ok" : "chip"; }
+      if (gs) { gs.textContent = geminiKey() ? "M14 IA ativa" : "Análise local"; gs.className = geminiKey() ? "chip chip-ok" : "chip"; }
       const gm = document.getElementById("geminiModelInput");
       if (gm && document.activeElement !== gm) gm.value = geminiModel();
       const set = function (id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v || ""; };

@@ -819,6 +819,8 @@
             <p id="reportPrintMeta" class="text-sm"></p>
           </div>
 
+          <div id="reportExecDiag" class="card p-4 avoid-break" style="border-color:rgba(139,92,246,.35)"></div>
+
           <div class="seg no-print" role="group" aria-label="Seções do relatório">
             <button type="button" data-rtab="case" onclick="setReportTab('case')">Metas, Tendência &amp; Simulador</button>
             <button type="button" data-rtab="funnel" onclick="setReportTab('funnel')">Funil Salesforce &amp; KPIs do Case</button>
@@ -861,6 +863,10 @@
             <div id="directorIntelCard" class="card p-4 avoid-break">
               <h3 class="card-title">Inteligência de diretoria · Agente Swile</h3>
               <p class="card-sub">Velocidade do pipeline = (SQLs × TPV médio × win rate) ÷ ciclo médio. SQL = oportunidade de Qualificando a Contrato enviado. Só dados do CRM: sem dado, aparece "sem dados".</p>
+              <div class="flex flex-wrap items-end gap-2 mt-2 no-print">
+                <div><label for="cyclePremise" class="label">Ciclo para a projeção (dias, premissa editável)</label><input id="cyclePremise" type="number" min="1" step="1" class="input h-8 w-28 num" oninput="saveCyclePremise()" /></div>
+                <p class="text-[11px] pb-1.5" style="color:var(--faint)">Usado só enquanto não há ciclo real (ganho com data de criação e assinatura). Padrão de 28 dias informado pelo usuário.</p>
+              </div>
               <div id="directorTiles" class="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3"></div>
               <div id="directorDetail" class="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3 text-[12px]"></div>
             </div>
@@ -1489,6 +1495,7 @@
                     <option value="real">Lucro Real</option><option value="presumido">Lucro Presumido</option><option value="simples">Simples Nacional</option>
                   </select></div>
                 <div class="col-span-2"><label for="patIrpj" class="label">IRPJ devido no ano, alíquota de 15% (R$) · opcional</label><input id="patIrpj" type="number" min="0" placeholder="Pergunte ao financeiro/contador" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
+                <label class="col-span-2 flex items-start gap-2 text-[11px] leading-snug" style="color:var(--muted)"><input id="patLc224" type="checkbox" checked class="mt-0.5" onchange="renderPatResult()"><span>Aplicar redutor da LC 224/2025 (desde 1º/01/2026): o teto cai para 90% de 4% = 3,6% do IRPJ devido. Desmarque para comparar com o teto de 4%.</span></label>
                 <div><label for="patFeeNow" class="label">Taxa cobrada hoje da empresa (%)</label><input id="patFeeNow" type="number" step="0.1" min="0" value="0" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
                 <div><label for="patFeeSwile" class="label">Taxa proposta Swile (%)</label><input id="patFeeSwile" type="number" step="0.1" min="0" value="0" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
                 <div><label for="patHrHours" class="label">Horas de RH poupadas/mês (premissa)</label><input id="patHrHours" type="number" min="0" value="12" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
@@ -1500,7 +1507,7 @@
                 <button type="button" class="btn btn-sm" onclick="sharePatSummary('copy')"><svg class="ico"><use href="#i-copy"/></svg>Copiar resumo</button>
                 <button id="btnSavePatToOpp" type="button" class="btn btn-sm" onclick="savePatToOpportunity()"><svg class="ico"><use href="#i-kanban"/></svg>Salvar na oportunidade</button>
               </div>
-              <p class="text-[11px] leading-relaxed" style="color:var(--faint)">Incentivo PAT (só Lucro Real): dedução do IRPJ igual a 15% das despesas com o programa, limitada a 4% do IRPJ devido (Lei 6.321/1976, art. 1º; RIR/2018 – Decreto 9.580/2018, arts. 641 e 642). A Receita deixou de aplicar os limites do Decreto 10.854/2021 (até 5 salários mínimos e 1 salário mínimo por trabalhador) na Solução de Consulta COSIT nº 3/2026. Estimativa comercial: confirme com a contabilidade do cliente.</p>
+              <p class="text-[11px] leading-relaxed" style="color:var(--faint)">Incentivo PAT (só Lucro Real): dedução do IRPJ igual a 15% das despesas com o programa, limitada a 4% do IRPJ devido (Lei 6.321/1976, art. 1º; RIR/2018 – Decreto 9.580/2018, arts. 641 e 642). Desde 1º/01/2026, a LC 224/2025 reduz esse limite para 90% do original, 3,6% do IRPJ devido à alíquota de 15%; o gasto abaixo do limite continua dedutível por inteiro (Receita Federal, Perguntas e Respostas sobre a redução de benefícios, pergunta 21). A Receita deixou de aplicar os limites do Decreto 10.854/2021 (até 5 salários mínimos e 1 salário mínimo por trabalhador) na Solução de Consulta COSIT nº 3/2026. Estimativa comercial: confirme com a contabilidade do cliente.</p>
             </div>
           </details>
           <div id="accResearch" class="hidden"></div>
@@ -2603,7 +2610,7 @@
     // Trecho entre [[ ]] some inteiro quando alguma variável dele está vazia (ex.: sem IRPJ, não há {pat_anual})
 
     // Versão dos modelos padrão. Ao subir, migrateTemplates() troca só os textos que ainda são o padrão antigo.
-    const TPL_VERSION = 2;
+    const TPL_VERSION = 3;
 
     const DEFAULT_WA_TEMPLATES = [
       {
@@ -2612,7 +2619,7 @@
       },
       {
         id: "w-d2", name: "D+2 · Âncora financeira PAT (CFO)", stages: [],
-        text: "{nome}, fiz uma conta rápida para o porte da {empresa}[[ ({vidas} vidas, cerca de R$ {tpv_mensal}/mês em benefícios)]].\n\nNo Lucro Real, o PAT permite deduzir do IRPJ 15% do gasto com alimentação, até o limite de 4% do imposto devido[[; para vocês, isso pode chegar a R$ {pat_anual}/ano]]. E com a interoperabilidade entre bandeiras prevista para novembro de 2026, a rede de aceitação deixa de ser motivo para continuar com {operadora}.\n\nSeria uma má ideia eu te mandar um comparativo de 1 página feito para a {empresa}?"
+        text: "{nome}, fiz uma conta rápida para o porte da {empresa}[[ ({vidas} vidas, cerca de R$ {tpv_mensal}/mês em benefícios)]].\n\nNo Lucro Real, o PAT permite deduzir do IRPJ 15% do gasto com alimentação, até o limite de 3,6% do IRPJ devido (os 4% da lei com o redutor da LC 224/2025)[[; para vocês, isso pode chegar a R$ {pat_anual}/ano]]. E com a interoperabilidade entre bandeiras prevista para novembro de 2026, a rede de aceitação deixa de ser motivo para continuar com {operadora}.\n\nSeria uma má ideia eu te mandar um comparativo de 1 página feito para a {empresa}?"
       },
       {
         id: "w-d5-premiacao", name: "D+5 · Entrada por Premiação (sem mexer no VR/VA)", stages: [],
@@ -2653,7 +2660,7 @@
       {
         id: "e-cfo-pat", name: "CFO/Compras · PAT no Lucro Real", stages: [],
         subject: "{empresa}: PAT no Lucro Real e o fim da exclusividade de rede",
-        body: "Olá {nome},\n\nSeparei dois pontos que mexem no caixa da {empresa}[[ ({vidas} vidas, cerca de R$ {tpv_mensal}/mês em benefícios)]]:\n\n1. Incentivo do PAT no Lucro Real: dedução no IRPJ de 15% da despesa com alimentação, limitada a 4% do imposto devido (Lei 6.321/76).[[ Na simulação que fiz, o potencial é de até R$ {pat_anual}/ano.]] O número exato depende do IRPJ devido, que posso calcular com o seu time.\n2. Interoperabilidade entre bandeiras, prevista para novembro de 2026: a rede de aceitação deixa de ser motivo para manter {operadora}.\n\nVocê seria contra eu apresentar essa memória de cálculo em 15 minutos? {link_agenda}\n\nAbraço,\n{vendedor}"
+        body: "Olá {nome},\n\nSeparei dois pontos que mexem no caixa da {empresa}[[ ({vidas} vidas, cerca de R$ {tpv_mensal}/mês em benefícios)]]:\n\n1. Incentivo do PAT no Lucro Real: dedução no IRPJ de 15% da despesa com alimentação, limitada a 3,6% do IRPJ devido (4% da Lei 6.321/76 com o redutor de 10% da LC 224/2025).[[ Na simulação que fiz, o potencial é de até R$ {pat_anual}/ano.]] O número exato depende do IRPJ devido, que posso calcular com o seu time.\n2. Interoperabilidade entre bandeiras, prevista para novembro de 2026: a rede de aceitação deixa de ser motivo para manter {operadora}.\n\nVocê seria contra eu apresentar essa memória de cálculo em 15 minutos? {link_agenda}\n\nAbraço,\n{vendedor}"
       },
       {
         id: "e-diagnostico", name: "Convite para diagnóstico", stages: ["Qualificado (SQL)", "Discovery RH/DP"], advance_to: "Discovery RH/DP",
@@ -2677,14 +2684,16 @@
       }
     ];
 
-    // Textos padrão da versão 1. Só são trocados se continuarem iguais (o que a pessoa editou fica).
+    // Textos padrão de versões anteriores (v1 e v2). Só são trocados se continuarem iguais (o que a pessoa editou fica).
     const LEGACY_TEMPLATES_V1 = {
       wa: {
+        "w-d2": { to: "w-d2", text: "{nome}, fiz uma conta rápida para o porte da {empresa}[[ ({vidas} vidas, cerca de R$ {tpv_mensal}/mês em benefícios)]].\n\nNo Lucro Real, o PAT permite deduzir do IRPJ 15% do gasto com alimentação, até o limite de 4% do imposto devido[[; para vocês, isso pode chegar a R$ {pat_anual}/ano]]. E com a interoperabilidade entre bandeiras prevista para novembro de 2026, a rede de aceitação deixa de ser motivo para continuar com {operadora}.\n\nSeria uma má ideia eu te mandar um comparativo de 1 página feito para a {empresa}?" },
         "w-primeiro": { to: "w-d0", text: "Olá {nome}, tudo bem? Aqui é {vendedor}, da Swile. Vi que a {empresa} usa {operadora} para cerca de {vidas} pessoas aqui no Rio. Com a interoperabilidade do PAT em novembro, várias empresas estão unificando VA, VR e outros benefícios em um único cartão Mastercard, sem taxa para a empresa. Posso te mostrar em 15 minutos?" },
         "w-caju": { to: "w-caju", text: "Olá {nome}! Aqui é {vendedor}, da Swile. Com a compra da Caju pelo iFood, alguns RHs do Rio estão montando um plano B para não depender da fusão de sistemas e de suporte. Topa 15 minutos para compararmos? {link_agenda}" },
         "w-proposta": { to: "w-followup-proposta", text: "Olá {nome}, tudo bem? Conseguiu avaliar a simulação para os {vidas} colaboradores da {empresa}? Se quiser, ajusto algo antes de você levar para o financeiro. {link_proposta}" }
       },
       email: {
+        "e-cfo-pat": { to: "e-cfo-pat", subject: "{empresa}: PAT no Lucro Real e o fim da exclusividade de rede", body: "Olá {nome},\n\nSeparei dois pontos que mexem no caixa da {empresa}[[ ({vidas} vidas, cerca de R$ {tpv_mensal}/mês em benefícios)]]:\n\n1. Incentivo do PAT no Lucro Real: dedução no IRPJ de 15% da despesa com alimentação, limitada a 4% do imposto devido (Lei 6.321/76).[[ Na simulação que fiz, o potencial é de até R$ {pat_anual}/ano.]] O número exato depende do IRPJ devido, que posso calcular com o seu time.\n2. Interoperabilidade entre bandeiras, prevista para novembro de 2026: a rede de aceitação deixa de ser motivo para manter {operadora}.\n\nVocê seria contra eu apresentar essa memória de cálculo em 15 minutos? {link_agenda}\n\nAbraço,\n{vendedor}" },
         "e-primeiro": { to: "e-rh-4t", subject: "{empresa} + Swile: benefícios em um único cartão", body: "Olá {nome}, tudo bem?\n\nSou {vendedor}, da Swile. Vi que a {empresa} oferece {operadora} para cerca de {vidas} pessoas aqui no Rio.\n\nCom a interoperabilidade do PAT em novembro, temos ajudado empresas do mesmo porte a unificar VA, VR, Mobilidade, Home Office e Premiação em um único cartão Mastercard, com Apple/Google Pay e sem taxa para a empresa.\n\nFaz sentido conversarmos 15 minutos? Você pode escolher o horário aqui: {link_agenda}\n\nAbraço,\n{vendedor}" },
         "e-recuperacao": { to: "e-recuperacao", subject: "{nome}, como estão os benefícios da {empresa}?", body: "Olá {nome}, tudo bem?\n\nFaz um tempo que não conversamos. Com as mudanças do PAT neste ano, muitas empresas do Rio revisaram o contrato de benefícios. Vale 15 minutos para eu te mostrar os números?\n\n{link_agenda}\n\nAbraço,\n{vendedor}" }
       }
@@ -3615,7 +3624,7 @@
       "",
       "1. VISÃO DE DIRETOR (MEDDPICC):",
       "- Fale com números da conta quando existirem: TPV mensal, % da meta de R$ 600 mil, TPV anual.",
-      "- PAT: o incentivo fiscal vale só para Lucro Real. Dedução no IRPJ de 15% da despesa com alimentação do PAT, limitada a 4% do IRPJ devido (Lei 6.321/76; RIR/2018 arts. 641-642; Solução de Consulta COSIT 3/2026). Sem IRPJ devido informado, não dê valor em reais.",
+      "- PAT: o incentivo fiscal vale só para Lucro Real. Dedução no IRPJ de 15% da despesa com alimentação do PAT, limitada a 4% do IRPJ devido à alíquota de 15%, que a LC 224/2025 reduziu para 90% desse limite (3,6%) desde 1º/01/2026; abaixo do limite, a despesa incentivada é deduzida por inteiro (Lei 6.321/76; RIR/2018 arts. 641-642; Solução de Consulta COSIT 3/2026; Receita Federal, P&R LC 224, pergunta 21). Sem IRPJ devido informado, não dê valor em reais.",
       "- Champion: RH/DHO (menos retrabalho do DP, cartão que funciona). Economic buyer: CFO/financeiro (custo total, caixa, conformidade com o PAT). Paper process: compras e jurídico (prazo de entrega dos cartões, transição sem parar a operação).",
       "",
       "2. NEGOCIAÇÃO (Chris Voss) E QUANDO ATACAR OU RECUAR:",
@@ -4283,8 +4292,8 @@
       },
       {
         title: "SC COSIT nº 3/2026: incentivo fiscal do PAT", status: "ok",
-        facts: "A Receita afastou os limites do Decreto 10.854 no cálculo do incentivo. Só vale para empresas no Lucro Real: dedução de 15% do gasto com o PAT, limitada a 4% do IRPJ devido.",
-        source: "Solução de Consulta COSIT nº 3/2026; Lei 6.321/1976; RIR/2018 arts. 641 e 642",
+        facts: "A Receita afastou os limites do Decreto 10.854 no cálculo do incentivo. Só vale para empresas no Lucro Real: dedução de 15% do gasto com o PAT, limitada a 4% do IRPJ devido; desde 1º/01/2026 a LC 224/2025 reduz esse limite para 3,6%.",
+        source: "Solução de Consulta COSIT nº 3/2026; Lei 6.321/1976; RIR/2018 arts. 641 e 642; LC 224/2025 e Perguntas e Respostas da Receita (pergunta 21)",
         hook: "Oi {nome}! Uma solução de consulta da Receita deste ano (COSIT 3/2026) mudou o cálculo do incentivo do PAT para empresas no Lucro Real. Posso fazer uma simulação rápida para a {empresa}?"
       }
     ];
@@ -4328,7 +4337,7 @@
         body: [
           "Entrada \"Cavalo de Troia\" por Premiação: começar com um produto de incentivo, que não exige trocar o VA/VR no primeiro contrato. O RH testa a experiência sem risco e a Swile ganha o relacionamento antes da renovação. Confirmar com o time Swile as condições comerciais da Premiação.",
           "Interoperabilidade do PAT (Decreto 12.712/2025, prazo por volta de nov/2026): o cartão atual deixa de ser uma vantagem de rede de aceitação, e a decisão passa a ser experiência, app e serviço.",
-          "Segurança jurídica com a SC COSIT 3/2026: para empresas no Lucro Real, o incentivo do PAT (15% do gasto, limitado a 4% do IRPJ devido) entra na simulação e ajuda a ancorar a conversa com o financeiro."
+          "Segurança jurídica com a SC COSIT 3/2026: para empresas no Lucro Real, o incentivo do PAT (15% do gasto, limitado a 3,6% do IRPJ devido com o redutor da LC 224/2025) entra na simulação e ajuda a ancorar a conversa com o financeiro."
         ] },
       { q: "Q5", title: "Fechamento mensal no Salesforce", demo: "reports-funnel",
         body: [
@@ -6879,7 +6888,20 @@
         why.push(w ? SF_STAGE_NAMES[w] : "sem oportunidade aberta");
         return { acc: a, tpv: tpv, urg: urg, fac: fac, score: tpv * urg * fac, why: why.join(", "), pctGoal: tpv / CASE_TARGET_MONTH };
       }).sort(function (a, b) { return b.score - a.score; }).slice(0, 3);
+      // Projeção do funil (sem contrato encerrado): nunca é dado realizado, sempre rotulada como projeção
+      const active = sqls.filter(function (o) { return oppTpv(o) > 0; });
+      const activeTpv = active.reduce(function (sum, o) { return sum + oppTpv(o); }, 0);
+      const weighted = active.reduce(function (sum, o) { return sum + oppTpv(o) * (Number(o.probability) || STAGE_PROBS[Number(o.stage_weight)] || 0) / 100; }, 0);
+      const projCycle = loadCyclePremise();
+      const proj = active.length ? {
+        count: active.length,
+        ticket: activeTpv / active.length,
+        winRate: activeTpv ? weighted / activeTpv : null,
+        cycle: projCycle
+      } : null;
+      if (proj) proj.velocityDay = proj.winRate !== null ? proj.count * proj.ticket * proj.winRate / proj.cycle : null;
       return {
+        proj: proj,
         sqlCount: sqls.length, avgTpv: avgTpv, winRate: m.winRate, cycle: m.avgCycle,
         velocityDay: velocity, velocityMonth: velocity === null ? null : velocity * 30, missing: missing,
         wonMonth: m.wonMonthTpv, gapMonth: Math.max(0, CASE_TARGET_MONTH - m.wonMonthTpv),
@@ -6887,10 +6909,25 @@
       };
     }
 
+    const CYCLE_PREMISE_KEY = "swile_crm_cycle_premise";
+    const CYCLE_PREMISE_DEFAULT = 28; // informado pelo usuário (Michel), editável em Relatórios
+    function loadCyclePremise() {
+      try { const v = Number(localStorage.getItem(CYCLE_PREMISE_KEY)); if (v >= 1) return v; } catch (e) { /* ignore */ }
+      return CYCLE_PREMISE_DEFAULT;
+    }
+    function saveCyclePremise() {
+      const v = Number(document.getElementById("cyclePremise").value);
+      if (!(v >= 1)) return;
+      try { localStorage.setItem(CYCLE_PREMISE_KEY, String(Math.round(v))); } catch (e) { /* ignore */ }
+      renderCaseReports();
+    }
+
     function directorPoints(d) {
       const pts = [];
       pts.push(d.velocityDay === null
-        ? "Velocidade do pipeline: sem dados. Faltam: " + d.missing.join("; ") + "."
+        ? (d.proj && d.proj.velocityDay !== null
+          ? "Velocidade do pipeline (projeção do funil, sem contrato encerrado): " + fmtK(d.proj.velocityDay) + "/dia = " + d.proj.count + " oportunidades ativas × " + fmtK(d.proj.ticket) + " × " + pct0(d.proj.winRate) + " ponderado ÷ " + d.proj.cycle + " dias (premissa)."
+          : "Velocidade do pipeline: sem dados. Faltam: " + d.missing.join("; ") + ".")
         : "Velocidade do pipeline: " + fmtK(d.velocityDay) + "/dia (≈ " + fmtK(d.velocityMonth) + "/mês) = " + d.sqlCount + " SQLs × " + fmtK(d.avgTpv) + " × " + pct0(d.winRate) + " ÷ " + Math.round(d.cycle) + " dias.");
       pts.push(d.gapMonth > 0
         ? "Faltam " + fmtK(d.gapMonth) + " para os R$ 600 mil do mês (assinado: " + fmtK(d.wonMonth) + ")." + (d.velocityMonth !== null ? (d.velocityMonth >= d.gapMonth ? " No ritmo atual, o funil cobre o gap." : " No ritmo atual, o funil não cobre o gap: abasteça Qualificando e acelere Negociando.") : "")
@@ -6903,7 +6940,8 @@
 
     function directorFacts(d) {
       return {
-        velocidade_dia: d.velocityDay, velocidade_mes: d.velocityMonth, sqls: d.sqlCount, tpv_medio: d.avgTpv, win_rate: d.winRate, ciclo_dias: d.cycle,
+        velocidade_dia: d.velocityDay, velocidade_mes: d.velocityMonth,
+        projecao_do_funil: d.proj ? { rotulo: "Projeção do funil, não é dado realizado", oportunidades_ativas: d.proj.count, ticket_medio: d.proj.ticket, win_rate_ponderado: d.proj.winRate, ciclo_premissa_dias: d.proj.cycle, velocidade_dia: d.proj.velocityDay } : null, sqls: d.sqlCount, tpv_medio: d.avgTpv, win_rate: d.winRate, ciclo_dias: d.cycle,
         faltam_para_600k: d.gapMonth, gargalo: d.bottleneck ? { de: SF_STAGE_NAMES[d.bottleneck.from], para: SF_STAGE_NAMES[d.bottleneck.to] || "Contrato assinado", taxa: d.bottleneck.rate } : null,
         top3: d.top.map(function (t) { return { conta: t.acc.company_name, tpv: t.tpv, urgencia: t.urg, facilidade: t.fac, motivo: t.why }; })
       };
@@ -6917,7 +6955,7 @@
       const add = view === "cockpit" || view === "pipeline" ? dp : [dp[1]].concat(d.top.length ? [dp[dp.length - 1]] : []);
       r.points = (r.points || []).concat(add.map(function (p) { return "Diretoria · " + p; }));
       r.facts = Object.assign({}, r.facts, { diretoria: directorFacts(d) });
-      if (view === "pipeline") r.head = String(r.head || "").trim() + " " + (d.velocityDay === null ? "Velocidade do pipeline: sem dados." : "Velocidade do pipeline: " + fmtK(d.velocityDay) + "/dia.");
+      if (view === "pipeline") r.head = String(r.head || "").trim() + " " + (d.velocityDay !== null ? "Velocidade do pipeline: " + fmtK(d.velocityDay) + "/dia." : d.proj && d.proj.velocityDay !== null ? "Velocidade projetada do funil: " + fmtK(d.proj.velocityDay) + "/dia." : "Velocidade do pipeline: sem dados.");
       return r;
     }
 
@@ -7381,6 +7419,8 @@
         openTpv: openTpv, weighted: weighted, wonTpv: wonTpv, done: done, pending: pending, overdue: overdue,
         conversion: decided ? Math.round((won.length / decided) * 100) : null,
         lossReasons: lossReasons,
+        mappedTpv: accounts.reduce(function (s, a) { return s + computeMonthlyTpv(a); }, 0),
+        openAccounts: new Set(open.map(function (o) { return o.account_id; })).size,
         lives: accounts.reduce(function (s, a) { return s + (Number(a.active_card_users) || 0); }, 0)
       };
     }
@@ -7453,7 +7493,7 @@
       const m = computeCaseMetrics();
       kbox.innerHTML = [
         reportKpiHtml("Meta mensal", fmtK(CASE_TARGET_MONTH), "Assinado no mês: " + fmtK(m.wonMonthTpv) + " (" + Math.round(m.wonMonthTpv / CASE_TARGET_MONTH * 100) + "%)"),
-        reportKpiHtml("Meta trimestral", fmtK(CASE_TARGET_QUARTER), "Assinado no trimestre: " + fmtK(m.wonQuarterTpv)),
+        reportKpiHtml("Meta trimestral", fmtK(CASE_TARGET_QUARTER), "Assinado no trimestre: " + fmtK(m.wonQuarterTpv) + " · Rampa informada pelo usuário: M1 " + fmtK(loadCasePremises().m1) + " · M2 " + fmtK(loadCasePremises().m2) + " · M3 " + fmtK(Math.max(0, CASE_TARGET_QUARTER - loadCasePremises().m1 - loadCasePremises().m2))),
         reportKpiHtml("Forecast commit", fmtK(m.commit), m.byStage[5].count + " em Contrato enviado (85%)"),
         reportKpiHtml("Cobertura", m.coverage.toFixed(1).replace(".", ",") + "x", "Meta " + CASE_COVERAGE + "x = " + fmtK(CASE_TARGET_MONTH * CASE_COVERAGE) + " em Negociando + Contrato")
       ].join("");
@@ -7518,34 +7558,68 @@
       // Questão 3 · KPIs
       const pct = function (v) { return v === null ? null : Math.round(v * 100) + "%"; };
       const num1 = function (v) { return (Math.round(v * 10) / 10).toString().replace(".", ","); };
-      const tile = function (label, target, real, ok) {
+      const fproj = directorIntel().proj;
+      const tile = function (label, target, real, ok, projected) {
         return '<div class="rounded-xl border p-3 text-xs" style="border-color:var(--line);background:var(--surface-2)"><p class="eyebrow">' + label + '</p>' +
           '<p class="mt-1 text-[15px] font-semibold text-white num">Meta ' + target + '</p>' +
-          '<p class="mt-0.5" style="color:' + (real === null ? "var(--faint)" : ok ? "#6ee7b7" : "#fcd34d") + '">CRM: ' + (real === null ? "sem dados" : real) + '</p></div>';
+          (real === null && projected
+            ? '<p class="mt-0.5 kpi-proj" style="color:#c4b5fd"><span class="rounded px-1 py-px text-[10px] font-semibold" style="background:rgba(139,92,246,.18)">Projeção do funil</span> ' + projected + '</p>'
+            : '<p class="mt-0.5" style="color:' + (real === null ? "var(--faint)" : ok ? "#6ee7b7" : "#fcd34d") + '">CRM: ' + (real === null ? "sem dados" : real) + '</p>') + '</div>';
       };
       document.getElementById("caseKpiGrid").innerHTML =
         tile("Atividades por dia útil", "55", num1(m.activitiesPerDay), m.activitiesPerDay >= 55) +
         tile("Conexões decisórias por dia", "10 a 12", num1(m.connectionsPerDay) + " (ligações atendidas + reuniões registradas)", m.connectionsPerDay >= 10) +
         tile("Reuniões por semana", "8 a 10", String(m.meetingsWeek) + " nos últimos 7 dias", m.meetingsWeek >= 8) +
         tile("Cobertura de pipeline", "4x", num1(m.coverage) + "x", m.coverage >= CASE_COVERAGE) +
-        tile("Ciclo médio", "32 dias", m.avgCycle === null ? null : Math.round(m.avgCycle) + " dias", m.avgCycle !== null && m.avgCycle <= 32) +
-        tile("Win rate", "28%", pct(m.winRate), m.winRate !== null && m.winRate >= 0.28) +
-        tile("Ticket médio (GMV/mês)", "~R$ 210 mil", m.avgTicket === null ? null : fmtK(m.avgTicket), m.avgTicket !== null && m.avgTicket >= 210000) +
+        tile("Ciclo médio", "32 dias", m.avgCycle === null ? null : Math.round(m.avgCycle) + " dias", m.avgCycle !== null && m.avgCycle <= 32,
+          fproj ? fproj.cycle + " dias (premissa editável, sem ganho com datas)" : null) +
+        tile("Win rate", "28%", pct(m.winRate), m.winRate !== null && m.winRate >= 0.28,
+          fproj && fproj.winRate !== null ? pct(fproj.winRate) + " ponderado (forecast ÷ TPV das " + fproj.count + " ativas)" : null) +
+        tile("Ticket médio (GMV/mês)", "~R$ 210 mil", m.avgTicket === null ? null : fmtK(m.avgTicket), m.avgTicket !== null && m.avgTicket >= 210000,
+          fproj ? fmtK(fproj.ticket) + " (média das " + fproj.count + " oportunidades ativas)" : null) +
         tile("Positivação", "3 a 4 contas/mês", m.wonMonthCount + " assinada(s) no mês", m.wonMonthCount >= 3);
+    }
+
+    /** Painel do topo de Relatórios: gargalo, cobertura e 3 ações com contas da carteira (só dados do CRM). */
+    function renderExecDiagnosis() {
+      const box = document.getElementById("reportExecDiag");
+      if (!box) return;
+      const d = directorIntel();
+      const m = computeCaseMetrics();
+      const items = [];
+      items.push(d.bottleneck
+        ? "Gargalo: " + pct0(d.bottleneck.rate) + " de conversão em " + SF_STAGE_NAMES[d.bottleneck.from] + " → " + (SF_STAGE_NAMES[d.bottleneck.to] || "Contrato assinado") + " (" + d.bottleneck.passed + " de " + d.bottleneck.base + ")."
+        : "Gargalo entre fases: sem dados (precisa de pelo menos 2 oportunidades numa fase).");
+      items.push("Cobertura: " + num1Br(m.coverage) + "x frente à meta de " + CASE_COVERAGE + "x em Negociando + Contrato enviado" + (m.coverage < CASE_COVERAGE ? " (faltam " + fmtK(Math.max(0, CASE_TARGET_MONTH * CASE_COVERAGE - m.coverageTpv)) + ")." : ", meta batida."));
+      items.push(d.gapMonth > 0 ? "Faltam " + fmtK(d.gapMonth) + " para os R$ 600 mil do mês (assinado: " + fmtK(d.wonMonth) + ")." : "Meta de R$ 600 mil do mês batida.");
+      const actions = d.top.map(function (t) {
+        const opp = openOppOf(t.acc.id);
+        const w = opp ? Number(opp.stage_weight) : 1;
+        return '<li><span class="text-white">' + esc(t.acc.company_name) + '</span> <span class="num" style="color:var(--faint)">(' + esc(fmtK(t.tpv)) + '/mês, ' + esc(pct0(t.pctGoal)) + ' da meta · ' + esc(t.why) + ')</span>: ' + esc(opp ? stageAdvice(w) : "criar a oportunidade e " + stageAdvice(1)) + '.</li>';
+      });
+      box.innerHTML =
+        '<div class="flex flex-wrap items-center justify-between gap-2"><h3 class="card-title">Diagnóstico Executivo do Agente Swile</h3><span class="text-[10.5px]" style="color:var(--faint)">motor local · dados do CRM</span></div>' +
+        '<ul class="mt-2 space-y-1 text-[12px]" style="color:#c3c8d4">' + items.map(function (t) { return '<li class="flex gap-2"><span style="color:var(--faint)">•</span><span>' + esc(t) + '</span></li>'; }).join("") + '</ul>' +
+        '<p class="eyebrow mt-3 mb-1">3 ações para hoje</p>' +
+        (actions.length ? '<ol id="execDiagActions" class="list-decimal pl-5 space-y-1 text-[12px]" style="color:#c3c8d4">' + actions.join("") + '</ol>' : '<p class="text-[12px]" style="color:var(--faint)">Sem contas abertas com vidas e benefício médio cadastrados.</p>');
     }
 
     function renderDirectorIntel() {
       const tiles = document.getElementById("directorTiles");
       if (!tiles) return;
       const d = directorIntel();
+      const cp = document.getElementById("cyclePremise");
+      if (cp && document.activeElement !== cp) cp.value = loadCyclePremise();
       const tile = function (label, value, sub, tone) {
         return '<div class="rounded-xl border p-3 text-xs" style="border-color:var(--line);background:var(--surface-2)"><p class="eyebrow">' + esc(label) + '</p>' +
           '<p class="mt-1 text-[15px] font-semibold num" style="color:' + (tone || "#fff") + '">' + esc(value) + '</p><p class="mt-0.5" style="color:var(--muted)">' + esc(sub) + '</p></div>';
       };
       tiles.innerHTML =
-        tile("Velocidade do pipeline", d.velocityDay === null ? "sem dados" : fmtK(d.velocityDay) + "/dia",
-          d.velocityDay === null ? "Faltam: " + d.missing.join("; ") : d.sqlCount + " SQLs × " + fmtK(d.avgTpv) + " × " + pct0(d.winRate) + " ÷ " + Math.round(d.cycle) + " dias ≈ " + fmtK(d.velocityMonth) + "/mês",
-          d.velocityDay === null ? "var(--faint)" : null) +
+        (d.velocityDay !== null
+          ? tile("Velocidade do pipeline", fmtK(d.velocityDay) + "/dia", d.sqlCount + " SQLs × " + fmtK(d.avgTpv) + " × " + pct0(d.winRate) + " ÷ " + Math.round(d.cycle) + " dias ≈ " + fmtK(d.velocityMonth) + "/mês", null)
+          : d.proj && d.proj.velocityDay !== null
+            ? tile("Velocidade · Projeção do funil", fmtK(d.proj.velocityDay) + "/dia", d.proj.count + " ativas × " + fmtK(d.proj.ticket) + " × " + pct0(d.proj.winRate) + " ponderado ÷ " + d.proj.cycle + " dias (premissa) ≈ " + fmtK(d.proj.velocityDay * 30) + "/mês. Não é dado realizado.", "#c4b5fd")
+            : tile("Velocidade do pipeline", "sem dados", "Faltam: " + d.missing.join("; "), "var(--faint)")) +
         tile("Gap para R$ 600 mil", d.gapMonth > 0 ? fmtK(d.gapMonth) : "meta batida", "Assinado no mês: " + fmtK(d.wonMonth), d.gapMonth > 0 ? "#fcd34d" : "#6ee7b7") +
         tile("Gargalo entre fases", d.bottleneck ? pct0(d.bottleneck.rate) : "sem dados",
           d.bottleneck ? SF_STAGE_NAMES[d.bottleneck.from] + " → " + (SF_STAGE_NAMES[d.bottleneck.to] || "Contrato assinado") + " (" + d.bottleneck.passed + " de " + d.bottleneck.base + ")" : "precisa de 2+ oportunidades numa fase",
@@ -7573,6 +7647,7 @@
     function renderReports() {
       const box = document.getElementById("reportKpis");
       if (!box) return;
+      renderExecDiagnosis();
       const r = computeReportData();
       const period = reportPeriodLabel();
       const sub = document.getElementById("reportSubtitle");
@@ -7581,10 +7656,10 @@
       if (meta) meta.textContent = "Gerado em " + formatDateShort(todayIso()) + " " + new Date().getFullYear() + (state.sellerName ? " por " + state.sellerName : "") + " · período: " + period;
 
       box.innerHTML = [
-        reportKpiHtml("Contas na carteira", r.accounts.length, r.lives.toLocaleString("pt-BR") + " vidas mapeadas"),
+        reportKpiHtml("Potencial Total Mapeado", formatCompactBRL(r.mappedTpv), r.accounts.length + " conta(s) · " + r.lives.toLocaleString("pt-BR") + " vidas · TPV mensal"),
         reportKpiHtml("Clientes", r.clients.length, r.won.length + " ganho(s) no período · " + formatCompactBRL(r.wonTpv) + "/mês"),
         reportKpiHtml("Leads quentes", r.hot.length, "interesse alto, ainda não clientes"),
-        reportKpiHtml("Pipeline aberto", formatCompactBRL(r.openTpv), r.open.length + " oportunidade(s) · TPV mensal"),
+        reportKpiHtml("Pipeline em Negociação Ativa", formatCompactBRL(r.openTpv), r.openAccounts + " conta(s) com oportunidade aberta · TPV mensal"),
         reportKpiHtml("Forecast ponderado", formatCompactBRL(r.weighted), "TPV × probabilidade de cada etapa"),
         reportKpiHtml("Taxa de conversão", r.conversion === null ? "—" : r.conversion + "%", r.won.length + " ganho(s) e " + r.lost.length + " perda(s) no período"),
         reportKpiHtml("Atividades feitas", r.done.length, "follow-ups concluídos no período"),
@@ -7918,6 +7993,7 @@
       return {
         lives: n("patLives"), ticketFood: n("patTicket"), ticketFlex: n("patFlex"),
         regime: document.getElementById("patRegime").value,
+        lc224: !document.getElementById("patLc224") || document.getElementById("patLc224").checked,
         irpjDue: irpjRaw === "" ? null : n("patIrpj"),
         feeNow: Number(document.getElementById("patFeeNow").value) || 0,
         feeSwile: Number(document.getElementById("patFeeSwile").value) || 0,
@@ -7927,19 +8003,29 @@
 
     // Regra do incentivo: 15% das despesas com o PAT, limitado a 4% do IRPJ devido, apenas no Lucro Real.
     // Sem o IRPJ devido não dá para saber o teto, então o incentivo fica fora do total.
+    const PAT_CAP_PCT = 0.04;
+    const PAT_LC224_FACTOR = 0.9;
+    function patCapLabel(r) { return (r.capPct * 100).toFixed(1).replace(".", ",").replace(",0", "") + "% do IRPJ devido" + (r.lc224 ? " (LC 224/2025)" : ""); }
+
     function calculatePatSimulation(i) {
       const tpvMonthly = i.lives * (i.ticketFood + i.ticketFlex);
       const tpvAnnual = tpvMonthly * 12;
       const foodAnnual = i.lives * i.ticketFood * 12;
-      let pat = 0, patGross = 0, patCap = null, patStatus = "na";
+      // LC 224/2025 (RFB, Perguntas e Respostas v5, pergunta 21): só o LIMITE vira 90% do original (4% → 3,6%).
+      // O valor abaixo do limite continua dedutível por inteiro.
+      const capPct = i.lc224 === false ? PAT_CAP_PCT : PAT_CAP_PCT * PAT_LC224_FACTOR;
+      let pat = 0, patGross = 0, patCap = null, patCapLegacy = null, patLegacy = null, patStatus = "na";
       if (i.regime === "real") {
         patGross = foodAnnual * 0.15;
         if (i.irpjDue === null) patStatus = "need_irpj";
-        else { patCap = i.irpjDue * 0.04; pat = Math.min(patGross, patCap); patStatus = pat < patGross ? "capped" : "ok"; }
+        else {
+          patCap = i.irpjDue * capPct; pat = Math.min(patGross, patCap); patStatus = pat < patGross ? "capped" : "ok";
+          patCapLegacy = i.irpjDue * PAT_CAP_PCT; patLegacy = Math.min(patGross, patCapLegacy);
+        }
       }
       const fees = tpvAnnual * ((i.feeNow - i.feeSwile) / 100);
       const hr = i.lives > 0 ? i.hrHours * i.hrCost * 12 : 0;
-      return { tpvMonthly: tpvMonthly, tpvAnnual: tpvAnnual, foodAnnual: foodAnnual, pat: pat, patGross: patGross, patCap: patCap, patStatus: patStatus, fees: fees, hr: hr, total: pat + fees + hr };
+      return { tpvMonthly: tpvMonthly, tpvAnnual: tpvAnnual, foodAnnual: foodAnnual, pat: pat, patGross: patGross, patCap: patCap, patStatus: patStatus, capPct: capPct, lc224: i.lc224 !== false, patLegacy: patLegacy, fees: fees, hr: hr, total: pat + fees + hr };
     }
 
     function renderPatResult() {
@@ -7952,9 +8038,10 @@
       };
       let patTxt, patNote;
       if (r.patStatus === "na") { patTxt = "não se aplica"; patNote = "Incentivo só existe no Lucro Real"; }
-      else if (r.patStatus === "need_irpj") { patTxt = "informe o IRPJ"; patNote = "Até " + formatCurrencyBRL(r.patGross) + " (15% do gasto), limitado a 4% do IRPJ devido"; }
-      else if (r.patStatus === "capped") { patTxt = formatCurrencyBRL(r.pat); patNote = "Limitado a 4% do IRPJ informado"; }
-      else { patTxt = formatCurrencyBRL(r.pat); patNote = "15% do gasto com alimentação, dentro do teto de 4%"; }
+      else if (r.patStatus === "need_irpj") { patTxt = "informe o IRPJ"; patNote = "Até " + formatCurrencyBRL(r.patGross) + " (15% do gasto), limitado a " + patCapLabel(r); }
+      else if (r.patStatus === "capped") { patTxt = formatCurrencyBRL(r.pat); patNote = "Limitado a " + patCapLabel(r); }
+      else { patTxt = formatCurrencyBRL(r.pat); patNote = "15% do gasto com alimentação, dentro do teto de " + patCapLabel(r); }
+      if (r.lc224 && r.patLegacy !== null && r.patLegacy !== r.pat) patNote += " · com o teto antigo de 4%: " + formatCurrencyBRL(r.patLegacy);
       out.innerHTML =
         row("TPV mensal", formatCurrencyBRL(r.tpvMonthly)) +
         row("TPV anual", formatCurrencyBRL(r.tpvAnnual)) +
@@ -7975,8 +8062,8 @@
       const r = calculatePatSimulation(i);
       const regime = { real: "Lucro Real", presumido: "Lucro Presumido", simples: "Simples Nacional" }[i.regime];
       const patLine = r.patStatus === "na" ? "Incentivo PAT no IRPJ: não se aplica (" + regime + ")"
-        : r.patStatus === "need_irpj" ? "Incentivo PAT no IRPJ: até " + formatCurrencyBRL(r.patGross) + "/ano, limitado a 4% do IRPJ devido (a confirmar com a contabilidade)"
-        : "Incentivo PAT no IRPJ: " + formatCurrencyBRL(r.pat) + "/ano (estimativa, limitado a 4% do IRPJ devido)";
+        : r.patStatus === "need_irpj" ? "Incentivo PAT no IRPJ: até " + formatCurrencyBRL(r.patGross) + "/ano, limitado a " + patCapLabel(r) + " (a confirmar com a contabilidade)"
+        : "Incentivo PAT no IRPJ: " + formatCurrencyBRL(r.pat) + "/ano (estimativa, limitado a " + patCapLabel(r) + ")";
       return [
         "Simulação Swile · " + (acc ? acc.company_name : "") + " (" + formatDateShort(todayIso()) + ")",
         "• " + i.lives.toLocaleString("pt-BR") + " vidas · TPV " + formatCurrencyBRL(r.tpvMonthly) + "/mês (" + formatCurrencyBRL(r.tpvAnnual) + "/ano)",

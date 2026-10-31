@@ -76,6 +76,10 @@ begin
 
   foreach t in array array['crm_accounts', 'crm_opportunities', 'crm_meetings', 'crm_follow_ups', 'crm_routes_rj']
   loop
+    if to_regclass('public.' || t) is null then
+      raise notice 'Tabela public.% não existe: pulada.', t;
+      continue;
+    end if;
     execute format('alter table public.%I add column if not exists user_id uuid', t);
     execute format('alter table public.%I alter column user_id set default auth.uid()', t);
     execute format('update public.%I set user_id = %L where user_id is null', t, v_uid);
@@ -91,6 +95,7 @@ declare
 begin
   foreach t in array array['crm_accounts', 'crm_opportunities', 'crm_meetings', 'crm_follow_ups', 'crm_routes_rj']
   loop
+    continue when to_regclass('public.' || t) is null;
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "Public access %1$s" on public.%1$I', t);
     execute format('drop policy if exists "Authenticated access %1$s" on public.%1$I', t);
@@ -166,10 +171,31 @@ grant select on public.v_crm_accounts_360 to authenticated;
 commit;
 
 -- 6. Conferência: "sem_dono" deve ser 0 em todas as tabelas
-select 'crm_accounts' as tabela, count(*) as total, count(*) filter (where user_id is null) as sem_dono from public.crm_accounts
-union all select 'crm_opportunities', count(*), count(*) filter (where user_id is null) from public.crm_opportunities
-union all select 'crm_meetings', count(*), count(*) filter (where user_id is null) from public.crm_meetings
-union all select 'crm_follow_ups', count(*), count(*) filter (where user_id is null) from public.crm_follow_ups
-union all select 'crm_routes_rj', count(*), count(*) filter (where user_id is null) from public.crm_routes_rj;
+drop table if exists pg_temp.crm_rls_check;
+create temp table crm_rls_check (tabela text, total bigint, sem_dono bigint);
+do $$
+declare t text; v_total bigint; v_null bigint;
+begin
+  foreach t in array array['crm_accounts', 'crm_opportunities', 'crm_meetings', 'crm_follow_ups', 'crm_routes_rj']
+  loop
+    if to_regclass('public.' || t) is null then
+      insert into crm_rls_check values (t || ' (não existe)', null, null);
+    else
+      execute format('select count(*), count(*) filter (where user_id is null) from public.%I', t) into v_total, v_null;
+      insert into crm_rls_check values (t, v_total, v_null);
+    end if;
+  end loop;
+end
+$$;
+select * from crm_rls_check;
+
+-- 7. Ingestão pelo script Python semanal (scripts/ingest_prospects.py, docs/ingestao_python.md)
+--   Endpoint: POST https://<projeto>.supabase.co/rest/v1/crm_accounts?on_conflict=code
+--   Headers:  apikey: <chave pública>, Authorization: Bearer <access_token do SEU login>,
+--             Prefer: resolution=ignore-duplicates,return=minimal
+--   O token vem de POST /auth/v1/token?grant_type=password com o seu e-mail e senha
+--   (variáveis de ambiente). Assim o RLS vale também para o script e o user_id é
+--   preenchido sozinho. NÃO use a service_role key: ela ignora o RLS e não pode ir
+--   para o repositório nem para o site.
 
 notify pgrst, 'reload schema';

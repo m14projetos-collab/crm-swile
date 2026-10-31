@@ -185,3 +185,14 @@ node scripts/check_js.mjs            # valida a sintaxe do JS
 Para testar localmente, abra `index.html` no navegador (ou `python3 -m http.server`).
 
 Total da base inicial (calculado dos dados): **15 contas, 6.820 vidas, TPV de R$ 5.907.900/mês** (R$ 70,9 mi/ano).
+
+### Segurança (Fase 5)
+
+- **RLS por usuário:** `supabase/security/rls_por_usuario.sql` (também em Banco e login › "Segurança: RLS por usuário", com o e-mail do login já preenchido ao copiar). Em uma transação: garante `crm_allowed_users`/`crm_is_allowed()` do Modo Seguro, acha o seu usuário em `auth.users` (para com erro se não achar), cria `user_id uuid default auth.uid()` nas 5 tabelas, **preenche as linhas existentes com o seu id** e só então troca as policies para `user_id = auth.uid() and crm_is_allowed()`. Idempotente. Não rode a migration principal depois: ela recria as policies abertas. O app envia `user_id` quando a coluna existe e há sessão.
+- **XSS e links:** todo texto vindo de usuário, CSV, banco ou IA passa por `esc()` (alias `escapeHtml`); sites de contas passam por `safeExternalUrl()` (só http/https) e `openExternal()` recusa outros protocolos.
+- **CSV injection:** `sanitizeCsvCell()` põe apóstrofo em texto que começa com `= + - @ TAB CR`, exceto números, telefones (`+55 …`) e negativos, para não estragar a importação no Salesforce. O importador tira o apóstrofo. O Excel (.xlsx) grava as células como texto, sem fórmulas.
+- **Vazamentos:** `<meta name="referrer" content="no-referrer">`, `rel="noopener noreferrer"` em todo link externo, backup JSON passa por `stripSensitiveCredentials()` (sem chaves, tokens ou URL de webhook). A chamada da M14 IA manda só a origem no Referer, para chaves restritas por site.
+- **Chave da M14 IA:** opção "Guardar chave apenas nesta sessão" (sessionStorage).
+- **Console limpo:** chave do Supabase em formato inválido não dispara requisição; depois que o banco pediu login uma vez, a abertura automática sem sessão não chama a API (o botão Conectar sempre tenta).
+- **Busca:** debounce de 150 ms na busca de Contas e no Ctrl+K.
+

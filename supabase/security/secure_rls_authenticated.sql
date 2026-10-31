@@ -1,5 +1,7 @@
 -- =============================================================================
 -- SWILE OS CRM — MODO SEGURO (RLS RESTRITO A E-MAILS LIBERADOS)
+-- Fase 5: prefira supabase/security/rls_por_usuario.sql, que inclui esta lista de
+-- e-mails e ainda isola as linhas por usuário (user_id = auth.uid()).
 -- Rode DEPOIS da migration principal, no SQL Editor do Supabase.
 --
 -- O que muda:

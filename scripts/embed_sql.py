@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Embute a migration + seed do Supabase no index.html (botão "Copiar SQL Completo").
+"""Embute a migration + seed e o script de RLS por usuário no index.html (botões de copiar SQL).
 
 Uso:
   python3 scripts/embed_sql.py          # atualiza o index.html
@@ -14,6 +14,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 INDEX = ROOT / "index.html"
 MIGRATION = ROOT / "supabase" / "migrations" / "20261029000000_swile_os_crm_schema.sql"
 SEED = ROOT / "supabase" / "seed.sql"
+SECURITY = ROOT / "supabase" / "security" / "rls_por_usuario.sql"
 
 BEGIN = "/* SQL:BEGIN (gerado por scripts/embed_sql.py — não edite à mão) */"
 END = "/* SQL:END */"
@@ -28,7 +29,8 @@ def build_block() -> str:
         + "\n"
     )
     literal = json.dumps(sql, ensure_ascii=False).replace("</", "<\\/")
-    return f"{BEGIN}\n    const SQL_SCHEMA_TEXT = {literal};\n    {END}"
+    sec = json.dumps(SECURITY.read_text(encoding="utf-8"), ensure_ascii=False).replace("</", "<\\/")
+    return f"{BEGIN}\n    const SQL_SCHEMA_TEXT = {literal};\n    const SQL_SECURITY_TEXT = {sec};\n    {END}"
 
 
 def main() -> int:

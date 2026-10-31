@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0d13" />
+  <meta name="referrer" content="no-referrer" />
   <title>Swile OS · CRM Middle Market RJ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -515,7 +516,7 @@
           <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
             <div class="col-span-2 lg:col-span-2">
               <label for="searchAccounts" class="sr-only">Buscar</label>
-              <input id="searchAccounts" type="search" oninput="renderAccountsTable()" placeholder="Buscar empresa, bairro, decisor ou dor…" class="input" />
+              <input id="searchAccounts" type="search" oninput="renderAccountsTableDebounced()" placeholder="Buscar empresa, bairro, decisor ou dor…" class="input" />
             </div>
             <div>
               <label for="filterProvider" class="sr-only">Operadora</label>
@@ -974,6 +975,7 @@
                 <button type="button" class="btn btn-sm" onclick="clearGeminiKey()"><svg class="ico"><use href="#i-trash"/></svg>Apagar chave</button>
                 <button id="btnValidateAi" type="button" class="btn btn-sm" onclick="testGeminiKey()">⚡ Validar Motor M14 IA</button>
               </div>
+              <label class="flex items-center gap-1.5" style="color:var(--muted)"><input id="geminiKeySessionOnly" type="checkbox" class="accent-violet-500" />Guardar chave apenas nesta sessão (sessionStorage: apaga ao fechar a aba). Indicado em computador compartilhado.</label>
               <p id="geminiTestStatus" class="text-[11px]" style="color:var(--faint)"></p>
               <p style="color:var(--faint)">M14 IA · assistente comercial do CRM: transcrição de calls até ~55 min, diagnóstico de leads e avanço de pipeline.</p>
               <details id="aiDisclosure" class="text-[11px]" style="color:var(--faint)">
@@ -1151,7 +1153,7 @@
 
               <div class="card p-4 space-y-3 text-xs">
                 <h3 class="card-title flex items-center gap-2"><svg class="ico"><use href="#i-user"/></svg>Login (necessário só no Modo Seguro)</h3>
-                <p style="color:var(--muted)">No Modo Seguro (<code class="text-violet-300">supabase/security/secure_rls_authenticated.sql</code>), só os e-mails liberados no SQL leem e gravam no banco. Primeira vez? Digite e-mail e senha e clique em <strong>Criar login</strong>; depois use <strong>Entrar</strong>.</p>
+                <p style="color:var(--muted)">No Modo Seguro (<code class="text-violet-300">supabase/security/rls_por_usuario.sql</code>, ao lado), só os e-mails liberados leem e gravam, e cada um vê só as próprias linhas. Primeira vez? Digite e-mail e senha e clique em <strong>Criar login</strong>; depois use <strong>Entrar</strong>.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input id="inputAuthEmail" type="email" autocomplete="username" placeholder="seu@email.com" class="input" />
                   <input id="inputAuthPassword" type="password" autocomplete="current-password" placeholder="senha (mín. 6 caracteres)" class="input" />
@@ -1170,7 +1172,7 @@
               <div class="card p-4 space-y-3 text-xs">
                 <h3 class="card-title">Publicar em 3 passos</h3>
                 <ol class="list-decimal list-inside space-y-1.5" style="color:#c3c8d4">
-                  <li>Copie o SQL abaixo (schema + 15 contas) e rode no <a class="text-violet-300 underline underline-offset-2" href="https://supabase.com/dashboard/project/yjomvwnxqinbmoqyeyre/sql/new" target="_blank" rel="noopener">SQL Editor do Supabase</a>.</li>
+                  <li>Copie o SQL abaixo (schema + 15 contas) e rode no <a class="text-violet-300 underline underline-offset-2" href="https://supabase.com/dashboard/project/yjomvwnxqinbmoqyeyre/sql/new" target="_blank" rel="noopener noreferrer">SQL Editor do Supabase</a>.</li>
                   <li>No GitHub: <strong>Settings → Pages → Source: GitHub Actions</strong>. Cada push na <code class="text-violet-300">main</code> publica o CRM.</li>
                   <li>Abra <code class="text-violet-300">https://m14projetos-collab.github.io/crm-swile/</code> e clique em Conectar.</li>
                 </ol>
@@ -1186,6 +1188,26 @@
                 <div class="mt-3 space-y-2">
                   <button id="btnCopySqlSchema" type="button" onclick="copySqlSchemaText()" class="btn btn-primary btn-sm"><svg class="ico"><use href="#i-copy"/></svg>Copiar SQL completo</button>
                   <textarea id="sqlSchemaTextarea" readonly rows="16" class="input font-mono text-[11px] custom-scroll" style="color:#a7f3d0"></textarea>
+                </div>
+              </details>
+              <details id="sqlSecurityCard" class="card p-4 group">
+                <summary class="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 class="card-title">Segurança: RLS por usuário (recomendado com dados reais)</h3>
+                    <p class="card-sub">Cada login só vê e grava as próprias linhas. Substitui as policies abertas.</p>
+                  </div>
+                  <span class="btn btn-sm">Mostrar</span>
+                </summary>
+                <div class="mt-3 space-y-2 text-xs" style="color:#c3c8d4">
+                  <ol class="list-decimal list-inside space-y-1">
+                    <li>Crie o login ao lado (<strong>Criar login</strong>) e confirme o e-mail.</li>
+                    <li>Com o e-mail digitado no campo de login, clique em <strong>Copiar SQL de segurança</strong>: o e-mail já vai preenchido no script.</li>
+                    <li>Rode no SQL Editor. As contas que já existem passam a ser suas (o script preenche o user_id antes de trocar as policies).</li>
+                    <li>Volte aqui e clique em <strong>Entrar</strong>.</li>
+                  </ol>
+                  <p style="color:var(--faint)">Não rode de novo o SQL completo depois disso: ele recria as policies abertas.</p>
+                  <button id="btnCopySqlSecurity" type="button" onclick="copySqlSecurityText()" class="btn btn-primary btn-sm"><svg class="ico"><use href="#i-copy"/></svg>Copiar SQL de segurança</button>
+                  <textarea id="sqlSecurityTextarea" readonly rows="12" class="input font-mono text-[11px] custom-scroll" style="color:#a7f3d0"></textarea>
                 </div>
               </details>
             </div>
@@ -1213,7 +1235,7 @@
       <div class="flex items-center gap-2 px-4 border-b" style="border-color:var(--line)">
         <svg class="ico" style="color:var(--faint)"><use href="#i-search"/></svg>
         <label for="paletteInput" class="sr-only">Buscar</label>
-        <input id="paletteInput" type="text" autocomplete="off" placeholder="Empresa, bairro, decisor, operadora ou ação…" class="flex-1 h-12 bg-transparent text-sm text-white outline-none placeholder:text-slate-500" oninput="renderPalette()" onkeydown="paletteKey(event)" />
+        <input id="paletteInput" type="text" autocomplete="off" placeholder="Empresa, bairro, decisor, operadora ou ação…" class="flex-1 h-12 bg-transparent text-sm text-white outline-none placeholder:text-slate-500" oninput="renderPaletteDebounced()" onkeydown="paletteKey(event)" />
         <kbd class="text-[10px] rounded border px-1" style="border-color:var(--line-strong);color:var(--faint)">Esc</kbd>
       </div>
       <div id="paletteResults" class="max-h-[55vh] overflow-y-auto custom-scroll py-1"></div>
@@ -2162,6 +2184,7 @@
 
     /* SQL:BEGIN (gerado por scripts/embed_sql.py — não edite à mão) */
     const SQL_SCHEMA_TEXT = "-- =============================================================================\n-- SWILE OS CRM — MIDDLE MARKET RJ (SUPABASE POSTGRESQL SCHEMA)\n-- Evolução do Fields OS CRM (Takeat) -> Arquitetura Relacional Limpa\n-- Idempotente: pode ser executado mais de uma vez no SQL Editor sem erro.\n-- =============================================================================\n\ncreate extension if not exists \"pgcrypto\";\n\n-- 1. TABELA CENTRAL: CONTAS & CLIENTES (crm_accounts)\n-- Fonte Única de Verdade para geografia, decisores, vidas, cartão atual e TPV\ncreate table if not exists public.crm_accounts (\n  id uuid primary key default gen_random_uuid(),\n  code text unique not null,\n  company_name text not null,\n  cnpj text,\n  website text,\n  careers_url text,\n  sector text not null,\n  polo_rj text not null,\n  neighborhood text,\n  address text,\n  phone text,\n  email_rh text,\n  decision_maker_name text,\n  decision_maker_role text,\n  persona_chave text not null default 'RH Estratégico / Employer Branding',\n  employees_count integer not null default 100,\n  active_card_users integer not null default 100,\n  avg_monthly_ticket numeric(12,2) not null default 800.00,\n  -- TPV Mensal e Anual calculados pelo banco (Generated Columns)\n  estimated_monthly_tpv numeric(14,2) generated always as (active_card_users * avg_monthly_ticket) stored,\n  estimated_annual_tpv numeric(14,2) generated always as (active_card_users * avg_monthly_ticket * 12) stored,\n  current_provider text not null default 'A Validar',\n  current_model text not null default 'Tradicional',\n  status text not null default 'Lead Mapeado',\n  priority_icp text not null default 'Alta',\n  interest_level text not null default 'Morno',\n  preferred_channel text not null default 'LinkedIn',\n  rh_pains text,\n  user_complaints text,\n  provider_pros_cons text,\n  swile_trigger_2026 text,\n  contract_expiration_date date,\n  loss_reason text,\n  post_sales_phase text,\n  last_interaction_at timestamptz default now(),\n  created_at timestamptz not null default now(),\n  updated_at timestamptz not null default now()\n);\n\n-- 2. PIPELINE COMERCIAL: OPORTUNIDADES (crm_opportunities)\n-- stage_weight: 1=SQL, 2=Discovery, 3=Demo, 4=Proposta/Negociação, 5=Fechado, 0=Perdido\ncreate table if not exists public.crm_opportunities (\n  id uuid primary key default gen_random_uuid(),\n  account_id uuid not null references public.crm_accounts(id) on delete cascade,\n  title text not null,\n  stage text not null default '1. Qualificado (SQL)',\n  stage_weight integer not null default 1 check (stage_weight between 0 and 5),\n  negotiated_lives integer not null default 100,\n  proposed_monthly_tpv numeric(14,2) not null default 0,\n  probability integer not null default 30 check (probability between 0 and 100),\n  weighted_forecast_tpv numeric(14,2) generated always as (proposed_monthly_tpv * (probability::numeric / 100.0)) stored,\n  wallets_included text[] default array['Refeição', 'Alimentação', 'Mobilidade', 'Saúde', 'Home Office', 'Educação', 'Premiação'],\n  origin_channel text default 'Outbound Prospecção',\n  expected_close_date date,\n  proposal_sent_date date,\n  closed_date date,\n  loss_category text,\n  loss_details text,\n  notes text,\n  created_at timestamptz not null default now(),\n  updated_at timestamptz not null default now()\n);\n\n-- 3. AGENDA DE REUNIÕES & VISITAS (crm_meetings)\ncreate table if not exists public.crm_meetings (\n  id uuid primary key default gen_random_uuid(),\n  account_id uuid not null references public.crm_accounts(id) on delete cascade,\n  route_id uuid,\n  title text not null,\n  meeting_date timestamptz not null,\n  modality text not null default 'Videoconferência (Meet/Teams)',\n  meeting_type text not null default 'Discovery RH/DP',\n  status text not null default 'Agendada',\n  outcome text,\n  duration_minutes integer default 45,\n  notes text,\n  created_at timestamptz not null default now()\n);\n\n-- 4. FONTE ÚNICA DE PRÓXIMA AÇÃO: FOLLOW-UPS (crm_follow_ups)\ncreate table if not exists public.crm_follow_ups (\n  id uuid primary key default gen_random_uuid(),\n  account_id uuid not null references public.crm_accounts(id) on delete cascade,\n  opportunity_id uuid references public.crm_opportunities(id) on delete set null,\n  action_title text not null,\n  due_date date not null,\n  completed_date date,\n  status text not null default 'Pendente',\n  channel text not null default 'WhatsApp',\n  priority text not null default 'Alta',\n  trigger_used text,\n  notes text,\n  created_at timestamptz not null default now()\n);\n\n-- 5. PLANEJAMENTO DE ROTAS FIELD RJ (crm_routes_rj)\n-- Enxuta: sem duplicar endereço/dados cadastrais (lidos de crm_accounts)\ncreate table if not exists public.crm_routes_rj (\n  id uuid primary key default gen_random_uuid(),\n  route_date date not null,\n  shift text not null default 'Manhã + Tarde',\n  polo_rj text not null,\n  work_mode text not null default 'Campo (Field RJ)',\n  status text not null default 'Planejada',\n  estimated_km numeric(6,1) default 25.0,\n  logistics_notes text,\n  created_at timestamptz not null default now()\n);\n\n-- Índices para as chaves estrangeiras (joins da view e filtros do app)\ncreate index if not exists crm_opportunities_account_id_idx on public.crm_opportunities(account_id);\ncreate index if not exists crm_follow_ups_account_id_idx on public.crm_follow_ups(account_id);\ncreate index if not exists crm_follow_ups_pending_idx on public.crm_follow_ups(account_id, due_date) where status = 'Pendente';\ncreate index if not exists crm_meetings_account_id_idx on public.crm_meetings(account_id);\n\n-- 6. updated_at automático\ncreate or replace function public.crm_set_updated_at()\nreturns trigger\nlanguage plpgsql\nset search_path = ''\nas $$\nbegin\n  new.updated_at = now();\n  return new;\nend;\n$$;\n\ndrop trigger if exists crm_accounts_set_updated_at on public.crm_accounts;\ncreate trigger crm_accounts_set_updated_at\n  before update on public.crm_accounts\n  for each row execute function public.crm_set_updated_at();\n\ndrop trigger if exists crm_opportunities_set_updated_at on public.crm_opportunities;\ncreate trigger crm_opportunities_set_updated_at\n  before update on public.crm_opportunities\n  for each row execute function public.crm_set_updated_at();\n\n-- 7. VIEW CONSOLIDADA 360° (SUBSTITUI ROLLUPS E FÓRMULAS DO NOTION)\n-- security_invoker = true: a view respeita o RLS de quem consulta.\ncreate or replace view public.v_crm_accounts_360\nwith (security_invoker = true) as\nselect\n  a.*,\n  coalesce(o.max_stage_weight, 0) as max_pipeline_weight,\n  coalesce(o.open_opportunities_count, 0) as open_opportunities_count,\n  coalesce(m.meetings_count, 0) as meetings_count,\n  f.next_action_date,\n  f.next_action_title,\n  f.next_action_channel,\n  -- Etapa do Funil calculada automaticamente\n  case\n    when a.status = 'Perdido ❌' then 'Perdido'\n    when a.status = 'Fechado ✅' or coalesce(o.max_stage_weight, 0) = 5 then 'Cliente Ativo'\n    when coalesce(o.max_stage_weight, 0) >= 3 then 'Oportunidade'\n    when coalesce(o.max_stage_weight, 0) >= 1 then 'SQL'\n    when a.interest_level in ('Quente', 'Morno') then 'MQL'\n    else 'Lead'\n  end as funnel_stage,\n  -- Score Comercial ICP Swile (0 a 100) — mesma fórmula do app (computeCommercialScore)\n  least(100, greatest(0,\n    (case when a.priority_icp = 'Alta' then 22 when a.priority_icp = 'Média' then 14 else 6 end) +\n    (case when a.active_card_users >= 450 then 22 when a.active_card_users >= 250 then 16 else 10 end) +\n    (case when a.interest_level = 'Quente' then 22 when a.interest_level = 'Morno' then 14 else 6 end) +\n    (case when a.current_provider in ('Caju', 'Pluxee (ex-Sodexo)', 'Alelo') then 16 else 10 end) +\n    (coalesce(o.max_stage_weight, 0) * 4)\n  )) as commercial_score\nfrom public.crm_accounts a\nleft join (\n  select\n    account_id,\n    max(stage_weight) as max_stage_weight,\n    count(*) filter (where stage_weight between 1 and 4) as open_opportunities_count\n  from public.crm_opportunities\n  group by account_id\n) o on o.account_id = a.id\nleft join (\n  select account_id, count(*) as meetings_count\n  from public.crm_meetings\n  group by account_id\n) m on m.account_id = a.id\nleft join lateral (\n  select\n    fu.due_date as next_action_date,\n    fu.action_title as next_action_title,\n    fu.channel as next_action_channel\n  from public.crm_follow_ups fu\n  where fu.account_id = a.id and fu.status = 'Pendente'\n  order by fu.due_date asc\n  limit 1\n) f on true;\n\n-- 8. ROW LEVEL SECURITY (RLS)\nalter table public.crm_accounts enable row level security;\nalter table public.crm_opportunities enable row level security;\nalter table public.crm_meetings enable row level security;\nalter table public.crm_follow_ups enable row level security;\nalter table public.crm_routes_rj enable row level security;\n\n-- ATENÇÃO — MODO DEMO: as policies abaixo liberam leitura e escrita para\n-- QUALQUER pessoa que tenha a URL + chave pública (que fica visível no site).\n-- Para uso com dados reais de contatos, rode em seguida o arquivo\n-- supabase/security/secure_rls_authenticated.sql (exige login no app).\ndrop policy if exists \"Permitir leitura e escrita autenticada ou anon demo em crm_accounts\" on public.crm_accounts;\ndrop policy if exists \"Permitir leitura e escrita autenticada ou anon demo em crm_opportunities\" on public.crm_opportunities;\ndrop policy if exists \"Permitir leitura e escrita autenticada ou anon demo em crm_meetings\" on public.crm_meetings;\ndrop policy if exists \"Permitir leitura e escrita autenticada ou anon demo em crm_follow_ups\" on public.crm_follow_ups;\ndrop policy if exists \"Permitir leitura e escrita autenticada ou anon demo em crm_routes_rj\" on public.crm_routes_rj;\n\ndrop policy if exists \"Public access crm_accounts\" on public.crm_accounts;\ncreate policy \"Public access crm_accounts\" on public.crm_accounts for all using (true) with check (true);\n\ndrop policy if exists \"Public access crm_opportunities\" on public.crm_opportunities;\ncreate policy \"Public access crm_opportunities\" on public.crm_opportunities for all using (true) with check (true);\n\ndrop policy if exists \"Public access crm_meetings\" on public.crm_meetings;\ncreate policy \"Public access crm_meetings\" on public.crm_meetings for all using (true) with check (true);\n\ndrop policy if exists \"Public access crm_follow_ups\" on public.crm_follow_ups;\ncreate policy \"Public access crm_follow_ups\" on public.crm_follow_ups for all using (true) with check (true);\n\ndrop policy if exists \"Public access crm_routes_rj\" on public.crm_routes_rj;\ncreate policy \"Public access crm_routes_rj\" on public.crm_routes_rj for all using (true) with check (true);\n\n-- Permissões de API (PostgREST) para os papéis do Supabase\ngrant select, insert, update, delete on\n  public.crm_accounts, public.crm_opportunities, public.crm_meetings,\n  public.crm_follow_ups, public.crm_routes_rj\n  to anon, authenticated;\ngrant select on public.v_crm_accounts_360 to anon, authenticated;\n\n-- Recarrega o cache de schema do PostgREST (tabelas aparecem na API na hora)\nnotify pgrst, 'reload schema';\n\n-- =============================================================================\n-- SEED (supabase/seed.sql)\n-- =============================================================================\n-- SEED DATA — 15 CONTAS REAIS MIDDLE MARKET RIO DE JANEIRO (SWILE OS CRM)\n-- Idempotente: pode ser executado mais de uma vez (não duplica nem sobrescreve edições).\n-- Rode DEPOIS da migration supabase/migrations/20261029000000_swile_os_crm_schema.sql\n-- =============================================================================\n\ninsert into public.crm_accounts (\n  code, company_name, website, careers_url, sector, polo_rj, neighborhood, address, phone, email_rh,\n  decision_maker_name, decision_maker_role, persona_chave, employees_count, active_card_users, avg_monthly_ticket,\n  current_provider, current_model, status, priority_icp, interest_level, preferred_channel,\n  rh_pains, user_complaints, provider_pros_cons, swile_trigger_2026\n) values\n('LD-01', 'Nomus', 'https://www.nomus.com.br/', 'https://nomus.gupy.io/', 'Tecnologia / SaaS ERP', 'Centro / Porto Maravilha', 'Centro', 'Av. Prof. Pereira Reis, 76 - Centro, Rio de Janeiro - RJ, 20220-800', '+55 21 2018-0633', 'comercial@nomus.com.br', 'Head de Pessoas & Cultura', 'Head de People & Culture', 'RH Estratégico / Employer Branding', 180, 170, 920.00, 'Caju', 'Multibenefícios (Visa)', 'Outbound Iniciado', 'Alta', 'Quente', 'LinkedIn', 'Gestão híbrida (RJ + remoto); retenção de devs; incerteza após venda da Caju para o iFood (20/10/2026).', 'Bloqueios preventivos pontuais na bandeira Visa e ausência de clube robusto de descontos.', 'Prós: UX intuitiva. Contras: Adquirida pelo iFood em out/2026 e sem Mastercard Surpreenda.', 'Gatilho M&A Caju+iFood (20/10/2026): posicionar Swile B-Corp + X-Pay + Swile Shop.'),\n('LD-02', 'Beep Saúde', 'https://beepsaude.com.br/', 'https://beepsaude.gupy.io/', 'HealthTech / Saúde Domiciliar', 'Zona Sul / Barra', 'Botafogo / Barra da Tijuca', 'Rua Voluntários da Pátria / Hub Barra da Tijuca, Rio de Janeiro - RJ', '+55 21 3577-3231', 'gente@beepsaude.com.br', 'Diretora de Gente & Gestão', 'Diretora de RH / DHO', 'DP Operacional / Folha & PAT', 950, 900, 880.00, 'iFood Benefícios', 'Multibenefícios (Elo/Visa)', 'Discovery RH/DP', 'Alta', 'Quente', 'WhatsApp', 'Operação intensiva de campo (enfermeiras/frota) + time de BI; alto giro exige cartão virtual imediato.', 'Foco excessivo em delivery/restaurantes do app e menor flexibilidade para mobilidade/combustível e farmácia.', 'Prós: Cashback delivery. Contras: Categorias não-alimentação limitadas; fusão com Caju no CADE.', 'Operação mista campo+escritório: unificar VA/VR + Mobilidade/Combustível + Saúde no Swile Mastercard.'),\n('LD-03', 'RJZ Cyrela', 'https://www.cyrela.com.br/', 'https://cyrela.gupy.io/', 'Incorporação & Construção Civil', 'Barra da Tijuca / Recreio', 'Barra da Tijuca', 'Av. das Américas, 2480 / Av. José Silva de Azevedo Neto, 850 - Barra da Tijuca, RJ', '+55 21 3550-2501', 'pessoas.rj@cyrela.com.br', 'Gerente Pessoas & Performance RJ', 'Gerente de RH Regional', 'DP Operacional / Folha & PAT', 550, 520, 810.00, 'Flash', 'Multibenefícios (Mastercard/Visa)', 'Demo / Diagnóstico Agendado', 'Alta', 'Quente', 'Visita Presencial RJ', 'Gestão descentralizada entre escritório na Barra e canteiros de obras no RJ (VR atual R$ 36,65/dia).', 'Demora/cobrança em 2ª via de cartão físico em obras e atendimento robotizado no suporte.', 'Prós: Marca conhecida. Contras: Cobrança de módulos extras de RH e menor foco em clube de descontos.', 'Conectar com programa CuideCy: mostrar Taxa Zero real + Swile Shop (+1.000 lojas) e entrega por obra.'),\n('LD-04', 'Bemobi', 'https://www.bemobi.com/', 'https://bemobi.gupy.io/', 'Tecnologia / FinTech Pagamentos', 'Centro / Porto Maravilha', 'Saúde (Porto Maravilha)', 'Av. Barão de Tefé, 27 - Saúde, Rio de Janeiro - RJ, 20220-460', '+55 21 3529-9001', 'people@bemobi.com', 'VP / Head de People & Culture', 'Head de People & Culture', 'RH Estratégico / Employer Branding', 480, 460, 1150.00, 'Flash', 'Multibenefícios Flexível', 'Proposta & Simulação PAT', 'Alta', 'Quente', 'LinkedIn', 'Empresa GPTW com VR/VA nas férias, Home Office e programa interno BeInspired; busca engajamento.', 'Time tech sente falta de reconhecimento social integrado e descontos em tecnologia/educação.', 'Prós: Saldo flexível. Contras: Sem camada social/gamificada para o programa BeInspired.', 'Conectar o BeInspired às carteiras de Premiação Livre + recursos sociais da Swile (B-Corp).'),\n('LD-05', 'BIP Brasil (Unidade RJ)', 'http://bipbrasil.com.br/', 'https://vemprabip.gupy.io/', 'Consultoria de Negócios & Tech', 'Centro / Porto Maravilha', 'Centro', 'Av. Rio Branco, 128 - 12º andar - Centro, Rio de Janeiro - RJ, 20040-900', '+55 21 3513-6410', 'people.br@bip-group.com', 'Head de People Brasil', 'Diretora de RH', 'RH Estratégico / Employer Branding', 420, 400, 1050.00, 'Alelo', 'Tradicional c/ Flex (Elo)', 'Outbound Iniciado', 'Alta', 'Morno', 'LinkedIn', 'Tenta oferecer benefícios flexíveis mas presa ao modelo tradicional Alelo (Elo); consultores híbridos no Centro.', 'Rigidez das travas da bandeira Elo em plataformas online/educação e interface antiga do Meu Alelo.', 'Prós: Clube Alelo. Contras: Bandeira Elo menos aceita online que Mastercard e múltiplos contratos.', 'Gancho Interoperabilidade PAT (nov/2026): migrar de Elo para Mastercard Swile com 8 carteiras reais.'),\n('LD-06', 'LAMSA (Linha Amarela S/A)', 'http://www.lamsa.com.br/', 'https://trabalheconosco.vagas.com.br/lamsa', 'Infraestrutura & Concessões', 'Zona Norte / Del Castilho', 'Água Santa / Del Castilho', 'Linha Amarela, s/n - Água Santa, Rio de Janeiro - RJ, 20745-150', '+55 800 024 2355', 'rh@lamsa.com.br', 'Gerente de RH e Administração', 'Gerente de RH / DP', 'DP Operacional / Folha & PAT', 680, 650, 740.00, 'Alelo', 'Tradicional (VA/VR Separados)', 'Lead Mapeado', 'Média', 'Morno', 'Ligação', 'Operação 24/7 na Linha Amarela; alto giro operacional e gestão manual de 2ª via de cartões VA e VR separados.', 'Saldo acaba no VR e sobra no VA sem transferência possível entre categorias.', 'Prós: Rede tradicional. Contras: Dois plásticos separados e burocracia para o DP.', 'Reduzir retrabalho do DP unificando VA e VR em 1 único cartão Mastercard 100% dentro do PAT.'),\n('LD-07', 'Vasco da Gama SAF', 'https://www.vasco.com.br/', 'https://vascodagamasaf.vagas.solides.com.br/', 'Esportes & Entretenimento', 'Zona Norte / Del Castilho', 'São Cristóvão', 'Av. Roberto Dinamite, 10 - Vasco da Gama, Rio de Janeiro - RJ, 20921-060', '+55 21 2176-7373', 'rh@vasco.com.br', 'Head de RH / CFO SAF', 'Head de RH', 'CFO / Compras & Redução de Custos', 450, 430, 780.00, 'Pluxee (ex-Sodexo)', 'Tradicional (Elo)', 'Outbound Iniciado', 'Alta', 'Quente', 'WhatsApp', 'Profissionalização da gestão da SAF; necessidade de modernizar DP e pacote para staff técnico e administrativo.', 'Confusão pós-rebranding Sodexo->Pluxee, lentidão no app e falta de Apple/Google Pay.', 'Prós: Rede antiga. Contras: Nota 4,2/5, cartões separados e sem X-Pay.', 'Modernização digital da SAF: trocar Pluxee tradicional por Swile Mastercard Taxa Zero + X-Pay.'),\n('LD-08', 'Future Technologies (Future ATP)', 'https://futurevagas.vagas.solides.com.br/', 'https://futurevagas.vagas.solides.com.br/', 'Tecnologia da Informação & Redes', 'Centro / Porto Maravilha', 'Centro', 'Centro Empresarial Rio de Janeiro - RJ', '+55 21 3500-0000', 'rh@future.com.br', 'Gerente de Talentos & Pessoas', 'Gerente de RH', 'RH Estratégico / Employer Branding', 310, 300, 960.00, 'Pluxee (ex-Sodexo)', 'Tradicional (VA/VR Elo)', 'Discovery RH/DP', 'Alta', 'Quente', 'LinkedIn', 'Contrata Arquitetos de Soluções e Engenheiros de TI no RJ usando vale tradicional Pluxee, perdendo atratividade.', 'Time de TI em regime híbrido critica falta de Home Office e Educação no mesmo cartão.', 'Prós: Básico PAT. Contras: Desalinhado com talentos tech; sem Educação/Home Office.', 'Destravar 8 categorias (incluindo Educação p/ certificações de TI e Home Office) a Taxa Zero.'),\n('LD-09', 'Fattu do Brasil (Unidade RJ)', 'https://fattu.gupy.io/', 'https://fattu.gupy.io/', 'Distribuição & Suprimentos', 'Zona Norte / Del Castilho', 'Região Metropolitana RJ', 'Unidade Logística e Comercial Rio de Janeiro - RJ', '+55 21 3000-0000', 'dho@fattu.com.br', 'Coordenadora de DHO', 'Coordenadora de DHO', 'RH Estratégico / Employer Branding', 290, 280, 750.00, 'Caju', 'Multibenefícios (Visa)', 'Lead Mapeado', 'Alta', 'Morno', 'WhatsApp', '9x GPTW com programas Estilo Fattu e Baby Fattu; usa Caju + SalaryFits separado e quer centralizar mimos.', 'Motoristas enfrentam bloqueios pontuais na estrada e sentem falta de descontos em grandes redes.', 'Prós: Cultura jovem. Contras: Venda da Caju para o iFood gera incerteza no DHO.', 'Unificar Estilo Fattu e Baby Fattu na carteira de Premiação Swile + Swile Shop em um só Mastercard.'),\n('LD-10', 'Nasajon Sistemas', 'http://www.nasajon.com.br/', 'http://www.nasajon.com.br/', 'Tecnologia / ERP & Folha', 'Centro / Porto Maravilha', 'Centro', 'Av. Mal. Floriano, 19 - Sl 1003 - Centro, Rio de Janeiro - RJ, 20080-003', '+55 21 2213-9300', 'rh@nasajon.com.br', 'Diretora de Gente & Cultura', 'Diretora de RH', 'RH Estratégico / Employer Branding', 240, 230, 900.00, 'VR Benefícios', 'Tradicional / Transição', 'Outbound Iniciado', 'Alta', 'Quente', 'Visita Presencial RJ', 'Referência carioca em software de folha/contábil (GPTW); busca experiência moderna para o time Boa Gente Boa.', 'Colaboradores híbridos no Centro querem Apple/Google Pay e uso amplo em farmácias e cursos.', 'Prós: Tradição contábil. Contras: Menor agilidade no app e rede menor que Mastercard.', 'Duplo gancho: fechar as 230 vidas da Nasajon e abrir parceria de indicação na base de clientes de folha.'),\n('LD-11', 'Zinzane (Sede & Lojas RJ)', 'http://www.zinzane.com.br/', 'http://www.zinzane.com.br/', 'Varejo de Moda & E-commerce', 'Zona Sul / Barra', 'Centro / Botafogo / Barra', 'Rua Gonçalves Lédo, 101 - Centro / Rio Sul / BarraShopping, Rio de Janeiro - RJ', '+55 21 99211-4065', 'rh@zinzane.com.br', 'Head de Gente & Gestão', 'Head de RH', 'DP Operacional / Folha & PAT', 850, 780, 680.00, 'Ticket', 'Tradicional (Elo)', 'Lead Mapeado', 'Alta', 'Morno', 'WhatsApp', 'Dezenas de lojas no RJ; alto giro de vendedoras exige emissão instantânea e pagamento de premiação de metas.', 'Equipes de shopping reclamam de taxas/demora de 2ª via e de não receberem bônus de vendas no mesmo cartão.', 'Prós: Praças de alimentação. Contras: Taxas adm. altas e sem carteira de premiação integrada.', 'Unificar VR/VA + Premiação de Metas de Loja no mesmo Swile Card Mastercard com cartão virtual no dia 1.'),\n('LD-12', 'ICONIC Lubrificantes (Sede RJ)', 'https://www.iconiclubrificantes.com.br/', 'https://www.iconiclubrificantes.com.br/', 'Indústria Química & Energia', 'Barra da Tijuca / Recreio', 'Barra da Tijuca / São Cristóvão', 'Av. das Américas, 3434 - Bl 7, 4° andar - Barra da Tijuca, Rio de Janeiro - RJ', '+55 21 3906-1515', 'rh@iconic.com.br', 'Gerente de Remuneração e Benefícios', 'Gerente de Benefícios', 'CFO / Compras & Redução de Custos', 620, 600, 1020.00, 'Pluxee (ex-Sodexo)', 'Tradicional Corporativo', 'Lead Mapeado', 'Média', 'Frio', 'E-mail', 'Operação dividida entre escritório híbrido na Barra da Tijuca e fábricas em São Cristóvão e Duque de Caxias.', 'Público corporativo da Barra quer mobilidade e home office; fábrica prioriza atacadistas e farmácia.', 'Prós: Contrato antigo. Contras: Zero flexibilidade para o time híbrido da Barra.', 'Políticas customizadas por grupo no Dash RH: perfil Barra (híbrido) e perfil Planta Industrial na mesma fatura.'),\n('LD-13', 'Grant Thornton Brasil (RJ)', 'https://www.grantthornton.com.br/onde-estamos/rio-de-janeiro/', 'https://www.grantthornton.com.br/', 'Auditoria & Consultoria', 'Zona Sul / Barra', 'Flamengo', 'Praia do Flamengo, 154 - Conjuntos 401/402 - Flamengo, Rio de Janeiro - RJ', '+55 21 3512-4100', 'pessoas.rj@br.gt.com', 'Gerente de Pessoas & Cultura RJ', 'Gerente de RH', 'RH Estratégico / Employer Branding', 260, 250, 1100.00, 'Alelo', 'Tradicional (VA/VR)', 'Lead Mapeado', 'Média', 'Morno', 'LinkedIn', 'Auditores jovens com alta demanda por cursos/idiomas e deslocamento constante entre clientes no RJ.', 'Auditores reclamam que cartão Elo não entra no Apple Pay e não permite usar saldo em Educação/Mobilidade.', 'Prós: Tradição em auditoria. Contras: Sem autonomia de saldo nem X-Pay.', 'Retenção de auditores: bandeira Mastercard + X-Pay + carteiras Educação e Mobilidade com compliance PAT.'),\n('LD-14', 'Camorim Serviços Marítimos', 'http://www.camorim.com.br/', 'http://www.camorim.com.br/', 'Logística Portuária & Offshore', 'Niterói / Região Metropolitana', 'Ilha da Conceição (Niterói)', 'R. Mario Trilha, 136 - Ilha da Conceição, Niterói - RJ, 24050-190', '+55 21 3906-0450', 'rh@camorim.com.br', 'Gerente de RH / DP Marítimo', 'Gerente de DP', 'DP Operacional / Folha & PAT', 520, 490, 850.00, 'VR Benefícios', 'Tradicional (VA/VR)', 'Lead Mapeado', 'Média', 'Morno', 'Ligação', 'Forte ritmo de contratações em Niterói; escala de embarque exige flexibilidade entre VA (família) e VR.', 'Marítimos embarcados ficam com saldo preso em VR sem conseguir transferir para supermercado da família.', 'Prós: Conhecido no setor naval. Contras: Rigidez entre VA e VR na escala.', 'Flexibilidade inteligente dentro do PAT (VA/VR no mesmo cartão Mastercard aceito em +4 milhões de locais).'),\n('LD-15', 'Tursan Turismo', 'https://tursan.com.br/', 'https://tursan.com.br/', 'Transporte & Fretamento', 'Zona Oeste - Campo Grande', 'Campo Grande', 'Av. Brasil, 49389 - Campo Grande, Rio de Janeiro - RJ, 23065-480', '+55 21 3554-8000', 'vagas@tursan.com.br', 'Gerente de RH / DP', 'Gerente de DP', 'CFO / Compras & Redução de Custos', 380, 360, 650.00, 'VR Benefícios', 'Tradicional + Premiação separada', 'Outbound Iniciado', 'Alta', 'Quente', 'E-mail', 'Expansão de frota na Zona Oeste; opera vale alimentação e vale premiação de assiduidade em cartões separados.', 'Motoristas em rotas pela ZO, ZN e Serra enfrentam recusas de bandeira fechada e carregam 2 cartões.', 'Prós: Tradicional. Contras: Gestão duplicada entre alimentação e premiação.', 'Unificar Vale Alimentação + Vale Premiação de assiduidade dos motoristas em 1 único Swile Mastercard Taxa Zero.')\non conflict (code) do nothing;\n\n-- -----------------------------------------------------------------------------\n-- PIPELINE INICIAL (7 oportunidades) — mesmo conteúdo do modo local do app\n-- -----------------------------------------------------------------------------\ninsert into public.crm_opportunities (account_id, title, stage, stage_weight, negotiated_lives, proposed_monthly_tpv, probability, expected_close_date)\nselect a.id, 'Swile — ' || a.company_name, v.stage, v.stage_weight, a.active_card_users, a.estimated_monthly_tpv, v.probability, v.close_date::date\nfrom (values\n  ('LD-04', '4. Proposta & Simulação PAT', 4, 75, '2026-11-12'),\n  ('LD-03', '3. Demo Dash RH & App',       3, 60, '2026-11-18'),\n  ('LD-02', '2. Discovery & Vidas',        2, 50, '2026-11-25'),\n  ('LD-08', '2. Discovery & Vidas',        2, 45, '2026-11-28'),\n  ('LD-01', '1. Qualificado (SQL)',        1, 35, '2026-12-04'),\n  ('LD-07', '1. Qualificado (SQL)',        1, 35, '2026-12-08'),\n  ('LD-10', '1. Qualificado (SQL)',        1, 30, '2026-12-10')\n) as v(code, stage, stage_weight, probability, close_date)\njoin public.crm_accounts a on a.code = v.code\nwhere not exists (\n  select 1 from public.crm_opportunities o where o.account_id = a.id\n);\n\n-- -----------------------------------------------------------------------------\n-- FOLLOW-UPS INICIAIS (Fonte Única de Próxima Ação)\n-- -----------------------------------------------------------------------------\ninsert into public.crm_follow_ups (account_id, action_title, due_date, channel, status, priority)\nselect a.id, v.action_title, v.due_date::date, v.channel, 'Pendente', v.priority\nfrom (values\n  ('LD-01', 'Abordar Head de People sobre compra da Caju pelo iFood (20/10) + enviar comparativo Swile Shop', '2026-10-30', 'LinkedIn', 'Alta'),\n  ('LD-02', 'Apresentar simulação VA/VR + Mobilidade Frota (900 vidas) para Diretora de Gente da Beep Saúde', '2026-10-30', 'WhatsApp', 'Alta'),\n  ('LD-03', 'Confirmar Demo presencial no CEO Office Barra (RJZ Cyrela) — foco em logística de cartões p/ obras', '2026-10-31', 'Visita Presencial', 'Alta'),\n  ('LD-04', 'Validar minuta Taxa Zero + carteira Premiação BeInspired com People & Compras da Bemobi', '2026-10-31', 'E-mail', 'Alta'),\n  ('LD-07', 'Enviar vídeo de 60s mostrando X-Pay (Apple/Google Pay) para o RH da Vasco da Gama SAF', '2026-11-02', 'WhatsApp', 'Alta'),\n  ('LD-15', 'Ligar p/ RH da Tursan em Campo Grande sobre unificação do Vale Alimentação + Vale Premiação', '2026-11-03', 'Ligação', 'Média')\n) as v(code, action_title, due_date, channel, priority)\njoin public.crm_accounts a on a.code = v.code\nwhere not exists (\n  select 1 from public.crm_follow_ups f where f.account_id = a.id and f.action_title = v.action_title\n);\n";
+    const SQL_SECURITY_TEXT = "-- =============================================================================\n-- SWILE OS CRM — FASE 5: RLS POR USUÁRIO (cada login só vê as próprias linhas)\n-- Rode no SQL Editor do Supabase. O script é idempotente: pode rodar de novo.\n--\n-- O que faz, nesta ordem (tudo numa transação: se algo falhar, nada muda):\n--   1. Garante a lista de e-mails liberados (crm_allowed_users) e a função\n--      crm_is_allowed(), iguais às do Modo Seguro. Se você já rodou o Modo Seguro,\n--      nada se perde.\n--   2. Procura o seu usuário em auth.users pelo e-mail abaixo. Se não achar, PARA\n--      com erro, antes de mexer em qualquer tabela.\n--   3. Cria a coluna user_id (default auth.uid()) nas 5 tabelas do CRM e PREENCHE\n--      as linhas que já existem com o seu id. Sem isso, as contas atuais sumiriam\n--      depois das policies novas.\n--   4. Troca as policies: só usuário logado, liberado na lista E dono da linha\n--      (user_id = auth.uid()) lê e grava. O acesso anônimo sai.\n--   5. Recria a view 360° (respeita o RLS de quem consulta) e mostra a conferência.\n--\n-- Antes de rodar:\n--   a. No app, aba \"Banco e login\": crie o login (Criar login) e confirme o e-mail.\n--   b. Troque SEU_EMAIL_AQUI (linha do v_email, no passo 2) pelo e-mail desse login.\n--\n-- Depois de rodar:\n--   c. No app, clique em \"Entrar\". As contas aparecem como antes.\n--   d. Linhas novas recebem o seu user_id sozinhas (o app também envia).\n--\n-- Cuidados:\n--   * Não rode de novo a migration principal depois deste script: ela recria as\n--     policies abertas (\"Public access\") e o banco volta a ficar público.\n--   * Linhas inseridas pelo SQL Editor (usuário postgres) ficam com user_id nulo e\n--     não aparecem no app. Rode este script de novo para atribuí-las a você.\n--   * crm_accounts.code continua único no banco todo (não por usuário). Para mais\n--     de um vendedor com códigos próprios, a constraint precisa mudar depois.\n--   * Para liberar outra pessoa: insira o e-mail em crm_allowed_users. Ela verá só\n--     as linhas que ela mesma criar.\n-- =============================================================================\n\nbegin;\n\n-- 1. Lista de e-mails liberados e função de checagem (mesma definição do Modo Seguro)\ncreate table if not exists public.crm_allowed_users (\n  email text primary key,\n  created_at timestamptz not null default now()\n);\nalter table public.crm_allowed_users enable row level security;\nrevoke all on public.crm_allowed_users from anon, authenticated;\n\ncreate or replace function public.crm_is_allowed()\nreturns boolean\nlanguage sql\nstable\nsecurity definer\nset search_path = ''\nas $$\n  select exists (\n    select 1\n    from public.crm_allowed_users u\n    where u.email = lower(coalesce(auth.jwt() ->> 'email', ''))\n  );\n$$;\nrevoke all on function public.crm_is_allowed() from public, anon;\ngrant execute on function public.crm_is_allowed() to authenticated;\n\n-- 2 e 3. Dono das linhas atuais + coluna user_id\ndo $$\ndeclare\n  v_email text := lower(trim('SEU_EMAIL_AQUI'));\n  v_uid uuid;\n  t text;\nbegin\n  select id into v_uid from auth.users where lower(email) = v_email limit 1;\n  if v_uid is null then\n    raise exception 'Usuário % não encontrado em auth.users. Crie o login no app (Banco e login > Criar login), confirme o e-mail e troque SEU_EMAIL_AQUI antes de rodar.', v_email;\n  end if;\n\n  insert into public.crm_allowed_users (email) values (v_email) on conflict (email) do nothing;\n\n  foreach t in array array['crm_accounts', 'crm_opportunities', 'crm_meetings', 'crm_follow_ups', 'crm_routes_rj']\n  loop\n    execute format('alter table public.%I add column if not exists user_id uuid', t);\n    execute format('alter table public.%I alter column user_id set default auth.uid()', t);\n    execute format('update public.%I set user_id = %L where user_id is null', t, v_uid);\n    execute format('create index if not exists %I on public.%I (user_id)', t || '_user_id_idx', t);\n  end loop;\nend\n$$;\n\n-- 4. Policies: logado + liberado + dono da linha\ndo $$\ndeclare\n  t text;\nbegin\n  foreach t in array array['crm_accounts', 'crm_opportunities', 'crm_meetings', 'crm_follow_ups', 'crm_routes_rj']\n  loop\n    execute format('alter table public.%I enable row level security', t);\n    execute format('drop policy if exists \"Public access %1$s\" on public.%1$I', t);\n    execute format('drop policy if exists \"Authenticated access %1$s\" on public.%1$I', t);\n    execute format('drop policy if exists \"Allowed users %1$s\" on public.%1$I', t);\n    execute format('drop policy if exists \"Owner only %1$s\" on public.%1$I', t);\n    execute format(\n      'create policy \"Owner only %1$s\" on public.%1$I for all to authenticated '\n      'using (user_id = (select auth.uid()) and public.crm_is_allowed()) '\n      'with check (user_id = (select auth.uid()) and public.crm_is_allowed())',\n      t\n    );\n    execute format('revoke all on public.%I from anon', t);\n    execute format('grant select, insert, update, delete on public.%I to authenticated', t);\n  end loop;\nend\n$$;\n\n-- 5. View 360°: recriada para incluir user_id em a.* e continuar com security_invoker\ndrop view if exists public.v_crm_accounts_360;\ncreate view public.v_crm_accounts_360\nwith (security_invoker = true) as\nselect\n  a.*,\n  coalesce(o.max_stage_weight, 0) as max_pipeline_weight,\n  coalesce(o.open_opportunities_count, 0) as open_opportunities_count,\n  coalesce(m.meetings_count, 0) as meetings_count,\n  f.next_action_date,\n  f.next_action_title,\n  f.next_action_channel,\n  case\n    when a.status = 'Perdido ❌' then 'Perdido'\n    when a.status = 'Fechado ✅' or coalesce(o.max_stage_weight, 0) = 5 then 'Cliente Ativo'\n    when coalesce(o.max_stage_weight, 0) >= 3 then 'Oportunidade'\n    when coalesce(o.max_stage_weight, 0) >= 1 then 'SQL'\n    when a.interest_level in ('Quente', 'Morno') then 'MQL'\n    else 'Lead'\n  end as funnel_stage,\n  least(100, greatest(0,\n    (case when a.priority_icp = 'Alta' then 22 when a.priority_icp = 'Média' then 14 else 6 end) +\n    (case when a.active_card_users >= 450 then 22 when a.active_card_users >= 250 then 16 else 10 end) +\n    (case when a.interest_level = 'Quente' then 22 when a.interest_level = 'Morno' then 14 else 6 end) +\n    (case when a.current_provider in ('Caju', 'Pluxee (ex-Sodexo)', 'Alelo') then 16 else 10 end) +\n    (coalesce(o.max_stage_weight, 0) * 4)\n  )) as commercial_score\nfrom public.crm_accounts a\nleft join (\n  select\n    account_id,\n    max(stage_weight) as max_stage_weight,\n    count(*) filter (where stage_weight between 1 and 4) as open_opportunities_count\n  from public.crm_opportunities\n  group by account_id\n) o on o.account_id = a.id\nleft join (\n  select account_id, count(*) as meetings_count\n  from public.crm_meetings\n  group by account_id\n) m on m.account_id = a.id\nleft join lateral (\n  select\n    fu.due_date as next_action_date,\n    fu.action_title as next_action_title,\n    fu.channel as next_action_channel\n  from public.crm_follow_ups fu\n  where fu.account_id = a.id and fu.status = 'Pendente'\n  order by fu.due_date asc\n  limit 1\n) f on true;\n\nrevoke all on public.v_crm_accounts_360 from anon;\ngrant select on public.v_crm_accounts_360 to authenticated;\n\ncommit;\n\n-- 6. Conferência: \"sem_dono\" deve ser 0 em todas as tabelas\nselect 'crm_accounts' as tabela, count(*) as total, count(*) filter (where user_id is null) as sem_dono from public.crm_accounts\nunion all select 'crm_opportunities', count(*), count(*) filter (where user_id is null) from public.crm_opportunities\nunion all select 'crm_meetings', count(*), count(*) filter (where user_id is null) from public.crm_meetings\nunion all select 'crm_follow_ups', count(*), count(*) filter (where user_id is null) from public.crm_follow_ups\nunion all select 'crm_routes_rj', count(*), count(*) filter (where user_id is null) from public.crm_routes_rj;\n\nnotify pgrst, 'reload schema';\n";
     /* SQL:END */
 
     // 2. STATE MANAGEMENT (WITH SAFE LOCALSTORAGE + SUPABASE CLIENT)
@@ -2195,6 +2218,62 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
+    }
+
+    // Nome pedido na Fase 5; é o mesmo esc() usado em todo o app.
+    const escapeHtml = esc;
+
+    /** Só aceita http(s). Sem protocolo, assume https. Retorna "" para qualquer outra coisa (javascript:, data:, vbscript:…). */
+    function safeExternalUrl(rawUrl) {
+      const t = String(rawUrl || "").trim();
+      if (!t) return "";
+      if (/^[a-z][a-z0-9+.\-]*:/i.test(t) && !/^https?:\/\//i.test(t)) return "";
+      try {
+        const u = new URL(/^https?:\/\//i.test(t) ? t : "https://" + t);
+        return (u.protocol === "https:" || u.protocol === "http:") && /\./.test(u.hostname) ? u.href : "";
+      } catch (e) { return ""; }
+    }
+
+    // CSV formula injection (OWASP): texto que começa com = + - @ TAB ou CR ganha um apóstrofo.
+    // Números, telefones ("+55 21 3900-8200") e valores negativos ("-12.50") ficam como estão,
+    // senão o Salesforce e o Excel passariam a ler essas colunas como texto.
+    function csvGuard(v) {
+      if (v === null || v === undefined) return "";
+      if (typeof v === "number") return String(v);
+      const t = String(v);
+      if (!/^[=+\-@\t\r]/.test(t)) return t;
+      if (/^[+\-]?[\d\s().\/,\-]+$/.test(t) && /\d/.test(t)) return t;
+      return "'" + t;
+    }
+    /** Desfaz o csvGuard ao importar um CSV exportado pelo próprio CRM. */
+    function csvUnguard(c) { return /^'[=+\-@\t\r]/.test(c) ? c.slice(1) : c; }
+    /** Célula CSV pronta: guarda + aspas quando precisa. sep = separador do arquivo. */
+    function sanitizeCsvCell(v, sep) {
+      const t = csvGuard(v);
+      const re = sep === ";" ? /[;"\n\r]/ : /[,"\n\r]/;
+      return re.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+    }
+
+    // Remove segredos de qualquer arquivo exportado (backup JSON): chaves de API, tokens, webhook.
+    const SENSITIVE_KEY_RE = /(api_?key|gemini|swile_?ia|m14_?ia|supabase_?key|anon_?key|service_?role|access_?token|refresh_?token|secret|password|senha|webhook_?url)/i;
+    function stripSensitiveCredentials(payload) {
+      const clone = JSON.parse(JSON.stringify(payload || {}));
+      (function scrub(o) {
+        if (!o || typeof o !== "object") return;
+        Object.keys(o).forEach(function (k) {
+          if (SENSITIVE_KEY_RE.test(k)) delete o[k];
+          else if (k === "webhook" && o[k] && typeof o[k] === "object") delete o[k].url;
+          else if (typeof o[k] === "object") scrub(o[k]);
+        });
+      })(clone);
+      return clone;
+    }
+
+    function debounce(fn, ms) {
+      let t = null;
+      const d = function () { const a = arguments; clearTimeout(t); t = setTimeout(function () { t = null; fn.apply(null, a); }, ms); };
+      d.flush = function () { if (t) { clearTimeout(t); t = null; fn(); } };
+      return d;
     }
 
     function isUuid(v) {
@@ -2276,6 +2355,8 @@
 
       const sqlBox = document.getElementById("sqlSchemaTextarea");
       if (sqlBox) sqlBox.value = SQL_SCHEMA_TEXT;
+      const secBox = document.getElementById("sqlSecurityTextarea");
+      if (secBox) secBox.value = SQL_SECURITY_TEXT;
 
       document.getElementById("inputSupabaseUrl").value = state.supabaseUrl || "";
       document.getElementById("inputSupabaseKey").value = state.supabaseKey || "";
@@ -2730,14 +2811,19 @@
       ];
       if (prov && prov !== "A Validar") links.push({ label: "Reclame Aqui: " + prov.replace(" (ex-Sodexo)", ""), href: "https://www.google.com/search?q=" + e(prov.replace(" (ex-Sodexo)", "") + " benefícios site:reclameaqui.com.br") });
       links.push({ label: integ().navApp === "waze" ? "Waze" : "Como chegar", href: navUrl(acc) });
-      if (/^https?:\/\/[^/]+\.[^/]+/i.test(acc.website || "")) links.push({ label: "Site", href: acc.website });
+      const site = safeExternalUrl(acc.website);
+      if (site) links.push({ label: "Site", href: site });
       links.push({ label: "Google Meet", href: "https://meet.google.com/new" });
       return links;
     }
 
     // Abre em nova aba. Não usar a feature "noopener" aqui: com ela o window.open
     // sempre retorna null e o CRM também navegaria para o link na aba atual.
+    // Proteção contra reverse tabnabbing: opener = null logo após abrir, e a meta
+    // referrer=no-referrer impede que a URL do CRM vá no cabeçalho Referer.
     function openExternal(url) {
+      url = String(url || "").trim();
+      if (!/^(https?:|mailto:|tel:)/i.test(url)) { showToast("Link bloqueado: só abro endereços http(s).", "⚠️"); return; }
       const w = window.open(url, "_blank");
       if (w) { try { w.opener = null; } catch (e) { /* ignore */ } }
       else window.location.href = url;
@@ -3140,7 +3226,7 @@
     ];
 
     function srcChip(kind, label, url) {
-      if (kind === "ok") return url ? '<a class="chip chip-ok hover:text-white" href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(label || "conferido") + '</a>' : '<span class="chip chip-ok">' + esc(label || "conferido") + '</span>';
+      if (kind === "ok") return url ? '<a class="chip chip-ok hover:text-white" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(label || "conferido") + '</a>' : '<span class="chip chip-ok">' + esc(label || "conferido") + '</span>';
       if (kind === "est") return '<span class="chip" style="color:#fcd34d">estimativa</span>';
       return '<span class="chip" style="color:#c4b5fd">informado pelo usuário</span>';
     }
@@ -3415,7 +3501,11 @@
       return { temperature: temperature, score: score, highlights: highlights, objections: objections, rebuttal: rebuttal, whatsapp: whatsapp, next_stage: nextStage, competitor: comp ? comp.name : "", source: "local" };
     }
 
-    function geminiKey() { try { return localStorage.getItem("swile_crm_gemini_key") || ""; } catch (e) { return ""; } }
+    // A chave pode ficar só nesta aba (sessionStorage, some ao fechar) ou neste navegador (localStorage).
+    function geminiKey() {
+      try { return sessionStorage.getItem("swile_crm_gemini_key") || localStorage.getItem("swile_crm_gemini_key") || ""; } catch (e) { return ""; }
+    }
+    function geminiKeyIsSession() { try { return !!sessionStorage.getItem("swile_crm_gemini_key"); } catch (e) { return false; } }
     // White-label: na tela a IA se chama "M14 IA". O nome exibido é traduzido aqui
     // para o modelo real do Google; o aviso de terceiros fica em Integrações (LGPD).
     const AI_BRAND = "M14 IA";
@@ -3510,7 +3600,8 @@
         const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, opts.timeout || 30000) : null;
         try {
           const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(models[i]) + ":generateContent", {
-            method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: body, signal: ctrl ? ctrl.signal : undefined
+            method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: body, signal: ctrl ? ctrl.signal : undefined,
+            referrerPolicy: "strict-origin" // só o domínio, para chaves restritas por site continuarem funcionando
           });
           if (r.status === 404 && i + 1 < models.length) { lastErr = "motor principal indisponível para esta chave"; continue; }
           if (!r.ok) {
@@ -4215,9 +4306,9 @@
         const us = r.name === "Swile";
         return '<tr class="divider align-top"' + (us ? ' style="background:rgba(124,58,237,.08)"' : "") + '>' +
           '<td class="px-4 py-2.5 font-medium text-white whitespace-nowrap">' + esc(r.name) + '</td>' +
-          '<td class="px-3 py-2.5 whitespace-nowrap" style="color:' + (r.flag === "não informada" ? "var(--faint)" : "#c3c8d4") + '">' + esc(r.flag) + (r.flagSrc ? ' <a class="underline text-[11px] hover:text-white" style="color:var(--faint)" href="' + esc(r.flagSrc) + '" target="_blank" rel="noopener">Benway</a>' : "") + '</td>' +
+          '<td class="px-3 py-2.5 whitespace-nowrap" style="color:' + (r.flag === "não informada" ? "var(--faint)" : "#c3c8d4") + '">' + esc(r.flag) + (r.flagSrc ? ' <a class="underline text-[11px] hover:text-white" style="color:var(--faint)" href="' + esc(r.flagSrc) + '" target="_blank" rel="noopener noreferrer">Benway</a>' : "") + '</td>' +
           '<td class="px-3 py-2.5 whitespace-nowrap"><span class="num text-white">' + esc(r.rating) + '</span> ' +
-            (r.url ? '<a class="chip chip-ok hover:text-white" href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.src) + '</a>' : '<span class="chip">informada pelo usuário</span>') + '</td>' +
+            (r.url ? '<a class="chip chip-ok hover:text-white" href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer">' + esc(r.src) + '</a>' : '<span class="chip">informada pelo usuário</span>') + '</td>' +
           '<td class="px-4 py-2.5" style="color:var(--muted);min-width:16rem">' + esc(r.use) + '</td></tr>';
       }).join("");
       const tl = document.getElementById("pbTriggersList");
@@ -4225,7 +4316,7 @@
         return '<div class="card p-4 space-y-2 text-xs">' +
           '<div class="flex items-start justify-between gap-2"><h3 class="card-title">' + esc(g.title) + '</h3>' + pbStatusChip(g.status) + '</div>' +
           '<p style="color:#c3c8d4">' + esc(g.facts) + '</p>' +
-          '<p style="color:var(--faint)">Fonte: ' + esc(g.source) + (g.url ? ' · <a class="underline hover:text-white" href="' + esc(g.url) + '" target="_blank" rel="noopener">abrir</a>' : "") + '</p>' +
+          '<p style="color:var(--faint)">Fonte: ' + esc(g.source) + (g.url ? ' · <a class="underline hover:text-white" href="' + esc(g.url) + '" target="_blank" rel="noopener noreferrer">abrir</a>' : "") + '</p>' +
           '<div class="rounded-lg p-2.5" style="background:var(--surface-2)"><p style="color:var(--muted)">' + esc(g.hook) + '</p></div>' +
           '<button type="button" class="btn btn-sm" onclick="copyTriggerHook(' + i + ')">' + icon("copy") + 'Copiar gancho p/ WhatsApp</button>' +
         '</div>';
@@ -4235,7 +4326,7 @@
         return '<div class="card p-4 space-y-2 text-xs">' +
           '<div class="flex items-start justify-between gap-2"><h3 class="card-title">' + esc(x.title) + '</h3>' + pbStatusChip(x.status) + '</div>' +
           '<p style="color:#c3c8d4">' + esc(x.text) + '</p>' +
-          '<p style="color:var(--faint)">Fonte: ' + esc(x.source) + (x.url ? ' · <a class="underline hover:text-white" href="' + esc(x.url) + '" target="_blank" rel="noopener">abrir</a>' : "") + '</p></div>';
+          '<p style="color:var(--faint)">Fonte: ' + esc(x.source) + (x.url ? ' · <a class="underline hover:text-white" href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">abrir</a>' : "") + '</p></div>';
       }).join("");
     }
 
@@ -4428,8 +4519,8 @@
       } else if (kind === "linkedin") {
         openExternal("https://www.linkedin.com/search/results/people/?keywords=" + encodeURIComponent(acc.company_name + " RH benefícios"));
       } else if (kind === "site") {
-        const url = String(acc.website || "").trim();
-        if (!/^https?:\/\/[^/]+\.[^/]+/i.test(url)) { showToast("Conta sem site cadastrado.", "⚠️"); return; }
+        const url = safeExternalUrl(acc.website);
+        if (!url) { showToast("Conta sem site válido cadastrado.", "⚠️"); return; }
         openExternal(url);
       }
     }
@@ -5429,6 +5520,20 @@
       copyTextSafe(SQL_SCHEMA_TEXT, "Schema SQL do Supabase copiado!");
     }
 
+    // Script de RLS por usuário com o e-mail do login já preenchido (sem e-mail, mantém SEU_EMAIL_AQUI).
+    function securitySqlFor(email) {
+      email = String(email || "").trim().toLowerCase();
+      if (!/^[^\s@'"]+@[^\s@'"]+\.[^\s@'"]+$/.test(email)) return SQL_SECURITY_TEXT;
+      return SQL_SECURITY_TEXT.replace("'SEU_EMAIL_AQUI'", "'" + email + "'");
+    }
+    function copySqlSecurityText() {
+      const email = (document.getElementById("inputAuthEmail") || {}).value || "";
+      const sql = securitySqlFor(email);
+      const ta = document.getElementById("sqlSecurityTextarea");
+      if (ta) ta.value = sql;
+      copyTextSafe(sql, sql === SQL_SECURITY_TEXT ? "SQL copiado. Troque SEU_EMAIL_AQUI pelo e-mail do seu login." : "SQL de segurança copiado com " + email.trim().toLowerCase() + ".");
+    }
+
     function saveSellerPrefs() {
       state.sellerName = (document.getElementById("inputSellerName").value || "").trim();
       state.sellerRole = (document.getElementById("inputSellerRole").value || "").trim();
@@ -5531,7 +5636,7 @@
       const rs = document.getElementById("accResearch");
       rs.innerHTML = '<p class="eyebrow mb-2">Pesquisar antes de abordar</p><div class="flex flex-wrap gap-1.5">' +
         researchLinks(acc).map(function (l) {
-          return '<a class="chip hover:text-white" href="' + esc(l.href) + '" target="_blank" rel="noopener">' + esc(l.label) + '</a>';
+          return '<a class="chip hover:text-white" href="' + esc(l.href) + '" target="_blank" rel="noopener noreferrer">' + esc(l.label) + '</a>';
         }).join("") + '</div>';
       rs.classList.remove("hidden");
 
@@ -6117,7 +6222,7 @@
         acts.forEach(function (it) {
           const i = idx++;
           html += '<button type="button" class="pal-item' + (i === paletteSel ? ' is-sel' : '') + '" onmouseenter="paletteSel=' + i + '" onclick="runPaletteItem(' + i + ')">' + icon(it.ic) +
-            '<span class="flex-1">' + esc(it.label) + '</span>' + (it.hint ? '<kbd class="text-[10px]" style="color:var(--faint)">' + it.hint + '</kbd>' : '') + '</button>';
+            '<span class="flex-1">' + esc(it.label) + '</span>' + (it.hint ? '<kbd class="text-[10px]" style="color:var(--faint)">' + esc(it.hint) + '</kbd>' : '') + '</button>';
         });
       }
       document.getElementById("paletteResults").innerHTML = html || '<div class="empty">Nada encontrado. Enter cria uma conta com esse nome.</div>';
@@ -6134,10 +6239,14 @@
       }
     }
 
+    // 150 ms de debounce na busca: a digitação não recalcula a lista a cada tecla.
+    const renderPaletteDebounced = debounce(function () { renderPalette(); }, 150);
+    const renderAccountsTableDebounced = debounce(function () { renderAccountsTable(); }, 150);
+
     function paletteKey(e) {
       if (e.key === "ArrowDown") { e.preventDefault(); paletteSel = Math.min(paletteItems.length - 1, paletteSel + 1); renderPalette(); }
       else if (e.key === "ArrowUp") { e.preventDefault(); paletteSel = Math.max(0, paletteSel - 1); renderPalette(); }
-      else if (e.key === "Enter") { e.preventDefault(); runPaletteItem(paletteSel); }
+      else if (e.key === "Enter") { e.preventDefault(); renderPaletteDebounced.flush(); runPaletteItem(paletteSel); }
       else if (e.key === "Escape") { e.preventDefault(); closePalette(); }
     }
 
@@ -6145,16 +6254,18 @@
     function saveGeminiKey() {
       const k = (document.getElementById("geminiKeyInput").value || "").trim();
       const m = (document.getElementById("geminiModelInput").value || "").trim() || AI_DEFAULT_LABEL;
+      const sessionOnly = !!(document.getElementById("geminiKeySessionOnly") || {}).checked;
       try {
-        if (k) localStorage.setItem("swile_crm_gemini_key", k);
+        if (k && sessionOnly) { sessionStorage.setItem("swile_crm_gemini_key", k); localStorage.removeItem("swile_crm_gemini_key"); }
+        else if (k) { localStorage.setItem("swile_crm_gemini_key", k); sessionStorage.removeItem("swile_crm_gemini_key"); }
         localStorage.setItem("swile_crm_gemini_model", m);
       } catch (e) { showToast("O navegador bloqueou o armazenamento local.", "⚠️"); return; }
       document.getElementById("geminiKeyInput").value = "";
       renderIntegrations();
-      showToast(k ? "Chave salva neste navegador. O copiloto vai usar a M14 IA." : "Modelo salvo.", "🔑");
+      showToast(k ? (sessionOnly ? "Chave guardada só nesta aba. Ela some ao fechar." : "Chave salva neste navegador. O copiloto vai usar a M14 IA.") : "Modelo salvo.", "🔑");
     }
     function clearGeminiKey() {
-      try { localStorage.removeItem("swile_crm_gemini_key"); } catch (e) { /* ignore */ }
+      try { localStorage.removeItem("swile_crm_gemini_key"); sessionStorage.removeItem("swile_crm_gemini_key"); } catch (e) { /* ignore */ }
       renderIntegrations();
       showToast("Chave apagada. O copiloto volta para a análise local.", "🗑️");
     }
@@ -6170,10 +6281,7 @@
 
     function sfMoney(v) { return (Math.round((Number(v) || 0) * 100) / 100).toFixed(2); }
     function sfDate(iso) { const d = String(iso || "").slice(0, 10); return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : ""; }
-    function sfCsvCell(v) {
-      const t = String(v === null || v === undefined ? "" : v);
-      return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
-    }
+    function sfCsvCell(v) { return sanitizeCsvCell(v, ","); }
     function sfCsv(headers, rows) {
       return "﻿" + [headers.join(",")].concat(rows.map(function (r) { return r.map(sfCsvCell).join(","); })).join("\r\n") + "\r\n";
     }
@@ -6739,7 +6847,7 @@
         '<p style="color:#c3c8d4"><span style="color:var(--faint)">Dor/gatilho:</span> ' + esc(d.pain) + '</p>' +
         '<p style="color:#c3c8d4"><span style="color:var(--faint)">Como trabalhar agora:</span> ' + esc(d.how) + '</p>' +
         '<div class="flex flex-wrap gap-1.5 pt-0.5">' +
-          '<button type="button" class="btn btn-primary btn-sm" onclick="' + local.action.run + '">' + esc(local.action.label) + '</button>' +
+          '<button type="button" class="btn btn-primary btn-sm" onclick="' + esc(local.action.run) + '">' + esc(local.action.label) + '</button>' +
           '<button type="button" class="btn btn-sm" onclick="refreshLeadDiagnosisGemini()">' + icon("spark") + 'Atualizar com M14 IA</button>' +
         '</div>';
       box.classList.remove("hidden");
@@ -6768,7 +6876,9 @@
       const cfg = integ();
       renderSfPayload();
       const gs = document.getElementById("geminiStatus");
-      if (gs) { gs.textContent = geminiKey() ? "M14 IA ativa" : "Análise local"; gs.className = geminiKey() ? "chip chip-ok" : "chip"; }
+      const so = document.getElementById("geminiKeySessionOnly");
+      if (so && geminiKey()) so.checked = geminiKeyIsSession();
+      if (gs) { gs.textContent = geminiKey() ? "M14 IA ativa" + (geminiKeyIsSession() ? " · só nesta aba" : "") : "Análise local"; gs.className = geminiKey() ? "chip chip-ok" : "chip"; }
       const gm = document.getElementById("geminiModelInput");
       if (gm && document.activeElement !== gm) gm.value = geminiModel();
       const set = function (id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v || ""; };
@@ -7573,15 +7683,15 @@
           else if (ch === '"') q = false;
           else cell += ch;
         } else if (ch === '"') q = true;
-        else if (ch === sep) { row.push(cell); cell = ""; }
+        else if (ch === sep) { row.push(csvUnguard(cell)); cell = ""; }
         else if (ch === "\n" || ch === "\r") {
           if (ch === "\r" && src[i + 1] === "\n") i++;
-          row.push(cell); cell = "";
+          row.push(csvUnguard(cell)); cell = "";
           if (row.some(function (c) { return c.trim(); })) rows.push(row);
           row = [];
         } else cell += ch;
       }
-      row.push(cell);
+      row.push(csvUnguard(cell));
       if (row.some(function (c) { return c.trim(); })) rows.push(row);
       return rows;
     }
@@ -7710,7 +7820,7 @@
         interactions: state.interactions || [],
         integrations: integ()
       };
-      downloadFile("swile-os-crm-backup-" + todayIso() + ".json", JSON.stringify(data, null, 2), "application/json");
+      downloadFile("swile-os-crm-backup-" + todayIso() + ".json", JSON.stringify(stripSensitiveCredentials(data), null, 2), "application/json");
       showToast("Backup baixado.", "⬇");
     }
 
@@ -7850,6 +7960,8 @@
       key: "",
       client: null,
       accessToken: null,
+      userId: null,        // auth.uid() da sessão: vai em user_id nas gravações (RLS por usuário)
+      hasUserIdCol: false, // true quando as linhas lidas já trazem a coluna user_id (script da Fase 5 rodado)
       lastMode: "-",
 
       init: function (url, key) {
@@ -7905,16 +8017,27 @@
         return restFn();
       },
 
-      select: function (table, orderCol) {
+      select: async function (table, orderCol) {
         const self = this;
-        return this.run(
+        const res = await this.run(
           function (c) { return c.from(table).select("*").order(orderCol, { ascending: true }); },
           function () { return self.rest("GET", table + "?select=*&order=" + encodeURIComponent(orderCol) + ".asc"); }
         );
+        if (res && Array.isArray(res.data) && res.data.length && Object.prototype.hasOwnProperty.call(res.data[0], "user_id")) this.hasUserIdCol = true;
+        return res;
+      },
+
+      // Com o RLS por usuário ativo, cada linha nova leva o user_id de quem está logado.
+      // O banco também preenche sozinho (default auth.uid()); aqui é só para ficar explícito.
+      withOwner: function (rows) {
+        const uid = this.userId;
+        if (!uid || !this.hasUserIdCol) return rows;
+        return rows.map(function (r) { return r && !r.user_id ? Object.assign({}, r, { user_id: uid }) : r; });
       },
 
       upsert: function (table, rows, onConflict, ignoreDuplicates) {
         const self = this;
+        rows = this.withOwner(rows);
         return this.run(
           function (c) { return c.from(table).upsert(rows, { onConflict: onConflict, ignoreDuplicates: !!ignoreDuplicates }).select(); },
           function () {
@@ -7943,6 +8066,7 @@
           const res = await this.client.auth.signInWithPassword({ email: email, password: password });
           if (res.error) return { error: res.error };
           this.accessToken = res.data.session ? res.data.session.access_token : null;
+          this.userId = res.data.user ? res.data.user.id : null;
           return { user: res.data.user };
         }
         const resp = await fetch(this.url + "/auth/v1/token?grant_type=password", {
@@ -7953,6 +8077,7 @@
         const json = await resp.json().catch(function () { return {}; });
         if (!resp.ok) return { error: { message: json.error_description || json.msg || ("HTTP " + resp.status) } };
         this.accessToken = json.access_token;
+        this.userId = json.user ? json.user.id : null;
         return { user: json.user };
       },
 
@@ -7987,6 +8112,7 @@
 
       signOut: async function () {
         this.accessToken = null;
+        this.userId = null;
         if (this.client) {
           try { await this.client.auth.signOut(); } catch (e) { /* ignore */ }
         }
@@ -8011,6 +8137,7 @@
         // Volta do link de confirmação sem SDK: token no hash da URL
         if (!this.client && AUTH_RETURN && AUTH_RETURN.access_token) {
           this.accessToken = AUTH_RETURN.access_token;
+          this.userId = AUTH_RETURN.sub || null;
           return { email: AUTH_RETURN.email || "" };
         }
         if (!this.client) return null;
@@ -8024,6 +8151,7 @@
           const res = await this.client.auth.getSession();
           const sess = res && res.data ? res.data.session : null;
           this.accessToken = sess ? sess.access_token : null;
+          this.userId = sess && sess.user ? sess.user.id : null;
           return sess ? sess.user : null;
         } catch (e) {
           return null;
@@ -8046,6 +8174,7 @@
           try {
             const payload = JSON.parse(atob(out.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
             out.email = payload.email || "";
+            out.sub = payload.sub || "";
           } catch (e) { /* ignore */ }
         }
         return Object.keys(out).length ? out : null;
@@ -8162,6 +8291,14 @@
       }
     }
 
+    // anon key (JWT: eyJ….….…) ou publishable key (sb_publishable_…)
+    function isPlausibleSupabaseKey(k) {
+      k = String(k || "").trim();
+      return /^eyJ[\w-]+\.[\w-]+\.[\w-]+$/.test(k) || /^sb_publishable_[\w-]{10,}$/.test(k);
+    }
+    function dbRequiresLogin() { try { return localStorage.getItem("swile_crm_db_requires_login") === "1"; } catch (e) { return false; } }
+    function setDbRequiresLogin(v) { try { if (v) localStorage.setItem("swile_crm_db_requires_login", "1"); else localStorage.removeItem("swile_crm_db_requires_login"); } catch (e) { /* ignore */ } }
+
     async function connectAndSyncSupabase(opts) {
       const silent = opts && opts.silent;
       const cfg = readSupabaseInputs();
@@ -8173,10 +8310,25 @@
       persistState();
       setDbStatus("busy", "Conectando a <code>" + esc(cfg.url) + "</code>…");
 
+      if (!isPlausibleSupabaseKey(cfg.key)) {
+        state.supabaseConnected = false;
+        setDbStatus("error", "<p class='font-bold text-rose-300'>A chave pública não tem o formato do Supabase.</p><p>Use a <em>anon key</em> (começa com eyJ…) ou a <em>publishable key</em> (sb_publishable_…). O CRM segue no cache local.</p>");
+        if (!silent) showToast("Chave do Supabase em formato inválido.", "⚠️");
+        return;
+      }
+
       try {
         db.init(cfg.url, cfg.key);
         const sessionUser = await db.restoreSession();
         setAuthLabel(sessionUser);
+
+        // Banco já pediu login antes e não há sessão: na abertura automática não chama a API
+        // (evita o 401 no console). O botão "Conectar" sempre tenta de novo.
+        if (silent && !sessionUser && dbRequiresLogin()) {
+          state.supabaseConnected = false;
+          setDbStatus("login", "<p class='font-bold text-amber-300'>🔐 Modo Seguro ativo: faça login abaixo para ver os dados.</p>");
+          return;
+        }
 
         let remote = await loadRemoteData();
         if (remote.error) {
@@ -8184,7 +8336,7 @@
           if (isMissingTableError(remote.error)) {
             setDbStatus("missing",
               "<p class='font-bold text-amber-300'>O projeto respondeu, mas as tabelas do CRM ainda não existem.</p>" +
-              "<p>1. Clique em <strong>📋 Copiar SQL Completo</strong> (ao lado).<br>2. Cole e rode no <a class='text-emerald-300 underline' target='_blank' rel='noopener' href='" + SB_SQL_EDITOR_URL + "'>SQL Editor do Supabase</a>.<br>3. Volte aqui e clique em ⚡ Conectar.</p>" +
+              "<p>1. Clique em <strong>📋 Copiar SQL Completo</strong> (ao lado).<br>2. Cole e rode no <a class='text-emerald-300 underline' target='_blank' rel='noopener noreferrer' href='" + SB_SQL_EDITOR_URL + "'>SQL Editor do Supabase</a>.<br>3. Volte aqui e clique em ⚡ Conectar.</p>" +
               "<p class='text-slate-500'>Enquanto isso, o CRM segue funcionando no cache local.</p>");
             if (!silent) {
               showToast("Tabelas não encontradas: rode o SQL no SQL Editor do Supabase.", "⚡");
@@ -8192,6 +8344,7 @@
             }
           } else {
             const permDenied = /permission denied|row-level security|JWT|401|42501/i.test((remote.error.message || "") + " " + (remote.error.code || "") + " " + (remote.error.status || ""));
+            if (permDenied && !sessionUser) setDbRequiresLogin(true);
             // Sem sessão e o banco exige login: não é erro, só falta entrar
             setDbStatus(permDenied && !sessionUser ? "login" : "error", permDenied
               ? "<p class='font-bold text-amber-300'>🔐 Modo Seguro ativo: faça login abaixo para ver os dados.</p>"
@@ -8209,6 +8362,7 @@
           if (remote.error) return;
         }
 
+        if (!sessionUser) setDbRequiresLogin(false);
         applyRemoteData(remote);
         state.supabaseConnected = true;
         persistState();
@@ -8417,10 +8571,7 @@
         "Prioridade_ICP", "Score_ICP", "Dores_RH", "Reclamacoes_Usuarios", "Gatilho_Swile_2026",
         "Bairro", "Site", "Status", "Proxima_Acao"
       ];
-      const cell = function (v) {
-        const t = String(v === null || v === undefined ? "" : v);
-        return /[;"\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
-      };
+      const cell = function (v) { return sanitizeCsvCell(v, ";"); };
       const rows = [headers.join(";")];
       for (let i = 0; i < state.accounts.length; i++) {
         const a = state.accounts[i];

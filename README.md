@@ -159,7 +159,7 @@ As preferências e os modelos ficam no `localStorage` deste navegador (não vão
 - **Sugerir empresas RJ via Gemini:** entram como "sugestão não verificada" e só viram conta depois de conferidas.
 - **Sem chave:** tudo funciona pelo motor local.
 
-### Nome na interface: M14 IA
+### Nome na interface: Agente Swile (antes M14 IA)
 
 - Na tela, a camada de IA se chama **M14 IA** (rótulos, botões, toasts, chip de status). O campo Modelo mostra `M14 IA · Motor Comercial RJ` por padrão.
 - `resolveInternalModelId()` traduz o nome exibido para o modelo real: um nome que comece com `gemini-` passa direto; qualquer outro vira `gemini-2.5-flash`, com a troca automática para `gemini-3.8-flash` mantida. Mensagens de erro passam por `aiErr()`.
@@ -195,4 +195,6 @@ Total da base inicial (calculado dos dados): **15 contas, 6.820 vidas, TPV de R$
 - **Chave da M14 IA:** opção "Guardar chave apenas nesta sessão" (sessionStorage).
 - **Console limpo:** chave do Supabase em formato inválido não dispara requisição; depois que o banco pediu login uma vez, a abertura automática sem sessão não chama a API (o botão Conectar sempre tenta).
 - **Busca:** debounce de 150 ms na busca de Contas e no Ctrl+K.
+- **Agente Swile:** desde 31/10/2026 a IA aparece como "Agente Swile" (subtítulo "Powered by M14 IA"); padrões antigos salvos ("M14 IA · Motor Comercial RJ", "Swile IA…") passam a mostrar "Agente Swile · Comercial RJ". O fallback continua `gemini-3.8-flash`: o `gemini-2.0-flash` foi desligado pelo Google (junho/2026).
+- **Ingestão Python:** `scripts/ingest_prospects.py` + `docs/ingestao_python.md` (login do usuário + chave pública; sem service_role key). O script de RLS pula tabelas que não existem (ex.: `crm_routes_rj`).
 

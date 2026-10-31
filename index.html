@@ -858,6 +858,12 @@
           </div>
 
           <div id="rep-funnel" class="rep-tab space-y-4">
+            <div id="directorIntelCard" class="card p-4 avoid-break">
+              <h3 class="card-title">Inteligência de diretoria · Agente Swile</h3>
+              <p class="card-sub">Velocidade do pipeline = (SQLs × TPV médio × win rate) ÷ ciclo médio. SQL = oportunidade de Qualificando a Contrato enviado. Só dados do CRM: sem dado, aparece "sem dados".</p>
+              <div id="directorTiles" class="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3"></div>
+              <div id="directorDetail" class="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3 text-[12px]"></div>
+            </div>
             <div class="card overflow-hidden avoid-break">
               <div class="card-head pb-3"><div><h3 class="card-title">Questão 5 · Funil mensal de referência × CRM hoje</h3><p class="card-sub">Volume por fase do Salesforce para fechar R$ 600 mil/mês. "CRM hoje" conta as oportunidades abertas em cada fase agora.</p></div></div>
               <div class="overflow-x-auto"><table class="w-full text-[12px]"><thead><tr class="text-left" style="color:var(--faint)">
@@ -2348,6 +2354,13 @@
       // Completa preferências antigas com os campos novos sem apagar o que a pessoa editou
       const base = defaultIntegrations();
       const cur = state.integ || {};
+      // Modelos salvos numa versão anterior: troca só o que ainda é texto padrão
+      if (state.integ && !(Number(cur.tplVersion) >= TPL_VERSION)) {
+        if (Array.isArray(cur.waTemplates) && cur.waTemplates.length) cur.waTemplates = migrateTemplateList("wa", cur.waTemplates);
+        if (Array.isArray(cur.emailTemplates) && cur.emailTemplates.length) cur.emailTemplates = migrateTemplateList("email", cur.emailTemplates);
+        cur.tplVersion = TPL_VERSION;
+        setTimeout(persistState, 0);
+      }
       state.integ = Object.assign(base, cur, {
         links: Object.assign(base.links, cur.links || {}),
         webhook: Object.assign(base.webhook, cur.webhook || {}),
@@ -2586,16 +2599,28 @@
       "Contrato Enviado": 5
     };
     const ACCOUNT_STATUSES = Object.keys(STATUS_RANK);
-    const TEMPLATE_VARS = ["{nome}", "{empresa}", "{operadora}", "{vidas}", "{bairro}", "{vendedor}", "{link_agenda}", "{link_proposta}"];
+    const TEMPLATE_VARS = ["{nome}", "{empresa}", "{operadora}", "{vidas}", "{ticket}", "{tpv_mensal}", "{pat_anual}", "{polo}", "{bairro}", "{vendedor}", "{link_agenda}", "{link_proposta}"];
+    // Trecho entre [[ ]] some inteiro quando alguma variável dele está vazia (ex.: sem IRPJ, não há {pat_anual})
+
+    // Versão dos modelos padrão. Ao subir, migrateTemplates() troca só os textos que ainda são o padrão antigo.
+    const TPL_VERSION = 2;
 
     const DEFAULT_WA_TEMPLATES = [
       {
-        id: "w-primeiro", name: "Primeiro contato", stages: ["Lead Mapeado", "Outbound Iniciado"], advance_to: "Outbound Iniciado",
-        text: "Olá {nome}, tudo bem? Aqui é {vendedor}, da Swile. Vi que a {empresa} usa {operadora} para cerca de {vidas} pessoas aqui no Rio. Com a interoperabilidade do PAT em novembro, várias empresas estão unificando VA, VR e outros benefícios em um único cartão Mastercard, sem taxa para a empresa. Posso te mostrar em 15 minutos?"
+        id: "w-d0", name: "D+0 · Primeiro contato (auditoria de acusação)", stages: ["Lead Mapeado", "Outbound Iniciado"], advance_to: "Outbound Iniciado",
+        text: "Oi {nome}, tudo bem? Aqui é {vendedor}, da Swile.\n\nImagino que mexer no benefício [[de {vidas} pessoas ]]da {empresa} seja a última coisa que o DP quer agora. Não é sobre trocar o contrato com {operadora} amanhã.\n\nUma pergunta só: hoje vocês ainda administram cartões separados para Refeição e Alimentação, ou já está tudo num cartão só, com Apple Pay e Google Pay?"
+      },
+      {
+        id: "w-d2", name: "D+2 · Âncora financeira PAT (CFO)", stages: [],
+        text: "{nome}, fiz uma conta rápida para o porte da {empresa}[[ ({vidas} vidas, cerca de R$ {tpv_mensal}/mês em benefícios)]].\n\nNo Lucro Real, o PAT permite deduzir do IRPJ 15% do gasto com alimentação, até o limite de 4% do imposto devido[[; para vocês, isso pode chegar a R$ {pat_anual}/ano]]. E com a interoperabilidade entre bandeiras prevista para novembro de 2026, a rede de aceitação deixa de ser motivo para continuar com {operadora}.\n\nSeria uma má ideia eu te mandar um comparativo de 1 página feito para a {empresa}?"
+      },
+      {
+        id: "w-d5-premiacao", name: "D+5 · Entrada por Premiação (sem mexer no VR/VA)", stages: [],
+        text: "{nome}, se o contrato de VR/VA da {empresa} com {operadora} ainda tem prazo ou multa, não faz sentido mexer nele agora.\n\nUm caminho mais leve: começar só com Premiação, Incentivo ou Natal no cartão Swile Mastercard, sem tocar no VR/VA, e deixar essa conversa para perto do vencimento.\n\nVocê seria contra avaliar só essa frente de premiação?"
       },
       {
         id: "w-caju", name: "Gatilho Caju + iFood", stages: [], advance_to: "Outbound Iniciado",
-        text: "Olá {nome}! Aqui é {vendedor}, da Swile. Com a compra da Caju pelo iFood, alguns RHs do Rio estão montando um plano B para não depender da fusão de sistemas e de suporte. Topa 15 minutos para compararmos? {link_agenda}"
+        text: "Oi {nome}, tudo bem? Aqui é {vendedor}, da Swile.\n\nO iFood anunciou a compra da Caju em 20/10/2026, e a operação ainda depende do CADE. Imagino que o RH da {empresa} esteja esperando para ver o que muda no suporte e no app.\n\nVocê seria contra ter um plano B comparado lado a lado, sem compromisso? {link_agenda}"
       },
       {
         id: "w-retomar", name: "Retomar conversa", stages: ["Qualificado (SQL)", "Discovery RH/DP"],
@@ -2606,8 +2631,8 @@
         text: "Olá {nome}! Confirmando nossa demonstração do Dash RH da Swile. Se precisar mudar o horário, é só escolher outro aqui: {link_agenda}"
       },
       {
-        id: "w-proposta", name: "Cobrar retorno da proposta", stages: ["Proposta & Simulação PAT"],
-        text: "Olá {nome}, tudo bem? Conseguiu avaliar a simulação para os {vidas} colaboradores da {empresa}? Se quiser, ajusto algo antes de você levar para o financeiro. {link_proposta}"
+        id: "w-followup-proposta", name: "Follow-up de proposta (pergunta calibrada)", stages: ["Proposta & Simulação PAT", "Contrato Enviado"],
+        text: "Oi {nome}, tudo bem?\n\nSei que encaixar a troca de benefícios da {empresa} na rotina do RH não é simples. Por isso, uma pergunta direta:\n\nO que precisaria acontecer do nosso lado, em prazo de entrega dos cartões[[ para os {vidas} colaboradores]] ou em condição comercial, para você se sentir seguro em avançar ainda neste mês? {link_proposta}"
       },
       {
         id: "w-boas-vindas", name: "Boas-vindas (cliente)", stages: ["Fechado ✅"],
@@ -2621,9 +2646,14 @@
 
     const DEFAULT_EMAIL_TEMPLATES = [
       {
-        id: "e-primeiro", name: "Primeiro contato", stages: ["Lead Mapeado", "Outbound Iniciado"], advance_to: "Outbound Iniciado",
-        subject: "{empresa} + Swile: benefícios em um único cartão",
-        body: "Olá {nome}, tudo bem?\n\nSou {vendedor}, da Swile. Vi que a {empresa} oferece {operadora} para cerca de {vidas} pessoas aqui no Rio.\n\nCom a interoperabilidade do PAT em novembro, temos ajudado empresas do mesmo porte a unificar VA, VR, Mobilidade, Home Office e Premiação em um único cartão Mastercard, com Apple/Google Pay e sem taxa para a empresa.\n\nFaz sentido conversarmos 15 minutos? Você pode escolher o horário aqui: {link_agenda}\n\nAbraço,\n{vendedor}"
+        id: "e-rh-4t", name: "RH/DHO · Executivo 4T", stages: ["Lead Mapeado", "Outbound Iniciado"], advance_to: "Outbound Iniciado",
+        subject: "{empresa}: benefícios do time em um cartão só",
+        body: "Oi {nome},\n\nVi que a {empresa}[[, com cerca de {vidas} colaboradores,]] usa hoje {operadora}.\n\nQuando converso com RH, a queixa raramente é o valor do benefício. É o tempo do DP com segunda via de cartão e o colaborador que não consegue pagar por aproximação.\n\nNa Swile, Refeição, Alimentação, Mobilidade e Premiação ficam no mesmo cartão Mastercard, com Apple Pay e Google Pay, e a troca pode ser feita por etapas, sem virar tudo de uma vez.\n\nFaz sentido uma conversa de 15 minutos para eu mostrar como ficaria na {empresa}? Pode escolher o horário aqui: {link_agenda}\n\nOu o momento não é bom agora?\n\nAbraço,\n{vendedor}"
+      },
+      {
+        id: "e-cfo-pat", name: "CFO/Compras · PAT no Lucro Real", stages: [],
+        subject: "{empresa}: PAT no Lucro Real e o fim da exclusividade de rede",
+        body: "Olá {nome},\n\nSeparei dois pontos que mexem no caixa da {empresa}[[ ({vidas} vidas, cerca de R$ {tpv_mensal}/mês em benefícios)]]:\n\n1. Incentivo do PAT no Lucro Real: dedução no IRPJ de 15% da despesa com alimentação, limitada a 4% do imposto devido (Lei 6.321/76).[[ Na simulação que fiz, o potencial é de até R$ {pat_anual}/ano.]] O número exato depende do IRPJ devido, que posso calcular com o seu time.\n2. Interoperabilidade entre bandeiras, prevista para novembro de 2026: a rede de aceitação deixa de ser motivo para manter {operadora}.\n\nVocê seria contra eu apresentar essa memória de cálculo em 15 minutos? {link_agenda}\n\nAbraço,\n{vendedor}"
       },
       {
         id: "e-diagnostico", name: "Convite para diagnóstico", stages: ["Qualificado (SQL)", "Discovery RH/DP"], advance_to: "Discovery RH/DP",
@@ -2643,9 +2673,54 @@
       {
         id: "e-recuperacao", name: "Recontato (perdido)", stages: ["Perdido ❌"],
         subject: "{nome}, como estão os benefícios da {empresa}?",
-        body: "Olá {nome}, tudo bem?\n\nFaz um tempo que não conversamos. Com as mudanças do PAT neste ano, muitas empresas do Rio revisaram o contrato de benefícios. Vale 15 minutos para eu te mostrar os números?\n\n{link_agenda}\n\nAbraço,\n{vendedor}"
+        body: "Olá {nome}, tudo bem?\n\nFaz um tempo que não conversamos. Desde então o PAT mudou, e a interoperabilidade entre bandeiras está prevista para novembro de 2026.\n\nSeria uma má ideia eu te mostrar em 15 minutos o que isso muda para a {empresa}?\n\n{link_agenda}\n\nAbraço,\n{vendedor}"
       }
     ];
+
+    // Textos padrão da versão 1. Só são trocados se continuarem iguais (o que a pessoa editou fica).
+    const LEGACY_TEMPLATES_V1 = {
+      wa: {
+        "w-primeiro": { to: "w-d0", text: "Olá {nome}, tudo bem? Aqui é {vendedor}, da Swile. Vi que a {empresa} usa {operadora} para cerca de {vidas} pessoas aqui no Rio. Com a interoperabilidade do PAT em novembro, várias empresas estão unificando VA, VR e outros benefícios em um único cartão Mastercard, sem taxa para a empresa. Posso te mostrar em 15 minutos?" },
+        "w-caju": { to: "w-caju", text: "Olá {nome}! Aqui é {vendedor}, da Swile. Com a compra da Caju pelo iFood, alguns RHs do Rio estão montando um plano B para não depender da fusão de sistemas e de suporte. Topa 15 minutos para compararmos? {link_agenda}" },
+        "w-proposta": { to: "w-followup-proposta", text: "Olá {nome}, tudo bem? Conseguiu avaliar a simulação para os {vidas} colaboradores da {empresa}? Se quiser, ajusto algo antes de você levar para o financeiro. {link_proposta}" }
+      },
+      email: {
+        "e-primeiro": { to: "e-rh-4t", subject: "{empresa} + Swile: benefícios em um único cartão", body: "Olá {nome}, tudo bem?\n\nSou {vendedor}, da Swile. Vi que a {empresa} oferece {operadora} para cerca de {vidas} pessoas aqui no Rio.\n\nCom a interoperabilidade do PAT em novembro, temos ajudado empresas do mesmo porte a unificar VA, VR, Mobilidade, Home Office e Premiação em um único cartão Mastercard, com Apple/Google Pay e sem taxa para a empresa.\n\nFaz sentido conversarmos 15 minutos? Você pode escolher o horário aqui: {link_agenda}\n\nAbraço,\n{vendedor}" },
+        "e-recuperacao": { to: "e-recuperacao", subject: "{nome}, como estão os benefícios da {empresa}?", body: "Olá {nome}, tudo bem?\n\nFaz um tempo que não conversamos. Com as mudanças do PAT neste ano, muitas empresas do Rio revisaram o contrato de benefícios. Vale 15 minutos para eu te mostrar os números?\n\n{link_agenda}\n\nAbraço,\n{vendedor}" }
+      }
+    };
+
+    function tplNorm(v) { return String(v || "").replace(/\s+/g, " ").trim(); }
+    function tplIsLegacyDefault(kind, t) {
+      const leg = LEGACY_TEMPLATES_V1[kind][t && t.id];
+      if (!leg) return false;
+      return kind === "email" ? tplNorm(t.subject) === tplNorm(leg.subject) && tplNorm(t.body) === tplNorm(leg.body) : tplNorm(t.text) === tplNorm(leg.text);
+    }
+
+    /** Troca os modelos antigos ainda no padrão pelos novos e acrescenta os que faltam. Nunca apaga um modelo editado. */
+    function migrateTemplateList(kind, list) {
+      const defs = kind === "email" ? DEFAULT_EMAIL_TEMPLATES : DEFAULT_WA_TEMPLATES;
+      const byId = function (id) { const d = defs.find(function (x) { return x.id === id; }); return d ? JSON.parse(JSON.stringify(d)) : null; };
+      let out = list.map(function (t) {
+        if (!tplIsLegacyDefault(kind, t)) return t;
+        const target = byId(LEGACY_TEMPLATES_V1[kind][t.id].to);
+        return target || t;
+      });
+      // Evita duplicar um id que a troca acima já trouxe
+      const seen = {};
+      out = out.filter(function (t) { if (seen[t.id]) return false; seen[t.id] = true; return true; });
+      defs.forEach(function (d, i) {
+        if (seen[d.id]) return;
+        let pos = out.length;
+        for (let j = i - 1; j >= 0; j--) {
+          const k = out.findIndex(function (t) { return t.id === defs[j].id; });
+          if (k >= 0) { pos = k + 1; break; }
+        }
+        out.splice(pos, 0, JSON.parse(JSON.stringify(d)));
+        seen[d.id] = true;
+      });
+      return out;
+    }
 
     const WEBHOOK_EVENTS = [
       { id: "account.created", label: "Conta criada" },
@@ -2662,6 +2737,7 @@
         links: { scheduling: "", proposal: "" },
         waTemplates: JSON.parse(JSON.stringify(DEFAULT_WA_TEMPLATES)),
         emailTemplates: JSON.parse(JSON.stringify(DEFAULT_EMAIL_TEMPLATES)),
+        tplVersion: TPL_VERSION,
         webhook: { url: "", events: WEBHOOK_EVENTS.map(function (e) { return e.id; }) }
       };
     }
@@ -2709,6 +2785,10 @@
       const seller = (state.sellerName || "").trim();
       const prov = String(acc.current_provider || "").trim();
       const lives = Number(acc.active_card_users) || 0;
+      const ticket = Number(acc.avg_monthly_ticket) || 0;
+      const tpv = lives * ticket;
+      const patSim = acc.id && state.patSims ? state.patSims[acc.id] : null;
+      const money = function (v) { return v > 0 ? Math.round(v).toLocaleString("pt-BR") : ""; };
       const links = integ().links || {};
       let t = String(text || "");
       if (!seller) t = t.replace(/Aqui é \{vendedor\}, da Swile\./g, "Aqui é da Swile.").replace(/Sou \{vendedor\}, da Swile\./g, "Sou da Swile.");
@@ -2717,15 +2797,26 @@
         "{empresa}": String(acc.company_name || "").trim(),
         "{operadora}": prov && prov.toLowerCase() !== "a validar" ? prov : "o cartão atual",
         "{vidas}": lives ? lives.toLocaleString("pt-BR") : "",
+        "{ticket}": money(ticket),
+        "{tpv_mensal}": money(tpv),
+        "{pat_anual}": patSim ? money(Number(patSim.pat)) : "",
+        "{polo}": String(acc.polo_rj || "").trim(),
         "{bairro}": String(acc.neighborhood || "").trim(),
         "{vendedor}": seller ? sellerSignature() : "",
         "{link_agenda}": (links.scheduling || "").trim() || "(me diga o melhor dia e horário)",
         "{link_proposta}": (links.proposal || "").trim() || "(proposta em anexo)"
       };
+      const VAR_RE = /\{(nome|empresa|operadora|vidas|ticket|tpv_mensal|pat_anual|polo|bairro|vendedor|link_agenda|link_proposta)\}/g;
+      // Trechos opcionais [[...]]: saem inteiros se alguma variável de dentro estiver vazia
+      t = t.replace(/\[\[([\s\S]*?)\]\]/g, function (_, seg) {
+        const names = seg.match(VAR_RE) || [];
+        return names.some(function (n) { return !vals[n]; }) ? "" : seg;
+      });
       return t
-        .replace(/\{(nome|empresa|operadora|vidas|bairro|vendedor|link_agenda|link_proposta)\}/g, function (m) { return vals[m] === undefined ? m : vals[m]; })
+        .replace(VAR_RE, function (m) { return vals[m] === undefined ? m : vals[m]; })
         .replace(/cerca de\s+pessoas/g, "o time")
         .replace(/[ \t]+([,.!?])/g, "$1")
+        .replace(/(^|\n)[ \t]*,[ \t]*(\S)/g, function (m, a, c) { return a + c.toUpperCase(); })
         .replace(/[ \t]{2,}/g, " ")
         .replace(/(^|\n)[ \t]+/g, "$1")
         .trim();
@@ -2751,10 +2842,10 @@
       return "Olá" + (fn ? ", " + fn : "") + "! Tudo bem? " + (me ? "Aqui é " + me + ", da Swile. " : "") +
         "Vi a operação da " + comp + " aqui no Rio" + (lives ? " (~" + lives + " vidas)" : "") + " e notei que hoje vocês operam com " + prov + ". " +
         (prov === "Caju"
-          ? "Com a compra da Caju pelo iFood anunciada em 20/10/2026, temos apoiado vários RHs de médio porte no RJ a migrarem para a Swile para garantir independência global (B-Corp), bandeira Mastercard (+4M locais), Apple/Google Pay (X-Pay) e Swile Shop (+1.000 lojas) a Taxa Zero. "
-          : "Com a interoperabilidade total do PAT agora em novembro de 2026, temos ajudado empresas do porte da " + comp + " no RJ a unificar até 8 carteiras (VA, VR, Mobilidade, Saúde, Home Office e Premiação) em 1 único cartão Mastercard da Swile com Apple/Google Pay nativo e Taxa Zero. ") +
+          ? "Com a compra da Caju anunciada pelo iFood em 20/10/2026, ainda pendente de CADE e Banco Central, vale ter um plano B: a Swile é independente, certificada B Corp, com cartão Mastercard, Apple/Google Pay (X-Pay) e taxa zero para a empresa. "
+          : "Com a interoperabilidade entre bandeiras prevista para novembro de 2026, dá para unificar VA, VR, Mobilidade, Home Office e Premiação em 1 único cartão Mastercard da Swile, com Apple/Google Pay e taxa zero para a empresa. ") +
         (trig ? ("Nosso foco específico para vocês: " + trig + " ") : "") +
-        "Topa um papo de 15 min nesta semana para compararmos?";
+        "Seria uma má ideia compararmos em 15 minutos nesta semana?";
     }
 
     function buildEmail(acc, tpl) {
@@ -3514,6 +3605,32 @@
     const AI_DEFAULT_LABEL = "Agente Swile · Comercial RJ";
     // Padrões antigos salvos no navegador passam a mostrar o nome novo
     const AI_LEGACY_LABELS = ["gemini-2.5-flash", "M14 IA · Motor Comercial RJ", "Swile IA · Motor Comercial RJ", "M14 IA", "Swile IA"];
+    // Cérebro do Agente Swile: vai como systemInstruction em todas as chamadas de IA.
+    // Só fatos conferidos; o que não foi confirmado fica de fora ou vai com ressalva.
+    const AGENT_SYSTEM_INSTRUCTION = [
+      "Você é o Agente Swile: diretor de grandes contas, estrategista de RevOps e SDR/closer sênior da Swile no Rio de Janeiro, trabalhando lado a lado com o executivo de vendas.",
+      "Meta do executivo: contas com mais de 200 vidas no RJ, R$ 600 mil/mês e R$ 1,5 milhão no trimestre. TPV mensal = vidas × benefício médio por pessoa.",
+      "",
+      "REGRA ZERO (inegociável): use só os dados da conta e do CRM que vierem na mensagem. Nunca invente números, nomes, cases, clientes, depoimentos ou resultados. Se faltar um dado (vidas, benefício, IRPJ), não estime: diga o que falta ou escreva sem o número. Não afirme que 'várias empresas' ou 'empresas do RJ' fizeram algo.",
+      "",
+      "1. VISÃO DE DIRETOR (MEDDPICC):",
+      "- Fale com números da conta quando existirem: TPV mensal, % da meta de R$ 600 mil, TPV anual.",
+      "- PAT: o incentivo fiscal vale só para Lucro Real. Dedução no IRPJ de 15% da despesa com alimentação do PAT, limitada a 4% do IRPJ devido (Lei 6.321/76; RIR/2018 arts. 641-642; Solução de Consulta COSIT 3/2026). Sem IRPJ devido informado, não dê valor em reais.",
+      "- Champion: RH/DHO (menos retrabalho do DP, cartão que funciona). Economic buyer: CFO/financeiro (custo total, caixa, conformidade com o PAT). Paper process: compras e jurídico (prazo de entrega dos cartões, transição sem parar a operação).",
+      "",
+      "2. NEGOCIAÇÃO (Chris Voss) E QUANDO ATACAR OU RECUAR:",
+      "- Auditoria de acusação: reconheça o receio do cliente na primeira frase.",
+      "- Perguntas orientadas ao 'não' ('Seria uma má ideia...', 'Você seria contra...') no lugar de pedir reunião.",
+      "- Perguntas calibradas ('O que precisaria acontecer...', 'Como...') quando houver objeção de preço ou prazo.",
+      "- Atacar: dor com atendimento ou segunda via nas operadoras tradicionais; interoperabilidade entre bandeiras de benefício prevista para novembro de 2026 (Decreto 12.712/2025), que tira da rede de aceitação o motivo para ficar preso a uma operadora; Caju: o iFood anunciou a compra em 20/10/2026, operação ainda pendente de aprovação do CADE e do Banco Central (trate como incerteza de transição, sem afirmar fatos que não ocorreram).",
+      "- Recuar (Cavalo de Troia / land & expand): se há multa ou contrato de VR/VA recém-renovado, não bata de frente. Valide a decisão, proponha começar só com Premiação, Incentivo ou Natal no cartão Swile Mastercard e deixe o VR/VA para 60 dias antes do vencimento. Não prometa vantagem trabalhista ou tributária da premiação: isso depende de análise jurídica do cliente.",
+      "- Fatos da Swile que pode usar: cartão Mastercard, Apple Pay e Google Pay, certificação B Corp. Não cite número de estabelecimentos, de empresas clientes ou de carteiras.",
+      "",
+      "3. ESCRITA HUMANA:",
+      "- Proibido: 'Espero que este e-mail o encontre bem', 'No cenário dinâmico atual', 'Venho por meio deste', 'solução inovadora/disruptiva', 'sinergia', 'alavancar', 'divisor de águas', 'mergulhar de cabeça'.",
+      "- Tom de executivo sênior: calmo, direto, frases curtas, sem exclamação exagerada. WhatsApp com no máximo 3 a 4 blocos curtos. Estrutura 4T (verdade, reflexão, contraste, convite sem pressão).",
+      "- Responda em português do Brasil."
+    ].join("\n");
     const GEMINI_PRIMARY_MODEL = "gemini-2.5-flash";
     /** Nome exibido no campo Modelo (o antigo padrão "gemini-2.5-flash" vira o nome da marca). */
     function geminiModel() {
@@ -3596,7 +3713,7 @@
       if (!key) return { ok: false, error: "sem chave" };
       const models = [resolveInternalModelId(geminiModel())];
       if (models[0] !== GEMINI_FALLBACK_MODEL) models.push(GEMINI_FALLBACK_MODEL);
-      const body = JSON.stringify({ contents: [{ role: "user", parts: parts }], generationConfig: Object.assign({ temperature: 0.3 }, opts.json ? { responseMimeType: "application/json" } : {}) });
+      const body = JSON.stringify({ systemInstruction: { parts: [{ text: AGENT_SYSTEM_INSTRUCTION }] }, contents: [{ role: "user", parts: parts }], generationConfig: Object.assign({ temperature: 0.3 }, opts.json ? { responseMimeType: "application/json" } : {}) });
       if (body.length > GEMINI_INLINE_MAX_BYTES) return { ok: false, error: "conteúdo acima do limite de 20 MB por requisição" };
       let lastErr = "";
       for (let i = 0; i < models.length; i++) {
@@ -6100,14 +6217,16 @@
     function renderAccountComposer(acc) {
       const box = document.getElementById("accComposer");
       if (!box) return;
-      if (composerState.accountId !== acc.id) composerState = { accountId: acc.id, kind: "wa", tplId: null };
+      if (composerState.accountId !== acc.id) composerState = { accountId: acc.id, kind: "wa", tplId: null, custom: null };
       const kind = composerState.kind;
+      const custom = composerState.custom && composerState.custom.kind === kind ? composerState.custom : null;
       const list = kind === "email" ? integ().emailTemplates : integ().waTemplates;
-      let tpl = list.find(function (t) { return t.id === composerState.tplId; });
-      if (!tpl && composerState.tplId !== "chave") tpl = suggestedTemplate(kind, acc);
-      const isChave = composerState.tplId === "chave";
-      const text = isChave ? buildPitch(acc) : fillVars(kind === "email" ? tpl.body : tpl.text, acc);
-      const subject = kind === "email" ? (isChave ? "Swile × " + acc.company_name : fillVars(tpl.subject, acc)) : "";
+      let tpl = list.find(function (t) { return t.id === (custom ? custom.tplId : composerState.tplId); });
+      if (custom && !tpl) tpl = null;
+      if (!tpl && !custom && composerState.tplId !== "chave") tpl = suggestedTemplate(kind, acc);
+      const isChave = !custom && composerState.tplId === "chave";
+      const text = custom ? custom.text : isChave ? buildPitch(acc) : fillVars(kind === "email" ? tpl.body : tpl.text, acc);
+      const subject = kind === "email" ? (custom && custom.subject ? custom.subject : isChave ? "Swile × " + acc.company_name : fillVars(tpl.subject, acc)) : "";
       const adv = !isChave && tpl && tpl.advance_to ? autoAdvance(acc.status, tpl.advance_to) : null;
       const tab = function (k, label) {
         return '<button type="button" onclick="setComposer(\'kind\', \'' + k + '\')" class="px-2.5 h-7 rounded-md text-[11px] font-medium ' + (kind === k ? 'text-white' : '') + '" style="' + (kind === k ? 'background:var(--surface-3)' : 'color:var(--muted)') + '">' + label + '</button>';
@@ -6121,10 +6240,13 @@
         '<select id="composerTpl" class="input h-8" onchange="setComposer(\'tplId\', this.value)">' +
           list.map(function (t) { return '<option value="' + esc(t.id) + '"' + (!isChave && tpl && t.id === tpl.id ? ' selected' : '') + '>' + esc(t.name) + '</option>'; }).join("") +
           '<option value="chave"' + (isChave ? ' selected' : '') + '>Pitch CHAVE personalizado</option>' +
+          (custom && !tpl ? '<option value="custom" selected>Sob medida · Agente Swile</option>' : '') +
         '</select>' +
         (kind === "email" ? '<label for="composerSubject" class="sr-only">Assunto</label><input id="composerSubject" class="input h-8" value="' + esc(subject) + '" />' : '') +
         '<label for="composerText" class="sr-only">Texto</label>' +
         '<textarea id="composerText" rows="6" class="input text-[12px] leading-relaxed">' + esc(text) + '</textarea>' +
+        (custom ? '<p id="composerCustomNote" class="text-[11px]" style="color:#c4b5fd">' + esc(custom.note) + '</p>' : '') +
+        '<button type="button" id="btnTailorMsg" class="btn btn-sm w-full justify-center whitespace-normal text-center leading-snug" style="height:auto;min-height:2rem;white-space:normal;text-align:center;line-height:1.3;padding-top:.35rem;padding-bottom:.35rem;border-color:rgba(139,92,246,.45)" onclick="generateTailoredMessage()">⚡ Gerar Mensagem Sob Medida com Agente Swile</button>' +
         (adv ? '<p class="text-[11px]" style="color:#c4b5fd">Ao enviar, a conta vai para ' + esc(adv) + '.</p>' : '') +
         '<div class="flex flex-wrap gap-1.5">' +
           (kind === "wa"
@@ -6136,17 +6258,106 @@
     }
 
     function setComposer(field, value) {
+      if (field === "tplId" && value === "custom") return;
       composerState[field] = value;
+      composerState.custom = null;
       if (field === "kind") composerState.tplId = null;
       const acc = findAccount(composerState.accountId);
       if (acc) renderAccountComposer(acc);
+    }
+
+    /** Contexto real da conta para a mensagem sob medida. Só dados do CRM, nada estimado. */
+    function tailorContext(acc) {
+      const opp = openOppOf(acc.id);
+      const w = opp ? Number(opp.stage_weight) : null;
+      const inter = interactionsOf(acc.id);
+      const ta = document.getElementById("copilotTranscript");
+      let transcript = ta && document.getElementById("accFormId").value === acc.id ? String(ta.value || "").trim() : "";
+      if (!transcript) {
+        const withT = inter.find(function (i) { return /Transcrição:/.test(i.text || ""); });
+        if (withT) transcript = String(withT.text).split("Transcrição:").slice(1).join("Transcrição:").trim();
+      }
+      const lives = Number(acc.active_card_users) || 0;
+      const ticket = Number(acc.avg_monthly_ticket) || 0;
+      const pat = state.patSims && state.patSims[acc.id] ? Number(state.patSims[acc.id].pat) : null;
+      return {
+        empresa: acc.company_name || "",
+        decisor_primeiro_nome: firstName(acc.decision_maker_name) || null,
+        contato_registrado: acc.decision_maker_name || null,
+        operadora_atual: acc.current_provider && acc.current_provider !== "A validar" ? acc.current_provider : null,
+        vidas: lives || null,
+        beneficio_medio_mes: ticket || null,
+        tpv_mensal: lives && ticket ? lives * ticket : null,
+        pct_meta_600k: lives && ticket ? Math.round(lives * ticket / CASE_TARGET_MONTH * 1000) / 10 : null,
+        incentivo_pat_anual: pat || null,
+        polo: acc.polo_rj || null,
+        status_conta: acc.status || null,
+        fase_salesforce: w !== null ? SF_STAGE_NAMES[w] : "sem oportunidade aberta",
+        interesse: acc.interest_level || null,
+        gatilho_registrado: acc.swile_trigger_2026 || null,
+        reclamacoes_registradas: acc.user_complaints || null,
+        notas_oportunidade: opp && opp.notes ? String(opp.notes).slice(-800) : null,
+        ultimo_toque: inter[0] ? { tipo: inter[0].type, quando: String(inter[0].at).slice(0, 10), texto: String(inter[0].text || "").slice(0, 400) } : null,
+        historico_recente: inter.slice(1, 5).map(function (i) { return (i.type || "") + ": " + String(i.text || "").slice(0, 200); }),
+        transcricao_call: transcript ? transcript.slice(-3000) : null,
+        vendedor: (state.sellerName || "").trim() || null
+      };
+    }
+
+    /** Sem chave: escolhe o modelo pelo contexto (multa/contrato → Premiação, Caju, fase) e preenche. */
+    function tailorLocal(acc, kind, ctx) {
+      const list = kind === "email" ? integ().emailTemplates : integ().waTemplates;
+      const pick = function (id) { return list.find(function (t) { return t.id === id; }); };
+      const blob = [ctx.notas_oportunidade, ctx.ultimo_toque && ctx.ultimo_toque.texto, ctx.transcricao_call, ctx.historico_recente.join(" ")].join(" ").toLowerCase();
+      let tpl = null, why = "";
+      if (kind === "wa" && /multa|contrato vigente|renov|fidelidade|vencimento/.test(blob)) { tpl = pick("w-d5-premiacao"); why = "o histórico fala de contrato ou multa, então a entrada é por Premiação"; }
+      else if (kind === "wa" && ctx.operadora_atual === "Caju" && !(STATUS_RANK[acc.status] >= 4)) { tpl = pick("w-caju"); why = "a conta usa Caju"; }
+      else if (/cfo|financeir|imposto|irpj|lucro real/.test(blob + " " + String(ctx.contato_registrado || "").toLowerCase())) { tpl = pick(kind === "email" ? "e-cfo-pat" : "w-d2"); why = "a conversa envolve o financeiro"; }
+      if (!tpl) { tpl = suggestedTemplate(kind, acc); why = "modelo da etapa " + (acc.status || "atual"); }
+      return {
+        tplId: tpl.id,
+        text: fillVars(kind === "email" ? tpl.body : tpl.text, acc),
+        subject: kind === "email" ? fillVars(tpl.subject, acc) : "",
+        note: "Motor local (sem chave): \"" + tpl.name + "\", porque " + why + ". Revise antes de enviar."
+      };
+    }
+
+    async function generateTailoredMessage() {
+      const acc = findAccount(composerState.accountId);
+      if (!acc) return;
+      const kind = composerState.kind;
+      const ctx = tailorContext(acc);
+      if (!geminiKey()) {
+        composerState.custom = Object.assign({ kind: kind }, tailorLocal(acc, kind, ctx));
+        renderAccountComposer(acc);
+        return;
+      }
+      const btn = document.getElementById("btnTailorMsg");
+      if (btn) { btn.disabled = true; btn.textContent = "Agente Swile escrevendo…"; }
+      const prompt = "Escreva " + (kind === "email" ? "um e-mail (assunto e corpo)" : "uma mensagem de WhatsApp de no máximo 4 blocos curtos") +
+        " do executivo para o decisor desta conta, com o objetivo de avançar para o próximo passo da fase atual (reunião, proposta ou assinatura). " +
+        "Use auditoria de acusação ou pergunta calibrada conforme o momento, e termine com uma pergunta orientada ao 'não'. " +
+        "Use apenas os dados abaixo. Se um campo for null, não cite e não estime esse dado. Não invente cases, clientes ou números. " +
+        "Se houver nome do vendedor, assine com ele; se não, não assine com nome. Se não houver nome do decisor, não use nome genérico. " +
+        "Responda em JSON: {\"subject\": \"" + (kind === "email" ? "assunto curto" : "") + "\", \"text\": \"mensagem\", \"why\": \"1 frase: qual técnica usou e por quê\"}.\n\nDados da conta:\n" + JSON.stringify(ctx);
+      const r = await geminiRequest([{ text: prompt }], { json: true, timeout: 40000 });
+      if (r.ok && r.data && r.data.text) {
+        composerState.custom = { kind: kind, text: String(r.data.text).trim(), subject: kind === "email" ? String(r.data.subject || "").trim() : "", note: AI_BRAND + ": " + String(r.data.why || "mensagem sob medida").slice(0, 220) + " Revise antes de enviar." };
+      } else {
+        const loc = tailorLocal(acc, kind, ctx);
+        loc.note = AI_BRAND + " indisponível (" + (r.error || "falha") + "). " + loc.note;
+        composerState.custom = Object.assign({ kind: kind }, loc);
+      }
+      renderAccountComposer(acc);
     }
 
     function composerSend() {
       const acc = findAccount(composerState.accountId);
       if (!acc) return;
       const list = composerState.kind === "email" ? integ().emailTemplates : integ().waTemplates;
-      const tpl = composerState.tplId === "chave" ? null : (list.find(function (t) { return t.id === composerState.tplId; }) || suggestedTemplate(composerState.kind, acc));
+      const custom = composerState.custom && composerState.custom.kind === composerState.kind ? composerState.custom : null;
+      const tpl = custom ? (list.find(function (t) { return t.id === custom.tplId; }) || null)
+        : composerState.tplId === "chave" ? null : (list.find(function (t) { return t.id === composerState.tplId; }) || suggestedTemplate(composerState.kind, acc));
       const text = document.getElementById("composerText").value;
       if (composerState.kind === "email") sendEmail(acc, document.getElementById("composerSubject").value, text, tpl);
       else sendWhatsApp(acc, text, tpl);
@@ -6630,7 +6841,87 @@
       }[w] || "definir o próximo passo com data";
     }
 
+    // INTELIGÊNCIA DE DIRETORIA: só dados do CRM. Sem dado suficiente, mostra "sem dados" (nada estimado).
+    function directorIntel() {
+      const m = computeCaseMetrics();
+      const sqls = state.opportunities.filter(function (o) { const w = Number(o.stage_weight); return w >= 2 && w < STAGE_WON; });
+      const tpvs = sqls.map(oppTpv).filter(function (v) { return v > 0; });
+      const avgTpv = tpvs.length ? tpvs.reduce(function (a, b) { return a + b; }, 0) / tpvs.length : null;
+      const cycle = m.avgCycle === null ? null : Math.max(1, m.avgCycle);
+      const velocity = sqls.length && avgTpv !== null && m.winRate !== null && cycle !== null ? sqls.length * avgTpv * m.winRate / cycle : null;
+      const missing = [];
+      if (!sqls.length) missing.push("oportunidades de Qualificando em diante");
+      if (sqls.length && avgTpv === null) missing.push("vidas e benefício médio nas contas em negociação");
+      if (m.winRate === null) missing.push("ao menos 1 negócio ganho ou perdido");
+      if (cycle === null) missing.push("ao menos 1 ganho com data de criação e de assinatura");
+      // Conversão entre fases: quantas oportunidades chegaram à fase seguinte (fase atual, ganho ou fase onde foi perdida)
+      const reached = function (w) {
+        return state.opportunities.filter(function (o) { const st = Number(o.stage_weight); return st >= w || (st === 0 && Number(o.lost_stage) >= w); }).length;
+      };
+      const conv = [1, 2, 3, 4, 5].map(function (w) {
+        const from = reached(w), to = reached(w + 1);
+        return { from: w, to: w + 1, base: from, passed: to, rate: from ? to / from : null };
+      });
+      const measured = conv.filter(function (c) { return c.base >= 2 && c.rate !== null; });
+      const bottleneck = measured.length ? measured.slice().sort(function (a, b) { return a.rate - b.rate || b.base - a.base; })[0] : null;
+      // Matriz TPV × Urgência × Facilidade (1 a 3 cada fator)
+      const top = state.accounts.filter(function (a) { return a.status !== "Fechado ✅" && a.status !== "Perdido ❌" && computeMonthlyTpv(a) > 0; }).map(function (a) {
+        const opp = openOppOf(a.id);
+        const w = opp ? Number(opp.stage_weight) : 0;
+        const pend = pendingFollowupsOf(a.id);
+        const due = pend.filter(function (f) { return daysFromToday(f.due_date) <= 0; }).length;
+        const urg = 1 + (a.interest_level === "Quente" ? 1 : 0) + (due ? 1 : 0);
+        const fac = w >= 4 ? 3 : w >= 2 ? 2 : 1;
+        const tpv = computeMonthlyTpv(a);
+        const why = [];
+        if (a.interest_level === "Quente") why.push("lead quente");
+        if (due) why.push(due + " ação vencendo");
+        why.push(w ? SF_STAGE_NAMES[w] : "sem oportunidade aberta");
+        return { acc: a, tpv: tpv, urg: urg, fac: fac, score: tpv * urg * fac, why: why.join(", "), pctGoal: tpv / CASE_TARGET_MONTH };
+      }).sort(function (a, b) { return b.score - a.score; }).slice(0, 3);
+      return {
+        sqlCount: sqls.length, avgTpv: avgTpv, winRate: m.winRate, cycle: m.avgCycle,
+        velocityDay: velocity, velocityMonth: velocity === null ? null : velocity * 30, missing: missing,
+        wonMonth: m.wonMonthTpv, gapMonth: Math.max(0, CASE_TARGET_MONTH - m.wonMonthTpv),
+        conv: conv, bottleneck: bottleneck, top: top
+      };
+    }
+
+    function directorPoints(d) {
+      const pts = [];
+      pts.push(d.velocityDay === null
+        ? "Velocidade do pipeline: sem dados. Faltam: " + d.missing.join("; ") + "."
+        : "Velocidade do pipeline: " + fmtK(d.velocityDay) + "/dia (≈ " + fmtK(d.velocityMonth) + "/mês) = " + d.sqlCount + " SQLs × " + fmtK(d.avgTpv) + " × " + pct0(d.winRate) + " ÷ " + Math.round(d.cycle) + " dias.");
+      pts.push(d.gapMonth > 0
+        ? "Faltam " + fmtK(d.gapMonth) + " para os R$ 600 mil do mês (assinado: " + fmtK(d.wonMonth) + ")." + (d.velocityMonth !== null ? (d.velocityMonth >= d.gapMonth ? " No ritmo atual, o funil cobre o gap." : " No ritmo atual, o funil não cobre o gap: abasteça Qualificando e acelere Negociando.") : "")
+        : "Meta de R$ 600 mil do mês batida (" + fmtK(d.wonMonth) + ").");
+      if (d.bottleneck) pts.push("Gargalo: de " + SF_STAGE_NAMES[d.bottleneck.from] + " para " + (SF_STAGE_NAMES[d.bottleneck.to] || "Contrato assinado") + " passam " + pct0(d.bottleneck.rate) + " (" + d.bottleneck.passed + " de " + d.bottleneck.base + "). " + stageAdvice(d.bottleneck.from).replace(/^./, function (c) { return c.toUpperCase(); }) + ".");
+      else pts.push("Gargalo entre fases: sem dados (precisa de pelo menos 2 oportunidades numa fase).");
+      if (d.top.length) pts.push("Atacar hoje (TPV × urgência × facilidade): " + d.top.map(function (t) { return t.acc.company_name + " (" + fmtK(t.tpv) + "/mês, " + t.why + ")"; }).join("; ") + ".");
+      return pts;
+    }
+
+    function directorFacts(d) {
+      return {
+        velocidade_dia: d.velocityDay, velocidade_mes: d.velocityMonth, sqls: d.sqlCount, tpv_medio: d.avgTpv, win_rate: d.winRate, ciclo_dias: d.cycle,
+        faltam_para_600k: d.gapMonth, gargalo: d.bottleneck ? { de: SF_STAGE_NAMES[d.bottleneck.from], para: SF_STAGE_NAMES[d.bottleneck.to] || "Contrato assinado", taxa: d.bottleneck.rate } : null,
+        top3: d.top.map(function (t) { return { conta: t.acc.company_name, tpv: t.tpv, urgencia: t.urg, facilidade: t.fac, motivo: t.why }; })
+      };
+    }
+
     function briefLocal(view) {
+      const r = briefLocalBase(view);
+      const d = directorIntel();
+      const dp = directorPoints(d);
+      // Cockpit e Pipeline: leitura completa; demais telas: velocidade/gap + as 3 contas
+      const add = view === "cockpit" || view === "pipeline" ? dp : [dp[1]].concat(d.top.length ? [dp[dp.length - 1]] : []);
+      r.points = (r.points || []).concat(add.map(function (p) { return "Diretoria · " + p; }));
+      r.facts = Object.assign({}, r.facts, { diretoria: directorFacts(d) });
+      if (view === "pipeline") r.head = String(r.head || "").trim() + " " + (d.velocityDay === null ? "Velocidade do pipeline: sem dados." : "Velocidade do pipeline: " + fmtK(d.velocityDay) + "/dia.");
+      return r;
+    }
+
+    function briefLocalBase(view) {
       const m = computeCaseMetrics();
       const share = monthElapsedShare();
       if (view === "cockpit") {
@@ -6777,7 +7068,7 @@
       const el = document.getElementById("brief-" + view);
       if (el) { const s = el.querySelector("span.text-\\[10\\.5px\\]"); if (s) s.textContent = "consultando Agente Swile…"; }
       const prompt = "Você é um diretor comercial B2B de benefícios corporativos (Swile, Rio de Janeiro). Tom direto e sóbrio, sem emojis. " +
-        BRIEF_PROMPTS[view] + " Use só os dados abaixo, sem inventar números ou nomes. Responda em JSON: {\"head\": \"1 a 2 frases\", \"points\": [\"até 5 tópicos curtos e práticos\"]}.\n\nDados:\n" + JSON.stringify(local.facts);
+        BRIEF_PROMPTS[view] + " Inclua a leitura de diretoria do campo 'diretoria' (velocidade do pipeline, quanto falta para R$ 600 mil no mês, gargalo entre fases e as 3 contas a atacar); valor null é 'sem dados'. Use só os dados abaixo, sem inventar números ou nomes. Responda em JSON: {\"head\": \"1 a 2 frases\", \"points\": [\"até 5 tópicos curtos e práticos\"]}.\n\nDados:\n" + JSON.stringify(local.facts);
       const r = await geminiRequest([{ text: prompt }], { json: true });
       if (!r.ok || !r.data || !r.data.head) { showToast("O Agente Swile não respondeu (" + (r.error || "formato inválido") + "). Mantive o motor local.", "ℹ️"); renderBriefing(view); return; }
       geminiCacheSet(key, { head: String(r.data.head), points: (Array.isArray(r.data.points) ? r.data.points : []).slice(0, 5).map(String) });
@@ -6939,7 +7230,8 @@
         '</div></details>';
       };
       document.getElementById("waTemplatesBox").innerHTML = cfg.waTemplates.map(function (t, i) { return editor("wa", t, i); }).join("") +
-        '<button type="button" class="text-[11px] underline underline-offset-2" style="color:var(--faint)" onclick="resetTemplates(\'wa\')">Restaurar modelos padrão</button>';
+        '<div class="flex flex-wrap items-center gap-3"><button type="button" id="btnRestoreElite" class="btn btn-sm" onclick="restoreEliteTemplates()">🔄 Restaurar Templates de Elite do Agente Swile</button>' +
+        '<button type="button" class="text-[11px] underline underline-offset-2" style="color:var(--faint)" onclick="resetTemplates(\'wa\')">Restaurar modelos padrão</button></div>';
       document.getElementById("emailTemplatesBox").innerHTML = cfg.emailTemplates.map(function (t, i) { return editor("email", t, i); }).join("") +
         '<button type="button" class="text-[11px] underline underline-offset-2" style="color:var(--faint)" onclick="resetTemplates(\'email\')">Restaurar modelos padrão</button>';
     }
@@ -6970,6 +7262,23 @@
       list.splice(i, 1);
       persistState();
       renderTemplateEditors();
+    }
+
+    /** Volta os modelos padrão (WhatsApp e e-mail) ao texto de elite. Modelos que você criou continuam na lista. */
+    async function restoreEliteTemplates() {
+      if (!(await uiConfirm("Os modelos padrão de WhatsApp e e-mail voltam ao texto do Agente Swile. Modelos que você criou ou renomeou continuam na lista.", { title: "Restaurar templates de elite?", okLabel: "Restaurar" }))) return;
+      const restore = function (kind) {
+        const defs = kind === "email" ? DEFAULT_EMAIL_TEMPLATES : DEFAULT_WA_TEMPLATES;
+        const list = kind === "email" ? integ().emailTemplates : integ().waTemplates;
+        const out = list.map(function (t) { const d = defs.find(function (x) { return x.id === t.id; }); return d ? JSON.parse(JSON.stringify(d)) : t; });
+        return migrateTemplateList(kind, out);
+      };
+      integ().waTemplates = restore("wa");
+      integ().emailTemplates = restore("email");
+      integ().tplVersion = TPL_VERSION;
+      persistState();
+      renderTemplateEditors();
+      showToast("Templates de elite do Agente Swile restaurados.", "🔄");
     }
 
     async function resetTemplates(kind) {
@@ -7186,6 +7495,8 @@
       }
       renderCaseSimulator();
 
+      renderDirectorIntel();
+
       // Questão 5 · tabela por fase
       const tb = document.getElementById("caseFunnelTable");
       let html = "";
@@ -7221,6 +7532,36 @@
         tile("Win rate", "28%", pct(m.winRate), m.winRate !== null && m.winRate >= 0.28) +
         tile("Ticket médio (GMV/mês)", "~R$ 210 mil", m.avgTicket === null ? null : fmtK(m.avgTicket), m.avgTicket !== null && m.avgTicket >= 210000) +
         tile("Positivação", "3 a 4 contas/mês", m.wonMonthCount + " assinada(s) no mês", m.wonMonthCount >= 3);
+    }
+
+    function renderDirectorIntel() {
+      const tiles = document.getElementById("directorTiles");
+      if (!tiles) return;
+      const d = directorIntel();
+      const tile = function (label, value, sub, tone) {
+        return '<div class="rounded-xl border p-3 text-xs" style="border-color:var(--line);background:var(--surface-2)"><p class="eyebrow">' + esc(label) + '</p>' +
+          '<p class="mt-1 text-[15px] font-semibold num" style="color:' + (tone || "#fff") + '">' + esc(value) + '</p><p class="mt-0.5" style="color:var(--muted)">' + esc(sub) + '</p></div>';
+      };
+      tiles.innerHTML =
+        tile("Velocidade do pipeline", d.velocityDay === null ? "sem dados" : fmtK(d.velocityDay) + "/dia",
+          d.velocityDay === null ? "Faltam: " + d.missing.join("; ") : d.sqlCount + " SQLs × " + fmtK(d.avgTpv) + " × " + pct0(d.winRate) + " ÷ " + Math.round(d.cycle) + " dias ≈ " + fmtK(d.velocityMonth) + "/mês",
+          d.velocityDay === null ? "var(--faint)" : null) +
+        tile("Gap para R$ 600 mil", d.gapMonth > 0 ? fmtK(d.gapMonth) : "meta batida", "Assinado no mês: " + fmtK(d.wonMonth), d.gapMonth > 0 ? "#fcd34d" : "#6ee7b7") +
+        tile("Gargalo entre fases", d.bottleneck ? pct0(d.bottleneck.rate) : "sem dados",
+          d.bottleneck ? SF_STAGE_NAMES[d.bottleneck.from] + " → " + (SF_STAGE_NAMES[d.bottleneck.to] || "Contrato assinado") + " (" + d.bottleneck.passed + " de " + d.bottleneck.base + ")" : "precisa de 2+ oportunidades numa fase",
+          d.bottleneck ? "#fca5a5" : "var(--faint)") +
+        tile("Contas para atacar hoje", String(d.top.length), d.top.length ? "matriz TPV × urgência × facilidade" : "cadastre vidas e benefício médio nas contas", null);
+      const convRows = d.conv.map(function (c) {
+        return '<li class="flex justify-between gap-2"><span>' + esc(SF_STAGE_NAMES[c.from]) + ' → ' + esc(SF_STAGE_NAMES[c.to] || "Contrato assinado") + '</span><span class="num text-white">' + (c.rate === null ? "—" : pct0(c.rate) + ' <span style="color:var(--faint)">(' + c.passed + '/' + c.base + ')</span>') + '</span></li>';
+      }).join("");
+      const topRows = d.top.length ? d.top.map(function (t, i) {
+        return '<li><span class="text-white">' + (i + 1) + '. ' + esc(t.acc.company_name) + '</span> <span class="num">' + esc(fmtK(t.tpv)) + '/mês (' + esc(pct0(t.pctGoal)) + ' da meta)</span><br><span style="color:var(--faint)">Urgência ' + t.urg + '/3 · Facilidade ' + t.fac + '/3 · ' + esc(t.why) + '</span></li>';
+      }).join("") : '<li style="color:var(--faint)">Sem contas abertas com TPV calculável.</li>';
+      document.getElementById("directorDetail").innerHTML =
+        '<div><p class="eyebrow mb-1.5">Conversão entre as fases (Salesforce)</p><ul class="space-y-1" style="color:var(--muted)">' + convRows + '</ul>' +
+          '<p class="mt-1.5 text-[11px]" style="color:var(--faint)">Conta quem chegou à fase seguinte: fase atual, ganho ou a fase onde foi perdida. Perdas antigas sem fase registrada não entram.</p></div>' +
+        '<div><p class="eyebrow mb-1.5">Top 3: TPV × urgência × facilidade</p><ul id="directorTop3" class="space-y-1.5" style="color:var(--muted)">' + topRows + '</ul>' +
+          '<p class="mt-1.5 text-[11px]" style="color:var(--faint)">Urgência: +1 se lead quente, +1 se tem ação vencendo. Facilidade: fase no Salesforce (Negociando ou Contrato enviado = 3).</p></div>';
     }
 
     function reportKpiHtml(label, value, sub) {
@@ -7663,6 +8004,11 @@
       const opp = opps.find(function (o) { const w = Number(o.stage_weight); return w >= 1 && w < STAGE_WON; }) || opps[opps.length - 1];
       if (!opp) { showToast("Esta conta ainda não tem oportunidade. Crie uma e salve de novo.", "⚠️"); return; }
       const block = "--- " + patSummaryText();
+      // Guarda o incentivo PAT só quando há valor calculado (Lucro Real + IRPJ informado), para o {pat_anual} dos modelos
+      const patR = calculatePatSimulation(readPatInputs());
+      if (!state.patSims) state.patSims = {};
+      if (patR.patStatus === "ok" || patR.patStatus === "capped") state.patSims[acc.id] = { pat: Math.round(patR.pat), at: todayIso() };
+      else delete state.patSims[acc.id];
       opp.notes = (opp.notes ? String(opp.notes).trim() + "\n\n" : "") + block;
       persistState();
       remoteWrite("Simulação", function () { return db.update("crm_opportunities", opp.id, { notes: opp.notes }); });

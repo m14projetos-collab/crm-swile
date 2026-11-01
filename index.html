@@ -125,6 +125,11 @@
     .kcol .kcard { border-left: 3px solid var(--kc, #64748b); }
     .kcard[draggable="true"] { cursor: grab; }
     .kcard.is-dragging { opacity: .55; }
+    .kanban-board.touch-dragging { scroll-snap-type: none; }
+    .kmove { display: none; position: relative; min-width: 0; max-width: 100%; }
+    .kmove select, .lcard select { min-width: 0; max-width: 100%; }
+    @media (hover: none) { .kmove { display: block; } }
+    .lcard select { cursor: pointer; }
     .kcol.drag-over { outline: 2px dashed #a855f7; outline-offset: -2px; background: rgba(139,92,246,.07); }
     .th-sort { display: inline-flex; align-items: center; gap: 2px; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; }
     .th-sort:hover, .th-sort.is-sorted { color: var(--text); }
@@ -590,6 +595,11 @@
             </div>
           </details>
 
+          <div class="seg" role="group" aria-label="Situação das contas">
+            <button type="button" data-ascope="all" onclick="setAccountsScope('all')">Todas</button>
+            <button type="button" data-ascope="active" onclick="setAccountsScope('active')">Ativas no funil</button>
+            <button type="button" data-ascope="lost" onclick="setAccountsScope('lost')">Perdidas (<span id="accLostCount" class="num">0</span>)</button>
+          </div>
           <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
             <div class="col-span-2 lg:col-span-2">
               <label for="searchAccounts" class="sr-only">Buscar</label>
@@ -663,7 +673,10 @@
               <h2 class="text-lg font-semibold text-white tracking-tight">Pipeline</h2>
               <p id="pipelineSummary" class="text-sm" style="color:var(--muted)">Mover um card atualiza o status da conta e a probabilidade.</p>
             </div>
-            <button id="btnOpenNewOppModal" type="button" onclick="openOpportunityModal()" class="btn btn-primary btn-sm"><svg class="ico"><use href="#i-plus"/></svg>Nova oportunidade</button>
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="btnLostJump" type="button" onclick="openLostPanel()" class="btn btn-sm" title="Ver e reativar contas perdidas"><span class="dot" style="background:#f87171"></span>Perdidas <span id="lostCountBadge" class="num">0</span></button>
+              <button id="btnOpenNewOppModal" type="button" onclick="openOpportunityModal()" class="btn btn-primary btn-sm"><svg class="ico"><use href="#i-plus"/></svg>Nova oportunidade</button>
+            </div>
           </div>
           <div id="kanbanBoardContainer" class="kanban-board custom-scroll"></div>
           <div id="lostOppsContainer"></div>
@@ -1645,7 +1658,7 @@
               <div class="flex gap-2">
                 <label for="accNoteType" class="sr-only">Tipo</label>
                 <select id="accNoteType" class="input h-8 w-auto text-[12px]">
-                  <option>Nota</option><option>WhatsApp</option><option>Ligação</option><option>Reunião</option><option>E-mail</option><option>Visita</option>
+                  <option>Nota</option><option>WhatsApp</option><option>Ligação</option><option>Reunião</option><option>E-mail</option><option>Visita</option><option>Proposta enviada</option><option>Contrato enviado</option><option>Contrato assinado</option>
                 </select>
                 <label for="accNoteText" class="sr-only">Nota</label>
                 <input id="accNoteText" type="text" class="input h-8 text-[12px] flex-1 min-w-0" placeholder="Registrar nota ou interação…" onkeydown="if(event.key==='Enter'){event.preventDefault();addInteractionFromModal();}">
@@ -3231,6 +3244,10 @@
         // 1º toque tira o card de "Não contactado". "Em contato" só com conversa de verdade (reunião, atendeu, transcrição)
         if (/^(Ligação|WhatsApp|E-mail)$/.test(info.type || "") && curW === 1) target = 2;
         else if (/^(Reunião|Visita)$/.test(info.type || "") && (curW >= 1 || (STATUS_RANK[acc.status] || 0) >= 2)) target = 3;
+        // Marcos comerciais registrados na ficha: proposta → Negociando, minuta → Contrato enviado, assinatura → ganho
+        else if (info.type === "Proposta enviada") target = 4;
+        else if (info.type === "Contrato enviado") target = 5;
+        else if (info.type === "Contrato assinado") target = STAGE_WON;
       } else if (trigger === "pat") {
         target = 4;
       } else if (trigger === "transcript" || trigger === "outcome") {
@@ -5261,6 +5278,8 @@
       const prioFilter = document.getElementById("filterPriority").value;
 
       const filtered = state.accounts.filter(function (a) {
+        if (accountsScope === "lost" && !isLostAccount(a)) return false;
+        if (accountsScope === "active" && (isLostAccount(a) || a.status === "Fechado ✅")) return false;
         if (provFilter !== "ALL" && a.current_provider !== provFilter) return false;
         if (poloFilter !== "ALL" && a.polo_rj !== poloFilter) return false;
         if (prioFilter !== "ALL" && a.priority_icp !== prioFilter) return false;
@@ -5298,7 +5317,9 @@
           '<td class="text-right num whitespace-nowrap"><div class="text-white">' + formatCurrencyBRL(tpv) + '</div><div class="text-[11px]" style="color:var(--muted)">' + formatCurrencyBRL(a.avg_monthly_ticket) + '/vida</div></td>' +
           '<td>' + providerChip(a.current_provider) + '</td>' +
           '<td class="text-center">' + scoreHtml(computeCommercialScore(a)) + '</td>' +
-          '<td class="max-w-[16rem]"><p class="text-[11px] line-clamp-2" style="color:' + (noAction ? '#fcd34d' : '#aab2c3') + '">' + esc(nextAct) + '</p></td>' +
+          (isLostAccount(a)
+            ? '<td class="max-w-[16rem]" onclick="event.stopPropagation()">' + reactivateControlsHtml(a.id, "acct") + '</td>'
+            : '<td class="max-w-[16rem]"><p class="text-[11px] line-clamp-2" style="color:' + (noAction ? '#fcd34d' : '#aab2c3') + '">' + esc(nextAct) + '</p></td>') +
           '<td class="text-right">' + contactButtonsHtml(a) + '</td>' +
         '</tr>';
       }
@@ -5309,6 +5330,9 @@
       tbody.innerHTML = html;
       const lbl = document.getElementById("accountsCountLabel");
       if (lbl) lbl.textContent = filtered.length + " de " + state.accounts.length + " contas · ordenadas por score";
+      const lc = document.getElementById("accLostCount");
+      if (lc) lc.textContent = lostItems().length;
+      document.querySelectorAll("[data-ascope]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-ascope") === accountsScope)); });
     }
 
     /** Kanban 2.0 (visual 2.4): anel com o score comercial (0–100) da conta. Só aparece no 2.4. */
@@ -5399,6 +5423,7 @@
                 ? '<button type="button" onclick="editFollowup(\'' + esc(next.id) + '\')" class="w-full text-left text-[11px] rounded-md px-2 py-1 truncate" style="background:var(--surface);color:#aab2c3">' + icon("clock", "!w-3 !h-3 inline -mt-0.5 mr-1") + esc(relDateLabel(next.due_date)) + ' · ' + esc(next.action_title) + '</button>'
                 : '<button type="button" onclick="openFollowupModal(\'' + esc(acc.id) + '\')" class="w-full text-left text-[11px] rounded-md px-2 py-1" style="background:rgba(251,191,36,.08);color:#fcd34d">' + icon("alert", "!w-3 !h-3 inline -mt-0.5 mr-1") + 'Sem próximo passo · agendar</button>')
               : '') +
+            (st.weight < STAGE_WON ? kanbanMoveSelectHtml(opp.id, st.weight) : '') +
             '<div class="kcard-actions flex items-center justify-between pt-1">' +
               (st.weight > 1
                 ? '<button type="button" onclick="moveOpportunityStage(\'' + esc(opp.id) + '\', -1)" class="icon-btn !w-7 !h-7" title="Voltar etapa" aria-label="Voltar etapa">' + icon("left") + '</button>'
@@ -5421,23 +5446,7 @@
       const sum = document.getElementById("pipelineSummary");
       if (sum) sum.textContent = "Em aberto: " + formatCurrencyBRL(openTotal) + "/mês · ponderado " + formatCurrencyBRL(openWeighted) + "/mês. Mover um card atualiza o status da conta.";
 
-      // Perdidas (estágio 0)
-      const lost = state.opportunities.filter(function (o) { return Number(o.stage_weight) === 0; });
-      const lostEl = document.getElementById("lostOppsContainer");
-      if (lostEl) {
-        lostEl.innerHTML = lost.length
-          ? '<details class="card overflow-hidden"><summary class="px-4 py-3 text-[13px] font-medium text-slate-200 flex items-center gap-2"><span class="dot" style="background:#f87171"></span>Perdidas <span class="num" style="color:var(--faint)">' + lost.length + '</span></summary>' +
-            lost.map(function (o) {
-              const acc = findAccount(o.account_id);
-              if (!acc) return "";
-              return '<div class="row-item">' +
-                '<div class="min-w-0 flex-1"><p class="text-[13px] text-white">' + esc(acc.company_name) + '</p>' +
-                '<p class="text-[11px]" style="color:var(--muted)">' + esc(o.loss_category || "Motivo não informado") + (o.loss_details ? ' · ' + esc(o.loss_details) : '') + '</p></div>' +
-                '<button type="button" class="btn btn-sm" onclick="reopenOpportunity(\'' + esc(o.id) + '\')">Reabrir</button>' +
-              '</div>';
-            }).join("") + '</details>'
-          : "";
-      }
+      renderLostPanel();
     }
 
     function applyStageToAccount(acc, w) {
@@ -5517,25 +5526,204 @@
       let id = draggedOppId;
       try { id = ev.dataTransfer.getData("text/plain") || id; } catch (e) { /* ignore */ }
       draggedOppId = null;
-      const opp = state.opportunities.find(function (o) { return o.id === id; });
-      const target = Number(ev.currentTarget.getAttribute("data-stage"));
-      if (!opp || !target) return;
+      kanbanApplyMove(id, Number(ev.currentTarget.getAttribute("data-stage")));
+    }
+
+    /** Destino único do arrastar (mouse ou toque) e do seletor: key = id da oportunidade ou "acc:<id da conta>". */
+    function kanbanApplyMove(key, target) {
+      if (!key || !target) return;
+      if (String(key).indexOf("acc:") === 0) return reactivateAccount(String(key).slice(4), target);
+      const opp = state.opportunities.find(function (o) { return o.id === key; });
+      if (!opp) return;
+      if (Number(opp.stage_weight) === 0) return reactivateAccount(opp.account_id, target, opp);
       const delta = target - Number(opp.stage_weight);
       if (delta !== 0) moveOpportunityStage(opp.id, delta);
     }
+    function kanbanMoveSelectHtml(oppId, cur) {
+      let o = '<option value="">Mover para…</option>';
+      for (let w = 1; w <= STAGE_WON; w++) if (w !== cur) o += '<option value="' + w + '">' + w + '. ' + esc(SF_STAGE_NAMES[w]) + '</option>';
+      return '<label class="kmove"><span class="sr-only">Mover para a fase</span><select class="input h-8 text-[12px] w-full" onchange="if(this.value)kanbanApplyMove(\'' + esc(oppId) + '\', Number(this.value))">' + o + '</select></label>';
+    }
+
+    // ---------------------------------------------------------------------
+    // Perdidas: painel no Pipeline, filtro em Contas e reativação
+    // ---------------------------------------------------------------------
+    function hasActiveOrWonOpp(accId) {
+      return state.opportunities.some(function (o) { const w = Number(o.stage_weight); return o.account_id === accId && w >= 1; });
+    }
+    function isLostAccount(a) {
+      if (!a || hasActiveOrWonOpp(a.id)) return false;
+      return a.status === "Perdido ❌" || state.opportunities.some(function (o) { return o.account_id === a.id && Number(o.stage_weight) === 0; });
+    }
+    function lastLostOpp(accId) {
+      return state.opportunities.filter(function (o) { return o.account_id === accId && Number(o.stage_weight) === 0; })
+        .sort(function (x, y) { return String(y.closed_date || "").localeCompare(String(x.closed_date || "")); })[0] || null;
+    }
+    function lostItems() {
+      return state.accounts.filter(isLostAccount).map(function (a) { return { acc: a, opp: lastLostOpp(a.id) }; });
+    }
+    /** Fase sugerida na reativação: a fase em que foi perdida; sem registro, Em contato. */
+    function defaultReactivateStage(opp) {
+      const w = opp ? Number(opp.lost_stage) : 0;
+      return w >= 1 && w < STAGE_WON ? w : 3;
+    }
+    function reactivateControlsHtml(accId, ctx) {
+      const opp = lastLostOpp(accId);
+      const def = defaultReactivateStage(opp);
+      const sid = "react_" + ctx + "_" + accId;
+      let o = "";
+      for (let w = 1; w <= STAGE_WON; w++) o += '<option value="' + w + '"' + (w === def ? " selected" : "") + '>' + w + '. ' + esc(SF_STAGE_NAMES[w]) + '</option>';
+      return '<div class="relative flex items-center gap-1.5"><label for="' + esc(sid) + '" class="sr-only">Voltar para a fase</label>' +
+        '<select id="' + esc(sid) + '" class="input h-8 text-[12px] min-w-0 flex-1">' + o + '</select>' +
+        '<button type="button" class="btn btn-sm !h-8 shrink-0" onclick="event.stopPropagation();reactivateAccount(\'' + esc(accId) + '\', Number(document.getElementById(\'' + esc(sid) + '\').value))">Reativar</button></div>';
+    }
+
+    /** Tira a conta de Perdida e coloca a oportunidade na fase w (1 a 6). Reaproveita a última oportunidade perdida. */
+    function reactivateAccount(accId, w, oppHint) {
+      const acc = findAccount(accId);
+      w = Math.max(1, Math.min(STAGE_WON, Number(w) || 0));
+      if (!acc || !w) return null;
+      let opp = oppHint || lastLostOpp(acc.id);
+      let created = false;
+      if (!opp) {
+        opp = { id: newUuid(), account_id: acc.id, close_date: addDaysIso(30) };
+        state.opportunities.push(opp);
+        created = true;
+      }
+      const reason = opp.loss_category ? " (motivo da perda: " + opp.loss_category + ")" : "";
+      opp.stage_weight = w;
+      opp.stage = STAGE_LABELS[w];
+      opp.probability = STAGE_PROBS[w];
+      opp.closed_date = w === STAGE_WON ? todayIso() : null;
+      applyStageToAccount(acc, w);
+      persistState();
+      logInteraction(acc.id, "Nota", "Conta reativada em " + SF_STAGE_NAMES[w] + reason + ".", true, true);
+      refreshAllViews();
+      writeAutoAdvance(acc, { opp: opp, followups: [], created: created });
+      if (w === STAGE_WON) emitEvent("deal.won", { account: accountPayload(acc), opportunity: opportunityToRow(opp) });
+      showToast(acc.company_name + " saiu de Perdida e voltou para " + SF_STAGE_NAMES[w] + " (" + STAGE_PROBS[w] + "%).", "🔄");
+      return opp;
+    }
+
+    function openLostPanel() {
+      if (currentTab !== "pipeline") switchTab("pipeline");
+      const d = document.getElementById("lostPanel");
+      if (!d) return;
+      d.open = true;
+      d.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function renderLostPanel() {
+      const el = document.getElementById("lostOppsContainer");
+      const items = lostItems();
+      const badge = document.getElementById("lostCountBadge");
+      if (badge) badge.textContent = items.length;
+      if (!el) return;
+      const wasOpen = document.getElementById("lostPanel") ? document.getElementById("lostPanel").open : true;
+      if (!items.length) { el.innerHTML = '<p class="text-[12px] px-1" style="color:var(--faint)">Nenhuma conta perdida no momento.</p>'; return; }
+      el.innerHTML = '<details id="lostPanel" class="card overflow-hidden"' + (wasOpen ? " open" : "") + '>' +
+        '<summary class="px-4 py-3 text-[13px] font-medium text-slate-200 flex flex-wrap items-center gap-2"><span class="dot" style="background:#f87171"></span>Perdidas <span class="num" style="color:var(--faint)">' + items.length + '</span>' +
+        '<span class="text-[11px] font-normal" style="color:var(--muted)">· arraste o card para uma coluna acima ou escolha a fase e clique em Reativar</span></summary>' +
+        '<div class="px-3 pb-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">' +
+        items.map(function (it) {
+          const a = it.acc, o = it.opp;
+          return '<div class="kcard lcard space-y-2" style="border-left:3px solid #f87171" draggable="true" data-opp="acc:' + esc(a.id) + '" ondragstart="kanbanDragStart(event)" ondragend="kanbanDragEnd(event)">' +
+            '<div class="flex items-start justify-between gap-2"><button type="button" onclick="openAccountModal(\'' + esc(a.id) + '\')" class="text-left text-[13px] font-medium text-white hover:text-violet-300 leading-snug">' + esc(a.company_name) + '</button><span class="chip chip-bad shrink-0">Perdida</span></div>' +
+            '<div class="text-[11px] num space-y-0.5" style="color:var(--muted)"><div>' + esc(a.current_provider || "Operadora a validar") + ' · ' + Number(a.active_card_users || 0).toLocaleString("pt-BR") + ' vidas · ' + formatCompactBRL(computeMonthlyTpv(a)) + '/mês</div>' +
+            '<div>' + (o ? esc(o.loss_category || "Motivo não informado") + (o.lost_stage ? " · perdida em " + esc(SF_STAGE_NAMES[Number(o.lost_stage)] || "") : "") + (o.closed_date ? " · " + esc(formatDateShort(o.closed_date)) : "") : "Status Perdido na conta, sem oportunidade registrada") + '</div>' +
+            (o && o.loss_details ? '<div class="truncate" title="' + esc(o.loss_details) + '">' + esc(o.loss_details) + '</div>' : '') + '</div>' +
+            reactivateControlsHtml(a.id, "pipe") +
+          '</div>';
+        }).join("") + '</div></details>';
+    }
+
+    var accountsScope = "all";
+    try { const sc = localStorage.getItem("swile_crm_accounts_scope"); if (sc === "active" || sc === "lost") accountsScope = sc; } catch (e) { /* ignore */ }
+    function setAccountsScope(sc) {
+      accountsScope = sc === "active" || sc === "lost" ? sc : "all";
+      try { localStorage.setItem("swile_crm_accounts_scope", accountsScope); } catch (e) { /* ignore */ }
+      renderAccountsTable();
+    }
+
+    // Arrastar por toque (celular/tablet): segure o card ~0,35 s e arraste até a coluna
+    (function () {
+      let timer = null, start = null, key = null, ghost = null, src = null, over = null, scroller = null, raf = null, last = null;
+      function colAt(x, y) { const el = document.elementFromPoint(x, y); return el ? el.closest(".kcol") : null; }
+      function cleanup() {
+        clearTimeout(timer); timer = null;
+        if (ghost) ghost.remove(); ghost = null;
+        if (src) src.classList.remove("is-dragging"); src = null;
+        if (over) over.classList.remove("drag-over"); over = null;
+        if (raf) cancelAnimationFrame(raf); raf = null;
+        if (scroller) scroller.classList.remove("touch-dragging");
+        key = null; start = null; last = null;
+        document.removeEventListener("touchmove", onMove, { passive: false });
+      }
+      function onMove(e) {
+        if (!key) return;
+        e.preventDefault();
+        const t = e.touches[0];
+        ghost.style.transform = "translate(" + (t.clientX - start.dx) + "px," + (t.clientY - start.dy) + "px) rotate(2deg)";
+        last = { x: t.clientX, y: t.clientY };
+        hover();
+        if (!raf) raf = requestAnimationFrame(edgeScroll);
+      }
+      function hover() {
+        const c = colAt(last.x, last.y);
+        if (c !== over) { if (over) over.classList.remove("drag-over"); over = c; if (over) over.classList.add("drag-over"); }
+      }
+      // Enquanto o dedo fica perto da borda, rola o quadro (horizontal) ou a página (vertical)
+      function edgeScroll() {
+        raf = null;
+        if (!key || !last) return;
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const dx = last.x < 40 ? -10 : last.x > vw - 40 ? 10 : 0;
+        const dy = last.y < 70 ? -8 : last.y > vh - 70 ? 8 : 0;
+        if (scroller && dx) scroller.scrollLeft += dx;
+        if (dy) window.scrollBy(0, dy);
+        if (dx || dy) { hover(); raf = requestAnimationFrame(edgeScroll); }
+      }
+      document.addEventListener("touchstart", function (e) {
+        const card = e.target.closest && e.target.closest(".kcard[data-opp]");
+        if (!card || e.touches.length !== 1 || e.target.closest("select,input,textarea")) return;
+        const t = e.touches[0];
+        start = { x: t.clientX, y: t.clientY };
+        timer = setTimeout(function () {
+          const r = card.getBoundingClientRect();
+          key = card.getAttribute("data-opp"); src = card;
+          scroller = document.getElementById("kanbanBoardContainer");
+          if (scroller) scroller.classList.add("touch-dragging");
+          start.dx = start.x - r.left; start.dy = start.y - r.top;
+          ghost = card.cloneNode(true);
+          ghost.removeAttribute("id");
+          ghost.style.cssText = "position:fixed;left:0;top:0;width:" + r.width + "px;z-index:80;pointer-events:none;opacity:.92;box-shadow:0 18px 40px rgba(0,0,0,.6);transform:translate(" + r.left + "px," + r.top + "px)";
+          document.body.appendChild(ghost);
+          card.classList.add("is-dragging");
+          document.addEventListener("touchmove", onMove, { passive: false });
+          try { if (navigator.vibrate) navigator.vibrate(15); } catch (err) { /* ignore */ }
+        }, 350);
+      }, { passive: true });
+      document.addEventListener("touchmove", function (e) {
+        if (!timer || key || !start) return;
+        const t = e.touches[0];
+        if (Math.abs(t.clientX - start.x) > 10 || Math.abs(t.clientY - start.y) > 10) { clearTimeout(timer); timer = null; }
+      }, { passive: true });
+      function onEnd(e) {
+        if (!key) { clearTimeout(timer); timer = null; start = null; return; }
+        const t = e.changedTouches && e.changedTouches[0];
+        const c = t ? colAt(t.clientX, t.clientY) : over;
+        const k = key, target = c ? Number(c.getAttribute("data-stage")) : 0;
+        if (e.cancelable) e.preventDefault();
+        cleanup();
+        if (target) kanbanApplyMove(k, target);
+      }
+      document.addEventListener("touchend", onEnd, { passive: false });
+      document.addEventListener("touchcancel", function () { cleanup(); }, { passive: true });
+    })();
 
     function reopenOpportunity(oppId) {
       const opp = state.opportunities.find(function (o) { return o.id === oppId; });
-      if (!opp) return;
-      opp.stage_weight = 2;
-      opp.probability = STAGE_PROBS[2];
-      opp.stage = STAGE_LABELS[2];
-      opp.closed_date = null;
-      const acc = findAccount(opp.account_id);
-      applyStageToAccount(acc, 2);
-      refreshAllViews();
-      writeOpportunityAndAccount("Oportunidade", opp, acc);
-      showToast("Oportunidade reaberta em Qualificando.", "↩️");
+      if (opp) reactivateAccount(opp.account_id, defaultReactivateStage(opp), opp);
     }
 
     function openLossModal(oppId) {

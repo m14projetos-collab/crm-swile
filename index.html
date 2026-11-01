@@ -198,6 +198,10 @@
     @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
     .notif-badge { position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; border-radius: 9999px; background: #f43f5e; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
     .notif-badge.hidden, .upnext.hidden { display: none !important; }
+    @media (max-width: 767px) { .upnext { display: none !important; } }
+    html[data-ui-edition="v24"] .upnext::before { content: ""; width: .45rem; height: .45rem; border-radius: 9999px; background: #22D3EE; box-shadow: 0 0 8px #22D3EE; animation: livePulse 1.6s ease-in-out infinite; flex: none; }
+    html[data-ui-edition="v24"] .upnext.is-empty { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); color: #94A3B8; }
+    html[data-ui-edition="v24"] .upnext.is-empty::before { background: #64748B; box-shadow: none; animation: none; }
     .upnext { display: inline-flex; align-items: center; gap: .4rem; height: 1.85rem; padding: 0 .65rem; border-radius: 9999px; border: 1px solid rgba(139,92,246,.4); background: rgba(139,92,246,.1); color: #ddd6fe; font-size: 11.5px; max-width: 18rem; }
 
     /* ===== Visual Swile OS 2.4 (padrão desde nov/2026; Clássico v1 via Alt+V ou ?visual=v1) ===== */
@@ -214,15 +218,37 @@
     }
     html[data-ui-edition="v24"] #appSidebar, html[data-ui-edition="v24"] header.sticky { background: #0D0F17 !important; border-color: rgba(255,255,255,.07) !important; }
     html[data-ui-edition="v24"] .btn-primary { background: #7C3AED; border-color: #7C3AED; }
-    html[data-ui-edition="v24"] .kcard .kcard-actions { opacity: 0; transition: opacity .15s; }
-    html[data-ui-edition="v24"] .kcard:hover .kcard-actions, html[data-ui-edition="v24"] .kcard:focus-within .kcard-actions { opacity: 1; }
-    /* Ficha da conta como gaveta lateral (estilo Attio), com o Kanban visível ao fundo */
-    @media (min-width: 1024px) {
-      html[data-ui-edition="v24"] #accountModal { justify-content: flex-end; align-items: stretch; padding: 0; }
-      html[data-ui-edition="v24"] #accountModal .modal-panel { max-width: 58rem; max-height: 100vh; height: 100vh; border-radius: 0; border-left: 1px solid rgba(255,255,255,.1); animation: drawerIn .22s ease-out; }
-      html[data-ui-edition="v24"] #accountModal.modal-backdrop { background: rgba(5,6,10,.4); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    /* Kanban 2.0: card Obsidian, anel de score, TPV em destaque, trilha de fases e ações só no hover */
+    html[data-ui-edition="v24"] .kcard { background: linear-gradient(180deg, #181C29 0%, #12151F 100%); border-color: rgba(255,255,255,.08); box-shadow: inset 0 1px 0 0 rgba(255,255,255,.16), 0 10px 28px -8px rgba(0,0,0,.75); }
+    html[data-ui-edition="v24"] .kcard:hover { border-color: rgba(124,58,237,.45); }
+    @media (hover: hover) {
+      html[data-ui-edition="v24"] .kcard .kcard-actions { opacity: 0; max-height: 0; overflow: hidden; padding-top: 0; transition: opacity .18s, max-height .22s; }
+      html[data-ui-edition="v24"] .kcard:hover .kcard-actions, html[data-ui-edition="v24"] .kcard:focus-within .kcard-actions { opacity: 1; max-height: 3rem; padding-top: .25rem; }
     }
-    @keyframes drawerIn { from { transform: translateX(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+    .v24-only { display: none !important; }
+    html[data-ui-edition="v24"] .v24-only { display: block !important; }
+    html[data-ui-edition="v24"] .v24-only.v24-flex { display: flex !important; }
+    html[data-ui-edition="v24"] .v24-only.v24-grid { display: grid !important; }
+    html[data-ui-edition="v24"] .v1-only { display: none !important; }
+    .k24-tpv { white-space: nowrap; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 18px; font-weight: 700; color: #F8FAFC; letter-spacing: -0.02em; line-height: 1.1; }
+    .k24-ring { position: relative; width: 2.25rem; height: 2.25rem; flex: none; }
+    .k24-ring span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 10px 'JetBrains Mono', monospace; color: #fff; }
+    .k24-trail { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+    .k24-trail i { height: 4px; border-radius: 2px; background: rgba(255,255,255,.09); }
+    .k24-trail i.on { background: rgba(124,58,237,.45); }
+    .k24-trail i.cur { background: #7C3AED; box-shadow: 0 0 8px rgba(124,58,237,.8); }
+    /* Painel de gráficos 2.4 (Relatórios) */
+    .t24-card { border-radius: 14px; padding: .9rem; background: linear-gradient(180deg, rgba(24,28,41,.92) 0%, rgba(14,17,26,.98) 100%); border: 1px solid rgba(255,255,255,.08); box-shadow: inset 0 1px 0 0 rgba(255,255,255,.15), 0 10px 28px -10px rgba(0,0,0,.75); min-width: 0; }
+    .t24-k { font-size: 11px; color: #94A3B8; font-weight: 500; }
+    .t24-v { font: 700 1.15rem 'JetBrains Mono', ui-monospace, monospace; color: #fff; margin-top: .15rem; letter-spacing: -0.02em; }
+    .t24-tag { display: inline-block; font: 500 10px 'JetBrains Mono', monospace; padding: .1rem .4rem; border-radius: 4px; margin-top: .3rem; }
+    .t24-range { width: 100%; margin-top: .3rem; }
+    /* Ficha da conta como gaveta lateral (estilo Attio), com o Kanban visível ao fundo */
+    html[data-ui-edition="v24"] #accountModal { justify-content: flex-end; align-items: stretch; padding: 0; }
+    html[data-ui-edition="v24"] #accountModal .modal-panel { max-width: min(58rem, 100vw); max-height: 100vh; height: 100vh; border-radius: 0; border: 0; border-left: 1px solid rgba(124,58,237,.4); box-shadow: -16px 0 48px rgba(0,0,0,.85); animation: drawerIn .24s ease-out; }
+    html[data-ui-edition="v24"] #accountModal.modal-backdrop { background: rgba(5,6,10,.4); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    @media (min-width: 1024px) { html[data-ui-edition="v24"] #accountModal .modal-panel { border-radius: 16px 0 0 16px; } }
+    @keyframes drawerIn { from { transform: translateX(100%); } to { transform: none; } }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     .live-dot::before { content: ""; display: inline-block; width: .5rem; height: .5rem; margin-right: .35rem; border-radius: 9999px; background: #ef4444; vertical-align: middle; animation: livePulse 1.2s ease-in-out infinite; }
@@ -921,6 +947,8 @@
 
           <div id="reportExecDiag" class="card p-4 avoid-break" style="border-color:rgba(139,92,246,.35)"></div>
 
+          <div id="t24Panel" class="v24-only space-y-4" aria-label="Painel de gráficos Swile OS 2.4"></div>
+
           <div class="seg no-print" role="group" aria-label="Seções do relatório">
             <button type="button" data-rtab="case" onclick="setReportTab('case')">Metas, Tendência &amp; Simulador</button>
             <button type="button" data-rtab="funnel" onclick="setReportTab('funnel')">Funil Salesforce &amp; KPIs do Case</button>
@@ -987,7 +1015,7 @@
           <div id="reportKpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 report-grid">
-            <div class="card p-4 avoid-break">
+            <div class="card p-4 avoid-break v1-only">
               <h3 class="card-title">Funil de vendas</h3>
               <p class="card-sub">Oportunidades e TPV mensal por etapa</p>
               <div class="relative h-60 mt-3"><canvas id="chartReportFunnel" aria-label="Funil de vendas"></canvas></div>
@@ -1007,7 +1035,7 @@
               <p class="card-sub">Leads quentes, mornos e frios</p>
               <div class="relative h-60 mt-3"><canvas id="chartReportInterest" aria-label="Interesse das contas"></canvas></div>
             </div>
-            <div class="card p-4 avoid-break">
+            <div class="card p-4 avoid-break v1-only">
               <h3 class="card-title">Carteira por operadora</h3>
               <p class="card-sub">Contas e vidas por cartão atual</p>
               <div class="relative h-60 mt-3"><canvas id="chartReportProvider" aria-label="Contas por operadora"></canvas></div>
@@ -5283,6 +5311,23 @@
       if (lbl) lbl.textContent = filtered.length + " de " + state.accounts.length + " contas · ordenadas por score";
     }
 
+    /** Kanban 2.0 (visual 2.4): anel com o score comercial (0–100) da conta. Só aparece no 2.4. */
+    function kanbanScoreRing(score) {
+      const sc = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+      const r = 15, c = 2 * Math.PI * r, off = c - (sc / 100) * c;
+      const color = sc >= 80 ? "#06B6D4" : sc >= 65 ? "#8B5CF6" : "#F59E0B";
+      return '<span class="v24-only k24-ring" title="Score comercial ' + sc + '/100 (ICP, vidas, interesse, operadora e fase)">' +
+        '<svg viewBox="0 0 36 36" width="36" height="36" style="transform:rotate(-90deg)"><circle cx="18" cy="18" r="' + r + '" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="2.8"/>' +
+        '<circle cx="18" cy="18" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '" style="filter:drop-shadow(0 0 3px ' + color + ')"/></svg>' +
+        '<span>' + sc + '</span></span>';
+    }
+    /** Trilha das 6 fases do Salesforce com a fase atual acesa (só no 2.4). */
+    function kanbanStageTrail(w) {
+      let html = '<div class="v24-only" title="Fase ' + w + ' de 6: ' + esc(SF_STAGE_NAMES[w] || "") + '"><div class="k24-trail">';
+      for (let i = 1; i <= 6; i++) html += '<i class="' + (i === w ? "cur" : i < w ? "on" : "") + '"></i>';
+      return html + '</div><div class="text-[10px] mt-1" style="color:#A78BFA">' + w + '/6 · ' + esc(SF_STAGE_NAMES[w] || "") + '</div></div>';
+    }
+
     function renderKanbanBoard() {
       const container = document.getElementById("kanbanBoardContainer");
       if (!container) return;
@@ -5338,13 +5383,17 @@
           html += '<div class="kcard space-y-2" draggable="true" data-opp="' + esc(opp.id) + '" ondragstart="kanbanDragStart(event)" ondragend="kanbanDragEnd(event)">' +
             '<div class="flex items-start justify-between gap-2">' +
               '<button type="button" onclick="openAccountModal(\'' + esc(acc.id) + '\')" class="text-left text-[13px] font-medium text-white hover:text-violet-300 leading-snug">' + esc(acc.company_name) + '</button>' +
-              '<button type="button" onclick="editOpportunity(\'' + esc(opp.id) + '\')" class="icon-btn !w-6 !h-6 -mr-1 -mt-0.5" title="Editar oportunidade" aria-label="Editar oportunidade">' + icon("edit", "!w-3.5 !h-3.5") + '</button>' +
+              '<div class="flex items-start gap-1 shrink-0">' + kanbanScoreRing(computeCommercialScore(acc)) +
+              '<button type="button" onclick="editOpportunity(\'' + esc(opp.id) + '\')" class="icon-btn !w-6 !h-6 -mr-1 -mt-0.5" title="Editar oportunidade" aria-label="Editar oportunidade">' + icon("edit", "!w-3.5 !h-3.5") + '</button></div>' +
             '</div>' +
+            '<div class="v24-only"><div class="k24-tpv">' + formatCompactBRL(tpv) + '</div>' +
+              '<div class="text-[10.5px] num mt-0.5 truncate" style="color:#94A3B8" title="TPV mensal · probabilidade → ponderado">por mês · ' + esc(opp.probability) + '% → ' + formatCompactBRL(weighted) + '</div></div>' +
             '<div class="text-[11px] num space-y-0.5" style="color:var(--muted)">' +
               '<div>' + esc(acc.current_provider) + ' · ' + Number(acc.active_card_users || 0).toLocaleString("pt-BR") + ' vidas</div>' +
-              '<div><span class="text-slate-200">' + formatCurrencyBRL(tpv) + '</span> · ' + esc(opp.probability) + '% → ' + formatCompactBRL(weighted) + '</div>' +
+              '<div class="v1-only"><span class="text-slate-200">' + formatCurrencyBRL(tpv) + '</span> · ' + esc(opp.probability) + '% → ' + formatCompactBRL(weighted) + '</div>' +
               (opp.close_date && st.weight < STAGE_WON ? '<div style="color:' + (closeN < 0 ? '#fca5a5' : 'var(--muted)') + '">Fecha ' + esc(formatDateShort(opp.close_date)) + (closeN < 0 ? ' (vencida)' : '') + '</div>' : '') +
             '</div>' +
+            kanbanStageTrail(st.weight) +
             (st.weight < STAGE_WON
               ? (next
                 ? '<button type="button" onclick="editFollowup(\'' + esc(next.id) + '\')" class="w-full text-left text-[11px] rounded-md px-2 py-1 truncate" style="background:var(--surface);color:#aab2c3">' + icon("clock", "!w-3 !h-3 inline -mt-0.5 mr-1") + esc(relDateLabel(next.due_date)) + ' · ' + esc(next.action_title) + '</button>'
@@ -7746,11 +7795,191 @@
         '<p class="mt-1 text-[12px]" style="color:var(--muted)">' + esc(sub) + '</p></div>';
     }
 
+
+    // ---------------------------------------------------------------------
+    // Swile OS 2.4 · painel de gráficos (estilo Tremor) em Relatórios
+    // Tudo vem do CRM. O que é premissa aparece como "premissa" e pode ser editado.
+    // ---------------------------------------------------------------------
+    var t24Sim = null; // { ticket, win, lives } enquanto a aba estiver aberta
+
+    function t24Num(v) { return Number(v || 0).toLocaleString("pt-BR"); }
+    /** Série acumulada por data de criação (últimas 8 semanas). Sem datas suficientes: null. */
+    function t24CumulativeSeries(items, valueOf) {
+      const dated = items.filter(function (a) { return a.created_at && !isNaN(new Date(a.created_at)); });
+      if (dated.length < 2) return null;
+      const now = Date.now(), wk = 7 * 86400000, pts = [];
+      for (let i = 7; i >= 0; i--) {
+        const cut = now - i * wk;
+        pts.push(dated.reduce(function (s, a) { return new Date(a.created_at).getTime() <= cut ? s + valueOf(a) : s; }, 0));
+      }
+      return pts[0] === pts[pts.length - 1] ? null : pts;
+    }
+    function t24Spark(pts, color) {
+      if (!pts) return '<svg width="78" height="36" viewBox="0 0 78 36" aria-hidden="true"><line x1="2" y1="26" x2="76" y2="26" stroke="' + color + '" stroke-opacity=".35" stroke-width="2" stroke-dasharray="3 3"/></svg>';
+      const max = Math.max.apply(null, pts), min = Math.min.apply(null, pts), span = max - min || 1;
+      const xy = pts.map(function (v, i) { return [2 + i * (74 / (pts.length - 1)), 32 - ((v - min) / span) * 28]; });
+      let d = "M" + xy[0][0].toFixed(1) + " " + xy[0][1].toFixed(1);
+      for (let i = 1; i < xy.length; i++) { const cx = (xy[i - 1][0] + xy[i][0]) / 2; d += " C" + cx.toFixed(1) + " " + xy[i - 1][1].toFixed(1) + " " + cx.toFixed(1) + " " + xy[i][1].toFixed(1) + " " + xy[i][0].toFixed(1) + " " + xy[i][1].toFixed(1); }
+      return '<svg width="78" height="36" viewBox="0 0 78 36" aria-hidden="true"><path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2.2" stroke-linecap="round" style="filter:drop-shadow(0 0 4px ' + color + ')"/></svg>';
+    }
+    function t24MiniBar(frac, color) {
+      const f = Math.max(0, Math.min(1, frac || 0));
+      return '<svg width="78" height="36" viewBox="0 0 78 36" aria-hidden="true"><rect x="2" y="15" width="74" height="6" rx="3" fill="rgba(255,255,255,.08)"/><rect x="2" y="15" width="' + (74 * f).toFixed(1) + '" height="6" rx="3" fill="' + color + '" style="filter:drop-shadow(0 0 4px ' + color + ')"/></svg>';
+    }
+    function t24Kpi(label, value, tag, tagColor, viz) {
+      return '<div class="t24-card flex items-center justify-between gap-2"><div class="min-w-0"><div class="t24-k">' + label + '</div><div class="t24-v">' + value + '</div>' +
+        '<span class="t24-tag" style="background:' + tagColor + '22;color:' + tagColor + '">' + tag + '</span></div>' + viz + '</div>';
+    }
+    /** Curva suave (Bezier) por pontos [x,y]. */
+    function t24Curve(xy) {
+      let d = "M" + xy[0][0] + "," + xy[0][1];
+      for (let i = 1; i < xy.length; i++) { const cx = (xy[i - 1][0] + xy[i][0]) / 2; d += " C" + cx + "," + xy[i - 1][1] + " " + cx + "," + xy[i][1] + " " + xy[i][0] + "," + xy[i][1]; }
+      return d;
+    }
+
+    function renderT24Panel(r) {
+      const box = document.getElementById("t24Panel");
+      if (!box) return;
+      r = r || computeReportData();
+      const m = computeCaseMetrics();
+      const d = directorIntel();
+      const realWin = m.winRate !== null && m.winRate !== undefined;
+      const winRate = realWin ? m.winRate : (d.proj && d.proj.winRate !== null ? d.proj.winRate : null);
+      const velocity = d.velocityDay !== null ? d.velocityDay : (d.proj ? d.proj.velocityDay : null);
+      const pace = CASE_TARGET_MONTH / 30;
+      const bigAccounts = r.accounts.filter(function (a) { return (Number(a.active_card_users) || 0) >= CASE_MIN_LIVES; }).length;
+
+      // 1. KPIs
+      const kpis =
+        t24Kpi("TPV mensal mapeado", formatCompactBRL(r.mappedTpv), r.accounts.length + " contas", "#10B981", t24Spark(t24CumulativeSeries(r.accounts, computeMonthlyTpv), "#10B981")) +
+        t24Kpi("Vidas mapeadas", t24Num(r.lives), bigAccounts + " contas ≥" + CASE_MIN_LIVES + " vidas", "#06B6D4", t24Spark(t24CumulativeSeries(r.accounts, function (a) { return Number(a.active_card_users) || 0; }), "#06B6D4")) +
+        t24Kpi("Win rate" + (realWin ? "" : " ponderado"), winRate === null ? "sem dados" : (winRate * 100).toFixed(1).replace(".", ",") + "%", realWin ? "ganhos ÷ decididos" : "Projeção do funil", "#8B5CF6", t24MiniBar(winRate, "#8B5CF6")) +
+        t24Kpi("Velocidade do pipeline", velocity === null ? "sem dados" : fmtK(velocity) + "/dia", d.velocityDay !== null ? "ciclo real" : "Projeção · ciclo " + loadCyclePremise() + "d", "#F59E0B", t24MiniBar(velocity === null ? 0 : velocity / pace, "#F59E0B"));
+
+      // 2. Simulação (AreaChart): base = TPV dos clientes atuais; cada mês soma vidas novas × ticket × win rate
+      const avgTicket = r.lives ? r.mappedTpv / r.lives : 0;
+      const activeLives = state.opportunities.filter(function (o) { const w = Number(o.stage_weight); return w >= 2 && w < STAGE_WON; })
+        .reduce(function (s, o) { const a = findAccount(o.account_id); return s + (a ? Number(a.active_card_users) || 0 : 0); }, 0);
+      if (!t24Sim) t24Sim = {
+        ticket: Math.round(avgTicket / 25) * 25 || 800,
+        win: winRate === null ? 25 : Math.max(1, Math.round(winRate * 100)),
+        lives: Math.max(50, Math.round(activeLives / 50) * 50)
+      };
+      t24Base = r.clients.reduce(function (s, a) { return s + computeMonthlyTpv(a); }, 0);
+      const slider = function (id, label, val, min, max, step, shown, accent) {
+        return '<label class="block rounded-lg p-2" style="background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.05)"><div class="flex justify-between gap-1 text-[11px]" style="color:#94A3B8"><span>' + label + '</span><strong id="' + id + 'Val" class="num text-white">' + shown + '</strong></div>' +
+          '<input id="' + id + '" type="range" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" class="t24-range" style="accent-color:' + accent + '" oninput="t24SimChange()" aria-label="' + label + '" /></label>';
+      };
+      const area =
+        '<div class="t24-card lg:col-span-7">' +
+          '<div class="flex flex-wrap items-start justify-between gap-2 mb-3"><div><div class="text-xs font-semibold text-white">Simulação de TPV recorrente · 6 meses</div>' +
+          '<div class="text-[11px]" style="color:#94A3B8">Base: TPV dos clientes atuais (' + fmtK(t24Base) + '). Cada mês soma vidas novas × benefício × win rate. Linha tracejada: base + meta de R$ 600 mil/mês.</div></div>' +
+          '<span id="t24PerMonth" class="text-xs num font-bold" style="color:#22D3EE"></span></div>' +
+          '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">' +
+            slider("t24Ticket", "Benefício por vida", t24Sim.ticket, 200, 2000, 25, "R$ " + t24Num(t24Sim.ticket), "#8B5CF6") +
+            slider("t24Win", "Win rate", t24Sim.win, 1, 90, 1, t24Sim.win + "%", "#22D3EE") +
+            slider("t24Lives", "Vidas novas/mês", t24Sim.lives, 50, 5000, 50, t24Num(t24Sim.lives), "#34D399") +
+          '</div>' +
+          '<div id="t24AreaSvg"></div>' +
+          '<p class="text-[10.5px] mt-1" style="color:#64748B">Simulação com premissas editáveis, não é previsão. Valores iniciais vêm do CRM: benefício médio da carteira, win rate ' + (realWin ? "real" : "projetado") + ' e vidas nas oportunidades abertas.</p>' +
+        '</div>';
+
+      // 3. Funil vetorial conectado (6 fases): quantas oportunidades chegaram a cada fase
+      const reached = [1, 2, 3, 4, 5, 6].map(function (w) {
+        return state.opportunities.filter(function (o) { const st = Number(o.stage_weight); return st >= w || (st === 0 && Number(o.lost_stage) >= w); }).length;
+      });
+      const top = Math.max(1, reached[0]);
+      const FW = 900, seg = FW / 6, H = 100, mid = 78;
+      const h = function (n) { return Math.max(6, (n / top) * H); };
+      const funnelColors = ["#22D3EE", "#38BDF8", "#818CF8", "#8B5CF6", "#A855F7", "#10B981"];
+      let fsvg = '<defs>' + funnelColors.map(function (c, i) { return '<linearGradient id="t24F' + i + '" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="' + c + '" stop-opacity=".85"/><stop offset="1" stop-color="' + (funnelColors[i + 1] || c) + '" stop-opacity=".7"/></linearGradient>'; }).join("") + '</defs>';
+      for (let i = 0; i < 6; i++) {
+        const x0 = i * seg, x1 = x0 + seg - 4, hl = h(reached[i]), hr = h(i < 5 ? reached[i + 1] : reached[i]);
+        fsvg += '<path d="M' + x0 + ',' + (mid - hl / 2) + ' L' + x1 + ',' + (mid - hr / 2) + ' L' + x1 + ',' + (mid + hr / 2) + ' L' + x0 + ',' + (mid + hl / 2) + ' Z" fill="url(#t24F' + i + ')"><title>' + esc(SF_STAGE_NAMES[i + 1]) + ': ' + reached[i] + '</title></path>';
+        fsvg += '<text x="' + (x0 + seg / 2 - 2) + '" y="' + (mid + 5) + '" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="JetBrains Mono, monospace">' + reached[i] + '</text>';
+        fsvg += '<text x="' + (x0 + seg / 2 - 2) + '" y="146" text-anchor="middle" fill="#94A3B8" font-size="10.5">' + esc(REPORT_STAGE_NAMES[i + 1]) + '</text>';
+        if (i < 5) {
+          const rate = reached[i] ? Math.round(reached[i + 1] / reached[i] * 100) + "%" : "—";
+          fsvg += '<rect x="' + (x1 - 18) + '" y="1" width="38" height="15" rx="7.5" fill="#1E1B4B" stroke="rgba(139,92,246,.6)"/><text x="' + (x1 + 1) + '" y="12" text-anchor="middle" fill="#C4B5FD" font-size="9.5" font-family="JetBrains Mono, monospace">' + rate + '</text>';
+        }
+      }
+      const funnel = '<div class="t24-card"><div class="flex flex-wrap items-baseline justify-between gap-2"><div class="text-xs font-semibold text-white">Funil Salesforce · 6 fases</div>' +
+        '<div class="text-[11px]" style="color:#94A3B8">Oportunidades que chegaram a cada fase (inclui as perdidas depois dela) e a conversão entre fases</div></div>' +
+        '<div class="overflow-x-auto"><svg viewBox="0 0 900 152" class="w-full mt-2" style="min-width:560px;display:block" role="img" aria-label="Funil vetorial">' + fsvg + '</svg></div></div>';
+
+      // 4. Gauge de cobertura + colunas por operadora
+      const cov = m.coverage, frac = Math.max(0, Math.min(1, cov / CASE_COVERAGE));
+      const R = 40, cx = 55, cy = 52, a0 = 150 * Math.PI / 180, sweep = 240 * Math.PI / 180;
+      const pt = function (a) { return (cx + R * Math.cos(a)).toFixed(1) + " " + (cy + R * Math.sin(a)).toFixed(1); };
+      const arc = function (f) { const a1 = a0 + sweep * f; return "M" + pt(a0) + " A" + R + " " + R + " 0 " + (sweep * f > Math.PI ? 1 : 0) + " 1 " + pt(a1); };
+      const gColor = frac >= 1 ? "#10B981" : frac >= .5 ? "#06B6D4" : "#F59E0B";
+      const gauge = '<div class="t24-card flex items-center gap-3"><svg width="110" height="96" viewBox="0 0 110 96" style="flex:none;width:110px;height:96px" role="img" aria-label="Cobertura do pipeline">' +
+        '<path d="' + arc(1) + '" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="9" stroke-linecap="round"/>' +
+        (frac > 0 ? '<path d="' + arc(frac) + '" fill="none" stroke="' + gColor + '" stroke-width="9" stroke-linecap="round" style="filter:drop-shadow(0 0 5px ' + gColor + ')"/>' : '') +
+        '<text x="55" y="57" text-anchor="middle" fill="#F8FAFC" font-size="16" font-weight="700" font-family="JetBrains Mono, monospace">' + cov.toFixed(1).replace(".", ",") + 'x</text>' +
+        '<text x="55" y="88" text-anchor="middle" fill="#94A3B8" font-size="9.5">meta ' + CASE_COVERAGE + ',0x</text></svg>' +
+        '<div class="min-w-0"><div class="text-xs font-semibold text-white">Cobertura do pipeline</div><div class="text-[11px] mt-1" style="color:#94A3B8">' + fmtK(m.coverageTpv) + ' em Negociando + Contrato enviado ÷ meta de ' + fmtK(CASE_TARGET_MONTH) + '/mês. Referência do case: ' + CASE_COVERAGE + 'x = ' + fmtK(CASE_TARGET_MONTH * CASE_COVERAGE) + '.</div></div></div>';
+      const prov = {};
+      r.accounts.forEach(function (a) { const k = a.current_provider || "A validar"; if (!prov[k]) prov[k] = { n: 0, lives: 0 }; prov[k].n++; prov[k].lives += Number(a.active_card_users) || 0; });
+      const provList = Object.keys(prov).map(function (k) { return { k: k, n: prov[k].n, lives: prov[k].lives }; }).sort(function (a, b) { return b.lives - a.lives; }).slice(0, 6);
+      const pMax = Math.max.apply(null, provList.map(function (p) { return p.lives; }).concat([1]));
+      const colColors = ["#7C3AED", "#06B6D4", "#10B981", "#F59E0B", "#EC4899", "#64748B"];
+      const cols = '<div class="t24-card"><div class="text-xs font-semibold text-white">Vidas por operadora atual</div><div class="text-[11px]" style="color:#94A3B8">Carteira mapeada · número de contas acima de cada coluna</div>' +
+        (provList.length ? '<div class="flex items-end gap-2 mt-3" style="height:8.5rem">' + provList.map(function (p, i) {
+          const hh = Math.max(4, Math.round(p.lives / pMax * 100));
+          return '<div class="flex-1 min-w-0 flex flex-col items-center justify-end h-full" title="' + esc(p.k) + ': ' + p.n + ' conta(s), ' + t24Num(p.lives) + ' vidas">' +
+            '<span class="num text-[10px]" style="color:#CBD5E1">' + p.n + '</span>' +
+            '<div class="w-full rounded-t-md" style="height:' + hh + '%;background:linear-gradient(180deg,' + colColors[i] + ',' + colColors[i] + '55);box-shadow:0 0 10px ' + colColors[i] + '55"></div>' +
+            '<span class="text-[10px] mt-1 truncate w-full text-center" style="color:#94A3B8">' + esc(String(p.k).replace(/\s*\(.*\)/, "")) + '</span></div>';
+        }).join("") + '</div>' : '<p class="text-[12px] mt-3" style="color:#94A3B8">Sem contas na carteira.</p>') + '</div>';
+
+      box.innerHTML =
+        '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">' + kpis + '</div>' +
+        '<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">' + area +
+          '<div class="lg:col-span-5 grid grid-cols-1 gap-4">' + gauge + cols + '</div></div>' + funnel;
+      t24DrawArea();
+    }
+
+    var t24Base = 0;
+    function t24DrawArea() {
+      const out = document.getElementById("t24AreaSvg");
+      if (!out || !t24Sim) return;
+      const base = t24Base;
+      const perMonth = t24Sim.lives * t24Sim.ticket * (t24Sim.win / 100);
+      const series = [1, 2, 3, 4, 5, 6].map(function (i) { return base + perMonth * i; });
+      const metaSeries = [1, 2, 3, 4, 5, 6].map(function (i) { return base + CASE_TARGET_MONTH * i; });
+      const maxV = Math.max.apply(null, series.concat(metaSeries)) || 1;
+      const X = function (i) { return 40 + i * 116; }, Y = function (v) { return Math.round(165 - (v / maxV) * 140); };
+      const xy = series.map(function (v, i) { return [X(i), Y(v)]; });
+      const curve = t24Curve(xy);
+      const meta = metaSeries.map(function (v, i) { return (i ? "L" : "M") + X(i) + "," + Y(v); }).join(" ");
+      const pm = document.getElementById("t24PerMonth");
+      if (pm) pm.textContent = "+" + fmtK(perMonth) + "/mês";
+      out.innerHTML = '<svg viewBox="0 0 660 200" class="w-full" style="height:11rem" role="img" aria-label="Curva simulada de TPV recorrente">' +
+        '<defs><linearGradient id="t24Grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#06B6D4" stop-opacity=".55"/><stop offset="65%" stop-color="#7C3AED" stop-opacity=".2"/><stop offset="100%" stop-color="#090A0F" stop-opacity="0"/></linearGradient></defs>' +
+        [25, 72, 118, 165].map(function (y) { return '<line x1="40" y1="' + y + '" x2="620" y2="' + y + '" stroke="rgba(255,255,255,.06)" stroke-dasharray="3 3"/>'; }).join("") +
+        '<path d="' + curve + ' L' + X(5) + ',170 L' + X(0) + ',170 Z" fill="url(#t24Grad)"/>' +
+        '<path d="' + meta + '" fill="none" stroke="#F59E0B" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="5 4"/>' +
+        '<path id="t24Curve" d="' + curve + '" fill="none" stroke="#06B6D4" stroke-width="3" style="filter:drop-shadow(0 0 6px rgba(6,182,212,.6))"/>' +
+        xy.map(function (p, i) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="' + (i === 5 ? "#10B981" : "#06B6D4") + '"><title>Mês ' + (i + 1) + ': ' + fmtK(series[i]) + '/mês</title></circle>'; }).join("") +
+        series.map(function (v, i) { return '<text x="' + X(i) + '" y="192" text-anchor="middle" fill="' + (i === 5 ? "#34D399" : "#94A3B8") + '" font-size="10" font-family="JetBrains Mono, monospace">M' + (i + 1) + ' ' + fmtK(v) + '</text>'; }).join("") +
+        '</svg>';
+    }
+
+    function t24SimChange() {
+      const v = function (id) { const el = document.getElementById(id); return el ? Number(el.value) : 0; };
+      t24Sim = { ticket: v("t24Ticket"), win: v("t24Win"), lives: v("t24Lives") };
+      const set = function (id, txt) { const el = document.getElementById(id); if (el) el.textContent = txt; };
+      set("t24TicketVal", "R$ " + t24Num(t24Sim.ticket)); set("t24WinVal", t24Sim.win + "%"); set("t24LivesVal", t24Num(t24Sim.lives));
+      t24DrawArea();
+    }
+
     function renderReports() {
       const box = document.getElementById("reportKpis");
       if (!box) return;
       renderExecDiagnosis();
       const r = computeReportData();
+      renderT24Panel(r);
       const period = reportPeriodLabel();
       const sub = document.getElementById("reportSubtitle");
       if (sub) sub.textContent = "Carteira de " + (state.sellerName || "Middle Market RJ") + " · ganhos, perdas e atividades: " + period + ".";
@@ -9181,6 +9410,23 @@
     const CAL_KIND_LABEL = { client: "Cliente", internal: "Time interno · indisponível", travel: "Bloqueio de rota RJ" };
     var agendaView = "list";
     var upNextDate = null;
+    /** Visão da Agenda: a escolha salva vale; sem escolha, o 2.4 abre no Calendário e o v1 na lista. */
+    function defaultAgendaView() {
+      let saved = null, ed = null;
+      try { saved = localStorage.getItem("swile_crm_agenda_view"); ed = localStorage.getItem("swile_ui_edition"); } catch (e) { /* ignore */ }
+      if (saved === "list" || saved === "calendar") return saved;
+      return ed === "v1" ? "list" : "calendar";
+    }
+    function applyAgendaView(v) {
+      agendaView = v === "calendar" ? "calendar" : "list";
+      const lg = document.getElementById("agendaListGrid"), cw = document.getElementById("calendarWrap");
+      if (!lg || !cw) return;
+      lg.classList.toggle("hidden", agendaView !== "list");
+      cw.classList.toggle("hidden", agendaView !== "calendar");
+      document.getElementById("btnAgendaList").setAttribute("aria-pressed", String(agendaView === "list"));
+      document.getElementById("btnAgendaCal").setAttribute("aria-pressed", String(agendaView === "calendar"));
+      if (agendaView === "calendar") renderCalendar();
+    }
 
     function calEvents() { if (!Array.isArray(state.calEvents)) state.calEvents = []; return state.calEvents; }
     function hmToMin(hm) { const m = /^(\d{1,2}):(\d{2})/.exec(String(hm || "")); return m ? Number(m[1]) * 60 + Number(m[2]) : null; }
@@ -9208,13 +9454,8 @@
     }
 
     function setAgendaView(v) {
-      agendaView = v === "calendar" ? "calendar" : "list";
-      try { localStorage.setItem("swile_crm_agenda_view", agendaView); } catch (e) { /* ignore */ }
-      document.getElementById("agendaListGrid").classList.toggle("hidden", agendaView !== "list");
-      document.getElementById("calendarWrap").classList.toggle("hidden", agendaView !== "calendar");
-      document.getElementById("btnAgendaList").setAttribute("aria-pressed", String(agendaView === "list"));
-      document.getElementById("btnAgendaCal").setAttribute("aria-pressed", String(agendaView === "calendar"));
-      if (agendaView === "calendar") renderCalendar();
+      try { localStorage.setItem("swile_crm_agenda_view", v === "calendar" ? "calendar" : "list"); } catch (e) { /* ignore */ }
+      applyAgendaView(v);
     }
 
     function openCalendarOn(date) {
@@ -9306,6 +9547,9 @@
             return '<button type="button" class="chip" onclick="editFollowup(\'' + esc(f.id) + '\')" title="Abrir a ação">' + esc((a ? a.company_name + ": " : "") + f.action_title) + '</button>';
           }).join("") + '</div>'
         : '';
+      // Atrasadas não aparecem na grade do dia: aviso com atalho para a lista
+      const overdue = state.followups.filter(function (f) { return f.status === "Pendente" && daysFromToday(f.due_date) < 0; }).length;
+      if (overdue) document.getElementById("calDayActions").innerHTML += '<button type="button" class="mt-2 text-[12px] rounded-md px-2 py-1" style="background:rgba(244,63,94,.1);color:#fda4af" onclick="setAgendaView(\'list\')">' + overdue + ' ação(ões) atrasada(s) na agenda · ver na lista</button>';
     }
 
     function showCalConflict(conflicts, date, startMin, dur) {
@@ -9436,7 +9680,15 @@
       const now = new Date(); const nm = now.getHours() * 60 + now.getMinutes();
       const next = calEventsOn(today).filter(function (e) { return calEnd(e) > nm; })[0];
       upNextDate = today;
-      if (!next) { pill.classList.add("hidden"); pill.classList.remove("xl:inline-flex"); return; }
+      if (!next) {
+        // No 2.4 a pílula fica sempre à vista: sem evento hoje, ela leva ao calendário para agendar
+        document.getElementById("upNextText").textContent = "Sem eventos hoje · abrir calendário";
+        pill.classList.toggle("is-empty", true);
+        if (uiEdition() === "v24") { pill.classList.remove("hidden"); pill.classList.add("xl:inline-flex"); }
+        else { pill.classList.add("hidden"); pill.classList.remove("xl:inline-flex"); }
+        return;
+      }
+      pill.classList.remove("is-empty");
       const inMin = hmToMin(next.start) - nm;
       document.getElementById("upNextText").textContent = (inMin > 0 ? "Próximo evento em " + (inMin >= 60 ? Math.floor(inMin / 60) + "h" + String(inMin % 60).padStart(2, "0") : inMin + " min") : "Agora") + ": " + next.title + " · " + next.start;
       pill.classList.remove("hidden"); pill.classList.add("xl:inline-flex");
@@ -9460,6 +9712,7 @@
     function uiEdition() { try { return localStorage.getItem(UI_EDITION_KEY) === "v1" ? "v1" : "v24"; } catch (e) { return "v24"; } }
     function applyUiEdition(ed) {
       document.documentElement.setAttribute("data-ui-edition", ed);
+      try { if (typeof updateUpNext === "function") updateUpNext(); } catch (e) { /* ignore */ }
       const l = document.getElementById("uiEditionLabel");
       if (l) l.textContent = ed === "v24" ? "Visual: Swile OS 2.4" : "Visual: Clássico v1";
     }
@@ -9467,9 +9720,11 @@
       const ed = uiEdition() === "v24" ? "v1" : "v24";
       try { localStorage.setItem(UI_EDITION_KEY, ed); } catch (e) { /* ignore */ }
       applyUiEdition(ed);
+      applyAgendaView(defaultAgendaView());
       showToast(ed === "v24" ? "Visual Swile OS 2.4 ativado. Alt+V volta ao Clássico v1." : "Visual Clássico v1 restaurado.", "🎨");
     }
     applyUiEdition(uiEdition());
+    applyAgendaView(defaultAgendaView());
     document.addEventListener("keydown", function (e) {
       if (e.altKey && !e.ctrlKey && !e.metaKey && String(e.code || "") === "KeyV") { e.preventDefault(); toggleUiEdition(); }
     });

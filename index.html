@@ -8,7 +8,7 @@
   <title>Swile OS · CRM Middle Market RJ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -182,6 +182,48 @@
       .lg\:pl-60 { padding-left: 0 !important; }
     }
     .fade-in { animation: fadeIn .18s ease-out; }
+    /* Calendário & Agenda */
+    .cal-grid { position: relative; display: grid; grid-template-columns: 3.25rem 1fr; }
+    .cal-hours { position: relative; }
+    .cal-hour { height: var(--cal-h, 56px); font-size: 10.5px; color: var(--faint); text-align: right; padding-right: .5rem; transform: translateY(-.45em); }
+    .cal-col { position: relative; border-left: 1px solid var(--line); background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--cal-h, 56px)); }
+    .cal-ev { position: absolute; left: .4rem; right: .4rem; border-radius: 8px; padding: .3rem .5rem; font-size: 11.5px; overflow: hidden; border: 1px solid; line-height: 1.3; }
+    .cal-ev.k-client { background: rgba(139,92,246,.18); border-color: rgba(139,92,246,.55); color: #ede9fe; }
+    .cal-ev.k-internal { background: repeating-linear-gradient(-45deg, rgba(245,158,11,.14), rgba(245,158,11,.14) 8px, rgba(245,158,11,.05) 8px, rgba(245,158,11,.05) 16px); border-color: rgba(245,158,11,.5); color: #fde68a; }
+    .cal-ev.k-travel { background: repeating-linear-gradient(-45deg, rgba(244,63,94,.14), rgba(244,63,94,.14) 8px, rgba(244,63,94,.05) 8px, rgba(244,63,94,.05) 16px); border-color: rgba(244,63,94,.5); color: #fecdd3; }
+    .cal-free { position: absolute; left: .4rem; right: .4rem; border: 1px dashed rgba(52,211,153,.45); border-radius: 8px; color: #6ee7b7; font-size: 10.5px; display: flex; align-items: flex-start; padding: .25rem .5rem; background: transparent; cursor: pointer; }
+    .cal-free:hover { background: rgba(52,211,153,.07); }
+    .cal-now { position: absolute; left: 0; right: 0; border-top: 2px solid #f43f5e; z-index: 3; }
+    .shake { animation: shake .38s ease-in-out; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+    .notif-badge { position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; border-radius: 9999px; background: #f43f5e; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+    .notif-badge.hidden, .upnext.hidden { display: none !important; }
+    .upnext { display: inline-flex; align-items: center; gap: .4rem; height: 1.85rem; padding: 0 .65rem; border-radius: 9999px; border: 1px solid rgba(139,92,246,.4); background: rgba(139,92,246,.1); color: #ddd6fe; font-size: 11.5px; max-width: 18rem; }
+
+    /* ===== Visual Swile OS 2.4 (opcional; o Clássico v1 continua sendo o padrão) ===== */
+    html[data-ui-edition="v24"] {
+      --bg: #090A0F; --surface: #12151F; --surface-2: #161A26; --surface-3: #1D2231;
+      --line: rgba(255,255,255,.07); --line-strong: rgba(255,255,255,.12);
+      --accent: #7C3AED; --accent-strong: #6D28D9; --accent-soft: rgba(124,58,237,.14);
+    }
+    html[data-ui-edition="v24"] body { letter-spacing: -0.011em; }
+    html[data-ui-edition="v24"] .num, html[data-ui-edition="v24"] .cal-hour { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    html[data-ui-edition="v24"] .card, html[data-ui-edition="v24"] .kcol, html[data-ui-edition="v24"] .modal-panel {
+      background: linear-gradient(180deg, rgba(24,28,41,.88) 0%, rgba(18,21,31,.98) 100%);
+      box-shadow: inset 0 1px 0 0 rgba(255,255,255,.13), 0 8px 24px -8px rgba(0,0,0,.65);
+    }
+    html[data-ui-edition="v24"] #appSidebar, html[data-ui-edition="v24"] header.sticky { background: #0D0F17 !important; border-color: rgba(255,255,255,.07) !important; }
+    html[data-ui-edition="v24"] .btn-primary { background: #7C3AED; border-color: #7C3AED; }
+    html[data-ui-edition="v24"] .kcard .kcard-actions { opacity: 0; transition: opacity .15s; }
+    html[data-ui-edition="v24"] .kcard:hover .kcard-actions, html[data-ui-edition="v24"] .kcard:focus-within .kcard-actions { opacity: 1; }
+    /* Ficha da conta como gaveta lateral (estilo Attio), com o Kanban visível ao fundo */
+    @media (min-width: 1024px) {
+      html[data-ui-edition="v24"] #accountModal { justify-content: flex-end; align-items: stretch; padding: 0; }
+      html[data-ui-edition="v24"] #accountModal .modal-panel { max-width: 58rem; max-height: 100vh; height: 100vh; border-radius: 0; border-left: 1px solid rgba(255,255,255,.1); animation: drawerIn .22s ease-out; }
+      html[data-ui-edition="v24"] #accountModal.modal-backdrop { background: rgba(5,6,10,.4); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    }
+    @keyframes drawerIn { from { transform: translateX(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     .live-dot::before { content: ""; display: inline-block; width: .5rem; height: .5rem; margin-right: .35rem; border-radius: 9999px; background: #ef4444; vertical-align: middle; animation: livePulse 1.2s ease-in-out infinite; }
     @keyframes livePulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
@@ -316,6 +358,15 @@
             <kbd class="hidden sm:inline text-[10px] rounded border px-1" style="border-color:var(--line-strong)">Ctrl K</kbd>
           </button>
           <span class="hidden lg:block flex-1"></span>
+          <button id="upNextPill" type="button" class="upnext hidden xl:inline-flex" onclick="openCalendarOn(upNextDate)" title="Abrir o calendário"><svg class="ico"><use href="#i-calendar"/></svg><span id="upNextText" class="truncate"></span></button>
+          <div class="relative">
+            <button id="btnNotifs" type="button" class="icon-btn relative" aria-label="Notificações" aria-haspopup="true" aria-expanded="false" onclick="toggleNotifPanel()"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="notifBadge" class="notif-badge hidden">0</span></button>
+            <div id="notifPanel" class="hidden absolute right-0 mt-2 w-80 max-w-[90vw] card p-3 z-30 text-xs" role="dialog" aria-label="Central de notificações">
+              <div class="flex items-center justify-between gap-2 mb-2"><p class="font-medium text-white">Notificações</p><button type="button" class="text-[11px] underline underline-offset-2" style="color:var(--faint)" onclick="markNotifsRead()">Marcar como lidas</button></div>
+              <ul id="notifList" class="space-y-1.5 max-h-80 overflow-y-auto custom-scroll"></ul>
+            </div>
+          </div>
+          <button id="btnUiEdition" type="button" class="btn btn-ghost btn-sm hidden md:inline-flex" onclick="toggleUiEdition()" title="Alternar visual (Alt+V)"><span id="uiEditionLabel">Visual: Clássico v1</span></button>
           <button id="btnOpenSupabaseTab" type="button" onclick="switchTab('supabase')" class="btn btn-ghost btn-sm !px-2" title="Status do banco">
             <span id="dbStatusDot" class="dot" style="background:var(--faint)"></span>
             <span id="dbStatusLabel" class="hidden md:inline">Modo local</span>
@@ -602,6 +653,10 @@
               <p class="text-sm" style="color:var(--muted)">Toda próxima ação nasce e termina aqui. Ao concluir, o CRM pede o próximo passo.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+              <div class="seg" role="group" aria-label="Visualização da agenda">
+                <button id="btnAgendaList" type="button" aria-pressed="true" onclick="setAgendaView('list')">Lista</button>
+                <button id="btnAgendaCal" type="button" aria-pressed="false" onclick="setAgendaView('calendar')">Calendário</button>
+              </div>
               <div class="seg" role="group" aria-label="Modo de trabalho">
                 <button id="btnModeHome" type="button" aria-pressed="true" onclick="setAgendaMode('home')">🏠 Home Office</button>
                 <button id="btnModeField" type="button" aria-pressed="false" onclick="setAgendaMode('field')">🚗 Campo</button>
@@ -616,7 +671,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div id="agendaListGrid" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div class="lg:col-span-7 card overflow-hidden">
               <div id="followupsFullList"></div>
             </div>
@@ -637,6 +692,51 @@
                 </div>
               </div>
               <div id="routesRjList"></div>
+            </div>
+          </div>
+          <div id="calendarWrap" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-8 card p-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5">
+                  <button type="button" class="icon-btn" aria-label="Dia anterior" onclick="shiftCalendarDay(-1)">‹</button>
+                  <input id="calDate" type="date" class="input h-8 w-auto num" onchange="renderCalendar()" aria-label="Dia do calendário" />
+                  <button type="button" class="icon-btn" aria-label="Próximo dia" onclick="shiftCalendarDay(1)">›</button>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="openCalendarOn(todayIso())">Hoje</button>
+                </div>
+                <div class="flex flex-wrap gap-2 text-[11px]" style="color:var(--muted)">
+                  <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:rgba(139,92,246,.45)"></span>Cliente</span>
+                  <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:rgba(245,158,11,.45)"></span>Time interno</span>
+                  <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:rgba(244,63,94,.45)"></span>Deslocamento</span>
+                  <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm border border-dashed" style="border-color:#34d399"></span>Livre</span>
+                </div>
+              </div>
+              <div id="calDayActions" class="mt-3"></div>
+              <div id="calGrid" class="cal-grid mt-3"></div>
+            </div>
+            <div class="lg:col-span-4 space-y-3">
+              <div id="calFormCard" class="card p-4 space-y-2.5 text-xs">
+                <h3 class="card-title">Agendar no calendário</h3>
+                <p class="card-sub">O detector de conflito confere a sobreposição pela duração antes de gravar.</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="col-span-2"><label for="calKind" class="label">Tipo</label>
+                    <select id="calKind" class="input h-8" onchange="syncCalForm()">
+                      <option value="client">Reunião com cliente</option>
+                      <option value="internal">Reunião interna do time</option>
+                      <option value="travel">Deslocamento / rota</option>
+                    </select></div>
+                  <div id="calAccountWrap" class="col-span-2"><label for="calAccount" class="label">Conta</label><select id="calAccount" class="input h-8"></select></div>
+                  <div id="calFormatWrap" class="col-span-2"><label for="calFormat" class="label">Formato</label>
+                    <select id="calFormat" class="input h-8"><option value="online">Vídeo / ligação</option><option value="presencial">Presencial</option></select></div>
+                  <div class="col-span-2"><label for="calTitle" class="label">Título (opcional para cliente)</label><input id="calTitle" class="input h-8" placeholder="Ex.: Demo do Dash RH" /></div>
+                  <div><label for="calFormDate" class="label">Data</label><input id="calFormDate" type="date" class="input h-8 num" /></div>
+                  <div><label for="calStart" class="label">Início</label><input id="calStart" type="time" step="900" min="07:00" max="21:00" class="input h-8 num" value="10:00" /></div>
+                  <div class="col-span-2"><label for="calDur" class="label">Duração</label>
+                    <select id="calDur" class="input h-8"><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>1 hora</option><option value="90">1h30</option><option value="120">2 horas</option></select></div>
+                </div>
+                <div id="calConflict" class="hidden rounded-lg border p-2.5 space-y-1.5" style="border-color:rgba(244,63,94,.5);background:rgba(244,63,94,.08)"></div>
+                <button id="btnCalSchedule" type="button" class="btn btn-primary btn-sm w-full" onclick="scheduleCalendarEvent()">Agendar</button>
+                <p class="text-[11px]" style="color:var(--faint)">Reunião com cliente também cria a ação na agenda da conta. Se a oportunidade estiver em Não contactado ou Qualificando, ela vai para Em contato. Reuniões internas e deslocamentos ficam só neste navegador.</p>
+              </div>
             </div>
           </div>
         </section>
@@ -4772,6 +4872,8 @@
       renderObjectionsList();
       updateCoachPromptPreview();
       renderNavCounts();
+      if (typeof renderNotifs === "function") { renderNotifs(); updateUpNext(); }
+      if (typeof agendaView !== "undefined" && agendaView === "calendar") renderCalendar();
       if (currentTab === "reports") renderReports();
       const feed = document.getElementById("weeklyFeed");
       if (feed && feed.open) renderWeeklyFeed();
@@ -5248,7 +5350,7 @@
                 ? '<button type="button" onclick="editFollowup(\'' + esc(next.id) + '\')" class="w-full text-left text-[11px] rounded-md px-2 py-1 truncate" style="background:var(--surface);color:#aab2c3">' + icon("clock", "!w-3 !h-3 inline -mt-0.5 mr-1") + esc(relDateLabel(next.due_date)) + ' · ' + esc(next.action_title) + '</button>'
                 : '<button type="button" onclick="openFollowupModal(\'' + esc(acc.id) + '\')" class="w-full text-left text-[11px] rounded-md px-2 py-1" style="background:rgba(251,191,36,.08);color:#fcd34d">' + icon("alert", "!w-3 !h-3 inline -mt-0.5 mr-1") + 'Sem próximo passo · agendar</button>')
               : '') +
-            '<div class="flex items-center justify-between pt-1">' +
+            '<div class="kcard-actions flex items-center justify-between pt-1">' +
               (st.weight > 1
                 ? '<button type="button" onclick="moveOpportunityStage(\'' + esc(opp.id) + '\', -1)" class="icon-btn !w-7 !h-7" title="Voltar etapa" aria-label="Voltar etapa">' + icon("left") + '</button>'
                 : '<span></span>') +
@@ -9069,6 +9171,301 @@
       if ((state.autoConnect || cameFromEmail) && state.supabaseUrl && state.supabaseKey) {
         connectAndSyncSupabase({ silent: !cameFromEmail });
       }
+    });
+
+
+    // ===================================================================
+    // 7z. CALENDÁRIO & AGENDA, DETECTOR DE CONFLITO, NOTIFICAÇÕES E VISUAL 2.4
+    // ===================================================================
+    const CAL_START_MIN = 8 * 60, CAL_END_MIN = 19 * 60, CAL_STEP = 15, CAL_HOUR_PX = 56;
+    const CAL_KIND_LABEL = { client: "Cliente", internal: "Time interno · indisponível", travel: "Bloqueio de rota RJ" };
+    var agendaView = "list";
+    var upNextDate = null;
+
+    function calEvents() { if (!Array.isArray(state.calEvents)) state.calEvents = []; return state.calEvents; }
+    function hmToMin(hm) { const m = /^(\d{1,2}):(\d{2})/.exec(String(hm || "")); return m ? Number(m[1]) * 60 + Number(m[2]) : null; }
+    function minToHm(v) { return String(Math.floor(v / 60)).padStart(2, "0") + ":" + String(v % 60).padStart(2, "0"); }
+    function calEnd(ev) { return hmToMin(ev.start) + (Number(ev.dur) || 0); }
+    function calEventsOn(date) { return calEvents().filter(function (e) { return e.date === date; }).sort(function (a, b) { return hmToMin(a.start) - hmToMin(b.start); }); }
+
+    /** Conflito = sobreposição de intervalos [início, fim). Encostar (fim de um = início do outro) não é conflito. */
+    function findCalendarConflicts(date, startMin, dur, ignoreId) {
+      const end = startMin + dur;
+      return calEventsOn(date).filter(function (e) {
+        if (ignoreId && e.id === ignoreId) return false;
+        const s0 = hmToMin(e.start), e0 = calEnd(e);
+        return startMin < e0 && s0 < end;
+      });
+    }
+
+    /** Próximo horário livre do dia (passos de 15 min, dentro de 08:00–19:00) a partir de fromMin. */
+    function nextFreeSlot(date, dur, fromMin) {
+      let t = Math.max(CAL_START_MIN, Math.ceil((fromMin || CAL_START_MIN) / CAL_STEP) * CAL_STEP);
+      for (; t + dur <= CAL_END_MIN; t += CAL_STEP) {
+        if (!findCalendarConflicts(date, t, dur).length) return t;
+      }
+      return null;
+    }
+
+    function setAgendaView(v) {
+      agendaView = v === "calendar" ? "calendar" : "list";
+      try { localStorage.setItem("swile_crm_agenda_view", agendaView); } catch (e) { /* ignore */ }
+      document.getElementById("agendaListGrid").classList.toggle("hidden", agendaView !== "list");
+      document.getElementById("calendarWrap").classList.toggle("hidden", agendaView !== "calendar");
+      document.getElementById("btnAgendaList").setAttribute("aria-pressed", String(agendaView === "list"));
+      document.getElementById("btnAgendaCal").setAttribute("aria-pressed", String(agendaView === "calendar"));
+      if (agendaView === "calendar") renderCalendar();
+    }
+
+    function openCalendarOn(date) {
+      if (currentTab !== "followups") switchTab("followups");
+      const d = document.getElementById("calDate");
+      if (d) d.value = date || todayIso();
+      setAgendaView("calendar");
+    }
+
+    function shiftCalendarDay(n) {
+      const el = document.getElementById("calDate");
+      const d = new Date((el.value || todayIso()) + "T12:00:00");
+      d.setDate(d.getDate() + n);
+      el.value = d.toISOString().slice(0, 10);
+      renderCalendar();
+    }
+
+    function syncCalForm() {
+      const k = document.getElementById("calKind").value;
+      document.getElementById("calAccountWrap").classList.toggle("hidden", k !== "client");
+      document.getElementById("calFormatWrap").classList.toggle("hidden", k !== "client");
+    }
+
+    function fillCalAccounts() {
+      const sel = document.getElementById("calAccount");
+      if (!sel) return;
+      const cur = sel.value;
+      sel.innerHTML = state.accounts.slice().sort(function (a, b) { return String(a.company_name).localeCompare(String(b.company_name)); })
+        .map(function (a) { return '<option value="' + esc(a.id) + '">' + esc(a.company_name) + '</option>'; }).join("");
+      if (cur) sel.value = cur;
+    }
+
+    function prefillCalSlot(date, startMin) {
+      document.getElementById("calFormDate").value = date;
+      document.getElementById("calStart").value = minToHm(startMin);
+      hideCalConflict();
+      const card = document.getElementById("calFormCard");
+      if (card) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      document.getElementById("calTitle").focus();
+    }
+
+    function hideCalConflict() { const b = document.getElementById("calConflict"); if (b) { b.classList.add("hidden"); b.innerHTML = ""; } }
+
+    function renderCalendar() {
+      const grid = document.getElementById("calGrid");
+      if (!grid) return;
+      const dEl = document.getElementById("calDate");
+      if (!dEl.value) dEl.value = todayIso();
+      const date = dEl.value;
+      const fd = document.getElementById("calFormDate");
+      if (fd && !fd.value) fd.value = date;
+      fillCalAccounts();
+      syncCalForm();
+      const evs = calEventsOn(date);
+      const top = function (min) { return ((min - CAL_START_MIN) / 60) * CAL_HOUR_PX; };
+      let hours = "";
+      for (let h = CAL_START_MIN / 60; h <= CAL_END_MIN / 60; h++) hours += '<div class="cal-hour num">' + String(h).padStart(2, "0") + ':00</div>';
+      let col = "";
+      // Janelas livres de 30 min ou mais
+      let cursor = CAL_START_MIN;
+      const busy = evs.map(function (e) { return [Math.max(CAL_START_MIN, hmToMin(e.start)), Math.min(CAL_END_MIN, calEnd(e))]; }).sort(function (a, b) { return a[0] - b[0]; });
+      const gaps = [];
+      busy.forEach(function (b) { if (b[0] - cursor >= 30) gaps.push([cursor, b[0]]); cursor = Math.max(cursor, b[1]); });
+      if (CAL_END_MIN - cursor >= 30) gaps.push([cursor, CAL_END_MIN]);
+      gaps.forEach(function (g) {
+        col += '<button type="button" class="cal-free" style="top:' + (top(g[0]) + 2) + 'px;height:' + (top(g[1]) - top(g[0]) - 4) + 'px" onclick="prefillCalSlot(\'' + date + '\', ' + g[0] + ')">Livre ' + minToHm(g[0]) + '–' + minToHm(g[1]) + ' · agendar</button>';
+      });
+      evs.forEach(function (e) {
+        const s0 = Math.max(CAL_START_MIN, hmToMin(e.start)), e0 = Math.min(CAL_END_MIN, calEnd(e));
+        if (e0 <= CAL_START_MIN || s0 >= CAL_END_MIN) return;
+        const acc = e.account_id ? findAccount(e.account_id) : null;
+        col += '<div class="cal-ev k-' + esc(e.kind) + '" data-ev="' + esc(e.id) + '" style="top:' + (top(s0) + 1) + 'px;height:' + Math.max(22, top(e0) - top(s0) - 2) + 'px">' +
+          '<div class="flex items-start justify-between gap-1"><span class="font-medium truncate">' + esc(e.title) + '</span>' +
+          '<button type="button" class="shrink-0 opacity-70 hover:opacity-100" title="Remover do calendário" aria-label="Remover do calendário" onclick="removeCalendarEvent(\'' + esc(e.id) + '\')">×</button></div>' +
+          '<div class="num opacity-80">' + esc(e.start) + '–' + minToHm(calEnd(e)) + ' · ' + esc(CAL_KIND_LABEL[e.kind] || "") + (acc ? ' · <button type="button" class="underline underline-offset-2" onclick="openAccountModal(\'' + esc(acc.id) + '\')">ficha</button>' : '') + '</div></div>';
+      });
+      if (date === todayIso()) {
+        const now = new Date(); const nm = now.getHours() * 60 + now.getMinutes();
+        if (nm >= CAL_START_MIN && nm <= CAL_END_MIN) col += '<div class="cal-now" style="top:' + top(nm) + 'px"></div>';
+      }
+      const height = top(CAL_END_MIN);
+      grid.style.setProperty("--cal-h", CAL_HOUR_PX + "px");
+      grid.innerHTML = '<div class="cal-hours" style="height:' + height + 'px">' + hours + '</div><div class="cal-col" style="height:' + height + 'px">' + col + '</div>';
+      // Ações da agenda do CRM no dia (sem horário): ficam fora da grade
+      const fus = state.followups.filter(function (f) { return f.status === "Pendente" && String(f.due_date).slice(0, 10) === date && !calEvents().some(function (e) { return e.followup_id === f.id; }); });
+      document.getElementById("calDayActions").innerHTML = fus.length
+        ? '<p class="eyebrow mb-1">Ações do CRM neste dia, sem horário (' + fus.length + ')</p><div class="flex flex-wrap gap-1.5">' + fus.map(function (f) {
+            const a = findAccount(f.account_id);
+            return '<button type="button" class="chip" onclick="editFollowup(\'' + esc(f.id) + '\')" title="Abrir a ação">' + esc((a ? a.company_name + ": " : "") + f.action_title) + '</button>';
+          }).join("") + '</div>'
+        : '';
+    }
+
+    function showCalConflict(conflicts, date, startMin, dur) {
+      const box = document.getElementById("calConflict");
+      const next = nextFreeSlot(date, dur, startMin);
+      const c = conflicts[0];
+      box.innerHTML =
+        '<p class="font-medium" style="color:#fecdd3">Conflito de agenda: ' + minToHm(startMin) + '–' + minToHm(startMin + dur) + ' já está ocupado</p>' +
+        conflicts.map(function (e) { return '<p style="color:#fda4af">' + esc(e.start) + '–' + minToHm(calEnd(e)) + ' · ' + esc(e.title) + ' (' + esc(CAL_KIND_LABEL[e.kind] || "") + ')</p>'; }).join("") +
+        (next !== null
+          ? '<button type="button" id="btnCalNextFree" class="btn btn-sm w-full" onclick="scheduleCalendarEvent(' + next + ')">⚡ Agendar no próximo horário livre (' + minToHm(next) + ')</button>'
+          : '<p style="color:var(--muted)">Sem horário livre de ' + dur + ' min até as 19:00 neste dia. Escolha outro dia.</p>');
+      box.classList.remove("hidden");
+      const card = document.getElementById("calFormCard");
+      card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
+      pushNotification("Conflito às " + minToHm(startMin) + " com " + c.title + " (" + c.start + "–" + minToHm(calEnd(c)) + ").", "conflict");
+      showToast("Horário ocupado: " + c.title + ".", "⛔");
+      playChime(true);
+    }
+
+    function scheduleCalendarEvent(forceStartMin) {
+      const kind = document.getElementById("calKind").value;
+      const date = document.getElementById("calFormDate").value || document.getElementById("calDate").value || todayIso();
+      const startMin = typeof forceStartMin === "number" ? forceStartMin : hmToMin(document.getElementById("calStart").value);
+      const dur = Number(document.getElementById("calDur").value) || 60;
+      if (startMin === null) { showToast("Informe o horário de início.", "⚠️"); return; }
+      if (startMin < CAL_START_MIN || startMin + dur > CAL_END_MIN) { showToast("A agenda vai das 08:00 às 19:00.", "⚠️"); return; }
+      const conflicts = findCalendarConflicts(date, startMin, dur);
+      if (conflicts.length) { showCalConflict(conflicts, date, startMin, dur); return; }
+      hideCalConflict();
+      const acc = kind === "client" ? findAccount(document.getElementById("calAccount").value) : null;
+      if (kind === "client" && !acc) { showToast("Escolha a conta da reunião.", "⚠️"); return; }
+      const typed = (document.getElementById("calTitle").value || "").trim();
+      const title = typed || (kind === "client" ? "Reunião · " + acc.company_name : kind === "internal" ? "Reunião interna" : "Deslocamento");
+      const ev = { id: newUuid(), kind: kind, title: kind === "client" && typed ? acc.company_name + " · " + typed : title, account_id: acc ? acc.id : null, date: date, start: minToHm(startMin), dur: dur, followup_id: null };
+      if (acc) {
+        const format = document.getElementById("calFormat").value;
+        const fu = createFollowup({
+          account_id: acc.id,
+          opportunity_id: (openOppOf(acc.id) || {}).id || null,
+          action_title: "Reunião " + ev.start + "–" + minToHm(startMin + dur) + (typed ? ": " + typed : ""),
+          due_date: date,
+          channel: format === "presencial" ? "Visita Presencial" : "Ligação",
+          notes: "Agendada pelo calendário (" + dur + " min).",
+          priority: acc.priority_icp === "Alta" ? "Alta" : "Média"
+        });
+        if (fu && fu.id) ev.followup_id = fu.id;
+        // 6 fases do Salesforce: reunião marcada leva Não contactado/Qualificando para Em contato
+        const opp = openOppOf(acc.id);
+        if (opp && Number(opp.stage_weight) >= 1 && Number(opp.stage_weight) < 3) moveOpportunityStage(opp.id, 3 - Number(opp.stage_weight));
+      }
+      calEvents().push(ev);
+      persistState();
+      document.getElementById("calTitle").value = "";
+      document.getElementById("calDate").value = date;
+      pushNotification("Agendado: " + ev.title + " em " + formatDateShort(date) + ", " + ev.start + "–" + minToHm(startMin + dur) + ".", "scheduled");
+      showToast("Agendado: " + ev.start + "–" + minToHm(startMin + dur) + ".", "📅");
+      refreshAllViews();
+      renderCalendar();
+      updateUpNext();
+    }
+
+    async function removeCalendarEvent(id) {
+      const ev = calEvents().find(function (e) { return e.id === id; });
+      if (!ev) return;
+      if (!(await uiConfirm("\"" + ev.title + "\" sai do calendário." + (ev.followup_id ? " A ação na agenda da conta continua; conclua ou reagende por lá." : ""), { title: "Remover do calendário?", okLabel: "Remover" }))) return;
+      state.calEvents = calEvents().filter(function (e) { return e.id !== id; });
+      persistState();
+      renderCalendar();
+      updateUpNext();
+    }
+
+    // Notificações (ficam neste navegador)
+    function notifs() { if (!Array.isArray(state.notifs)) state.notifs = []; return state.notifs; }
+    function pushNotification(text, kind) {
+      notifs().unshift({ id: newUuid(), at: new Date().toISOString(), text: String(text), kind: kind || "info", read: false });
+      state.notifs = notifs().slice(0, 50);
+      persistState();
+      renderNotifs();
+    }
+    function renderNotifs() {
+      const list = document.getElementById("notifList");
+      const badge = document.getElementById("notifBadge");
+      if (!list || !badge) return;
+      const unread = notifs().filter(function (n) { return !n.read; }).length;
+      badge.textContent = unread > 9 ? "9+" : String(unread);
+      badge.classList.toggle("hidden", !unread);
+      list.innerHTML = notifs().length ? notifs().map(function (n) {
+        const color = n.kind === "conflict" ? "#fda4af" : n.kind === "soon" ? "#fcd34d" : "#c3c8d4";
+        return '<li class="rounded-md px-2 py-1.5" style="background:' + (n.read ? "transparent" : "var(--surface-2)") + '"><p style="color:' + color + '">' + esc(n.text) + '</p><p class="num text-[10.5px]" style="color:var(--faint)">' + esc(new Date(n.at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })) + '</p></li>';
+      }).join("") : '<li style="color:var(--faint)">Nenhuma notificação.</li>';
+    }
+    function toggleNotifPanel(force) {
+      const p = document.getElementById("notifPanel");
+      const open = typeof force === "boolean" ? force : p.classList.contains("hidden");
+      p.classList.toggle("hidden", !open);
+      document.getElementById("btnNotifs").setAttribute("aria-expanded", String(open));
+      if (open) renderNotifs();
+    }
+    function markNotifsRead() { notifs().forEach(function (n) { n.read = true; }); persistState(); renderNotifs(); }
+    document.addEventListener("click", function (e) {
+      const p = document.getElementById("notifPanel");
+      if (p && !p.classList.contains("hidden") && !e.target.closest("#notifPanel") && !e.target.closest("#btnNotifs")) toggleNotifPanel(false);
+    });
+
+    /** Sinal sonoro curto via Web Audio API (sem arquivo externo). Falha em silêncio se o navegador bloquear. */
+    function playChime(isAlert) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        const ctx = playChime.ctx || (playChime.ctx = new AC());
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sine";
+        o.frequency.value = isAlert ? 520 : 880;
+        g.gain.setValueAtTime(0.0001, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.05, ctx.currentTime + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(); o.stop(ctx.currentTime + 0.27);
+      } catch (e) { /* ignore */ }
+    }
+
+    /** Pílula do próximo evento de hoje + aviso no sino 10 minutos antes. */
+    function updateUpNext() {
+      const pill = document.getElementById("upNextPill");
+      if (!pill) return;
+      const today = todayIso();
+      const now = new Date(); const nm = now.getHours() * 60 + now.getMinutes();
+      const next = calEventsOn(today).filter(function (e) { return calEnd(e) > nm; })[0];
+      upNextDate = today;
+      if (!next) { pill.classList.add("hidden"); pill.classList.remove("xl:inline-flex"); return; }
+      const inMin = hmToMin(next.start) - nm;
+      document.getElementById("upNextText").textContent = (inMin > 0 ? "Próximo evento em " + (inMin >= 60 ? Math.floor(inMin / 60) + "h" + String(inMin % 60).padStart(2, "0") : inMin + " min") : "Agora") + ": " + next.title + " · " + next.start;
+      pill.classList.remove("hidden"); pill.classList.add("xl:inline-flex");
+      if (inMin > 0 && inMin <= 10 && !next.notified) {
+        next.notified = true;
+        persistState();
+        pushNotification("Em " + inMin + " min: " + next.title + " (" + next.start + ").", "soon");
+        playChime(false);
+      }
+    }
+    setInterval(updateUpNext, 60000);
+
+    // Visual: Clássico v1 (padrão) ⇄ Swile OS 2.4 (opcional)
+    const UI_EDITION_KEY = "swile_ui_edition";
+    function uiEdition() { try { return localStorage.getItem(UI_EDITION_KEY) === "v24" ? "v24" : "v1"; } catch (e) { return "v1"; } }
+    function applyUiEdition(ed) {
+      document.documentElement.setAttribute("data-ui-edition", ed);
+      const l = document.getElementById("uiEditionLabel");
+      if (l) l.textContent = ed === "v24" ? "Visual: Swile OS 2.4" : "Visual: Clássico v1";
+    }
+    function toggleUiEdition() {
+      const ed = uiEdition() === "v24" ? "v1" : "v24";
+      try { localStorage.setItem(UI_EDITION_KEY, ed); } catch (e) { /* ignore */ }
+      applyUiEdition(ed);
+      showToast(ed === "v24" ? "Visual Swile OS 2.4 ativado. Alt+V volta ao Clássico v1." : "Visual Clássico v1 restaurado.", "🎨");
+    }
+    applyUiEdition(uiEdition());
+    document.addEventListener("keydown", function (e) {
+      if (e.altKey && !e.ctrlKey && !e.metaKey && String(e.code || "") === "KeyV") { e.preventDefault(); toggleUiEdition(); }
     });
 
     // Atalhos: Ctrl+K ou / = buscar, N = nova conta, F = follow-up, Esc = fechar janela

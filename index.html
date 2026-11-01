@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-ui-edition="v24">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -200,7 +200,7 @@
     .notif-badge.hidden, .upnext.hidden { display: none !important; }
     .upnext { display: inline-flex; align-items: center; gap: .4rem; height: 1.85rem; padding: 0 .65rem; border-radius: 9999px; border: 1px solid rgba(139,92,246,.4); background: rgba(139,92,246,.1); color: #ddd6fe; font-size: 11.5px; max-width: 18rem; }
 
-    /* ===== Visual Swile OS 2.4 (opcional; o Clássico v1 continua sendo o padrão) ===== */
+    /* ===== Visual Swile OS 2.4 (padrão desde nov/2026; Clássico v1 via Alt+V ou ?visual=v1) ===== */
     html[data-ui-edition="v24"] {
       --bg: #090A0F; --surface: #12151F; --surface-2: #161A26; --surface-3: #1D2231;
       --line: rgba(255,255,255,.07); --line-strong: rgba(255,255,255,.12);
@@ -366,7 +366,7 @@
               <ul id="notifList" class="space-y-1.5 max-h-80 overflow-y-auto custom-scroll"></ul>
             </div>
           </div>
-          <button id="btnUiEdition" type="button" class="btn btn-ghost btn-sm hidden md:inline-flex" onclick="toggleUiEdition()" title="Alternar visual (Alt+V)"><span id="uiEditionLabel">Visual: Clássico v1</span></button>
+          <button id="btnUiEdition" type="button" class="btn btn-ghost btn-sm hidden md:inline-flex" onclick="toggleUiEdition()" title="Alternar visual (Alt+V)"><span id="uiEditionLabel">Visual: Swile OS 2.4</span></button>
           <button id="btnOpenSupabaseTab" type="button" onclick="switchTab('supabase')" class="btn btn-ghost btn-sm !px-2" title="Status do banco">
             <span id="dbStatusDot" class="dot" style="background:var(--faint)"></span>
             <span id="dbStatusLabel" class="hidden md:inline">Modo local</span>
@@ -9449,9 +9449,15 @@
     }
     setInterval(updateUpNext, 60000);
 
-    // Visual: Clássico v1 (padrão) ⇄ Swile OS 2.4 (opcional)
+    // Visual: Swile OS 2.4 (padrão) ⇄ Clássico v1 (Alt+V ou ?visual=v1)
     const UI_EDITION_KEY = "swile_ui_edition";
-    function uiEdition() { try { return localStorage.getItem(UI_EDITION_KEY) === "v24" ? "v24" : "v1"; } catch (e) { return "v1"; } }
+    (function () {
+      try {
+        const q = new URLSearchParams(location.search).get("visual");
+        if (q === "v1" || q === "v24") localStorage.setItem(UI_EDITION_KEY, q);
+      } catch (e) { /* ignore */ }
+    })();
+    function uiEdition() { try { return localStorage.getItem(UI_EDITION_KEY) === "v1" ? "v1" : "v24"; } catch (e) { return "v24"; } }
     function applyUiEdition(ed) {
       document.documentElement.setAttribute("data-ui-edition", ed);
       const l = document.getElementById("uiEditionLabel");

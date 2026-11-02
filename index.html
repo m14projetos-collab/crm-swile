@@ -454,6 +454,25 @@
   </div>
 
   <!-- CONFIRMAÇÃO (substitui o confirm() do navegador) -->
+  <div id="proposalModal" class="fixed inset-0 z-[65] hidden modal-backdrop flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="proposalTitle" onclick="if(event.target===this)closeProposal3P()">
+    <div class="modal-panel w-full max-w-2xl p-5 space-y-3 fade-in">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h3 id="proposalTitle" class="text-[15px] font-semibold text-white">Proposta 3 Pilares</h3>
+          <p class="mt-0.5 text-[12px]" style="color:var(--muted)">Texto editável. Usa só dados da ficha, a simulação PAT salva e fatos com fonte.</p>
+        </div>
+        <button type="button" class="icon-btn shrink-0" aria-label="Fechar" onclick="closeProposal3P()">✕</button>
+      </div>
+      <p id="proposalWarn" class="rounded-lg px-3 py-2 text-[12px]" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.28);color:#fcd34d" hidden></p>
+      <label for="proposalText" class="sr-only">Proposta</label>
+      <textarea id="proposalText" rows="16" class="input text-[12px] leading-relaxed font-mono"></textarea>
+      <div class="flex flex-wrap justify-end gap-2">
+        <button type="button" class="btn btn-sm" onclick="proposalAction('download')"><svg class="ico"><use href="#i-download"/></svg>Baixar .txt</button>
+        <button type="button" class="btn btn-sm" onclick="proposalAction('email')"><svg class="ico"><use href="#i-mail"/></svg>Abrir no e-mail</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="proposalAction('copy')"><svg class="ico"><use href="#i-copy"/></svg>Copiar</button>
+      </div>
+    </div>
+  </div>
   <div id="confirmModal" class="fixed inset-0 z-[70] hidden modal-backdrop flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" onclick="if(event.target===this)resolveConfirm(false)">
     <div class="modal-panel w-full max-w-md p-5 space-y-4 fade-in">
       <div class="flex items-start gap-3">
@@ -971,6 +990,8 @@
               </div>
             </div>
           </div>
+
+          <div id="pbColdReading" class="card p-4 space-y-4"></div>
 
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div class="lg:col-span-6 card p-4 space-y-4">
@@ -1783,6 +1804,7 @@
                 <div><label for="patFeeSwile" class="label">Taxa proposta Swile (%)</label><input id="patFeeSwile" type="number" step="0.1" min="0" value="0" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
                 <div><label for="patHrHours" class="label">Horas de RH poupadas/mês (premissa)</label><input id="patHrHours" type="number" min="0" value="12" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
                 <div><label for="patHrCost" class="label">Custo da hora do RH (R$, premissa)</label><input id="patHrCost" type="number" min="0" value="65" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
+                <div class="col-span-2"><label for="patClimate" class="label">Software de clima/engajamento substituído (R$ por vida/mês) · opcional</label><input id="patClimate" type="number" min="0" step="0.5" value="" placeholder="Só preencha se o cliente paga hoje e o módulo entra no contrato Swile" class="input h-8 text-[12px]" oninput="renderPatResult()"></div>
               </div>
               <div id="patResult" class="rounded-lg p-3 space-y-1.5" style="background:var(--surface-2)"></div>
               <div class="flex flex-wrap gap-1.5">
@@ -2889,11 +2911,11 @@
       "Contrato Enviado": 5
     };
     const ACCOUNT_STATUSES = Object.keys(STATUS_RANK);
-    const TEMPLATE_VARS = ["{nome}", "{empresa}", "{operadora}", "{vidas}", "{ticket}", "{tpv_mensal}", "{pat_anual}", "{polo}", "{bairro}", "{vendedor}", "{link_agenda}", "{link_proposta}"];
+    const TEMPLATE_VARS = ["{nome}", "{empresa}", "{operadora}", "{vidas}", "{ticket}", "{tpv_mensal}", "{pat_anual}", "{polo}", "{bairro}", "{setor_rj}", "{argumento_operadora}", "{vendedor}", "{link_agenda}", "{link_proposta}"];
     // Trecho entre [[ ]] some inteiro quando alguma variável dele está vazia (ex.: sem IRPJ, não há {pat_anual})
 
     // Versão dos modelos padrão. Ao subir, migrateTemplates() troca só os textos que ainda são o padrão antigo.
-    const TPL_VERSION = 3;
+    const TPL_VERSION = 4;
 
     const DEFAULT_WA_TEMPLATES = [
       {
@@ -2907,6 +2929,18 @@
       {
         id: "w-d5-premiacao", name: "D+5 · Entrada por Premiação (sem mexer no VR/VA)", stages: [],
         text: "{nome}, se o contrato de VR/VA da {empresa} com {operadora} ainda tem prazo ou multa, não faz sentido mexer nele agora.\n\nUm caminho mais leve: começar só com Premiação, Incentivo ou Natal no cartão Swile Mastercard, sem tocar no VR/VA, e deixar essa conversa para perto do vencimento.\n\nVocê seria contra avaliar só essa frente de premiação?"
+      },
+      {
+        id: "w-d0-pontocego", name: "D+0 · Ponto cego de novembro (Premiação + híbrido)", stages: [], advance_to: "Outbound Iniciado",
+        text: "Oi {nome}, tudo bem? Aqui é {vendedor}, da Swile.\n\nTenho conversado com RHs de empresas[[ do porte da {empresa} ({vidas} vidas)]][[ em {polo}]] sobre duas frentes de fim de ano: premiar as equipes por meta e ajustar os benefícios de quem está no híbrido.\n\nHoje, na {empresa}, a premiação e o VR/VA ficam em fornecedores separados ou já está tudo em um cartão só?"
+      },
+      {
+        id: "w-d2-leitura", name: "D+2 · Leitura fria por concorrente", stages: [],
+        text: "{nome}, olhei o cenário da {empresa}[[ ({vidas} vidas, cerca de R$ {tpv_mensal}/mês em benefícios)]].\n\n[[{argumento_operadora}\n\n]]Na Swile, Refeição, Alimentação, Mobilidade, Home Office e Premiação ficam no mesmo cartão Mastercard, com Apple Pay e Google Pay.[[ No Lucro Real, o incentivo do PAT pode chegar a R$ {pat_anual}/ano para vocês.]]\n\nSeria uma má ideia eu te mandar um estudo de 1 página feito para a {empresa}?"
+      },
+      {
+        id: "w-followup-ato2", name: "Follow-up · Diagnóstico (Ato 2)", stages: [],
+        text: "Oi {nome}, tudo bem?\n\nPara eu ajustar o estudo da {empresa} à realidade do RH e do financeiro, duas perguntas rápidas:\n\n1) Quando vocês premiam por meta ou fazem a ação de fim de ano, quanto tempo o DP gasta e quanto isso custa hoje?\n2) O que precisaria estar na proposta (prazo de implantação[[ em {polo}]] ou condição comercial) para você se sentir seguro em avançar?"
       },
       {
         id: "w-caju", name: "Gatilho Caju + iFood", stages: [], advance_to: "Outbound Iniciado",
@@ -3094,11 +3128,13 @@
         "{pat_anual}": patSim ? money(Number(patSim.pat)) : "",
         "{polo}": String(acc.polo_rj || "").trim(),
         "{bairro}": String(acc.neighborhood || "").trim(),
+        "{setor_rj}": (function () { const sc = detectRjSector(acc); return sc ? sc.short : ""; })(),
+        "{argumento_operadora}": COMPETITOR_ANGLES[competitorAngleKey(prov)].msg.replace(/\{empresa\}/g, String(acc.company_name || "a empresa").trim()),
         "{vendedor}": seller ? sellerSignature() : "",
         "{link_agenda}": (links.scheduling || "").trim() || "(me diga o melhor dia e horário)",
         "{link_proposta}": (links.proposal || "").trim() || "(proposta em anexo)"
       };
-      const VAR_RE = /\{(nome|empresa|operadora|vidas|ticket|tpv_mensal|pat_anual|polo|bairro|vendedor|link_agenda|link_proposta)\}/g;
+      const VAR_RE = /\{(nome|empresa|operadora|vidas|ticket|tpv_mensal|pat_anual|polo|bairro|setor_rj|argumento_operadora|vendedor|link_agenda|link_proposta)\}/g;
       // Trechos opcionais [[...]]: saem inteiros se alguma variável de dentro estiver vazia
       t = t.replace(/\[\[([\s\S]*?)\]\]/g, function (_, seg) {
         const names = seg.match(VAR_RE) || [];
@@ -5055,6 +5091,7 @@
       renderKanbanBoard();
       renderFollowupsTab();
       renderBattlecardDetail();
+      renderColdPlaybook();
       renderPlaybookExtras();
       renderObjectionsList();
       updateCoachPromptPreview();
@@ -7436,8 +7473,23 @@
       const add = view === "cockpit" || view === "pipeline" ? dp : [dp[1]].concat(d.top.length ? [dp[dp.length - 1]] : []);
       r.points = (r.points || []).concat(add.map(function (p) { return "Diretoria · " + p; }));
       r.facts = Object.assign({}, r.facts, { diretoria: directorFacts(d) });
+      const cold = coldFocusPoint(view);
+      if (cold) r.points.push(cold);
       if (view === "pipeline") r.head = String(r.head || "").trim() + " " + (d.velocityDay !== null ? "Velocidade do pipeline: " + fmtK(d.velocityDay) + "/dia." : d.proj && d.proj.velocityDay !== null ? "Velocidade projetada do funil: " + fmtK(d.proj.velocityDay) + "/dia." : "Velocidade do pipeline: sem dados.");
       return r;
+    }
+
+    // Foco de fim de ano (Playbook › Leitura fria RJ). Na aba Contas, conta as contas abertas por ângulo de operadora.
+    function coldFocusPoint(view) {
+      if (view === "cockpit") return "Fim de ano · abra conversas pelo ponto cego: Premiação por meta e benefícios do time híbrido (modelo D+0 · Ponto cego de novembro).";
+      if (view === "pipeline") return "Fim de ano · em Em contato e Negociando, leve a Proposta 3 Pilares (botão na ficha) com a simulação PAT salva.";
+      if (view === "followups") return "Fim de ano · nas reuniões, use as 2 perguntas do Ato 2: quanto custa premiar hoje e o que precisa estar na proposta.";
+      if (view === "accounts") {
+        const c = { tradicional: 0, caju: 0, flash: 0, desconhecida: 0 };
+        state.accounts.forEach(function (a) { if (a.status === "Fechado ✅" || isLostAccount(a)) return; c[competitorAngleKey(a.current_provider)]++; });
+        return "Leitura fria · contas abertas: " + c.tradicional + " em operadoras tradicionais (Alelo, Ticket, Pluxee, VR), " + c.caju + " em Caju/iFood, " + c.flash + " na Flash e " + c.desconhecida + " sem operadora identificada.";
+      }
+      return null;
     }
 
     function briefLocalBase(view) {
@@ -7609,6 +7661,192 @@
     }
 
     // ---------- Diagnóstico do Lead & Próximo Passo (ficha da conta)
+    // LEITURA FRIA DA CONTA (nov/2026): setor RJ + ângulo pela operadora atual + dados que faltam.
+    // Só usa o que está na ficha: sem vidas, ticket ou operadora padrão.
+    const RJ_SECTORS = [
+      { id: "saude", short: "Saúde", label: "Saúde, laboratórios, clínicas e hospitais", keywords: ["saúde", "saude", "hospital", "clínica", "clinica", "laborat", "diagnóstic", "médic", "medic", "enfermagem", "healthtech"],
+        hook: "Turnover de atendimento e enfermagem: fale da experiência do colaborador (aceitação, Apple Pay e Google Pay) e de reconhecimento pela Premiação." },
+      { id: "offshore", short: "Óleo, gás e energia", label: "Óleo, gás, energia e engenharia", keywords: ["óleo", "oleo", "gás", "petróle", "petrole", "offshore", "energia", "engenharia", "naval", "portu", "macaé", "macae"],
+        hook: "Se o ticket for alto, leve a conta do PAT ao CFO cedo e trate a condição comercial direto com a Swile." },
+      { id: "educacao", short: "Educação", label: "Educação privada", keywords: ["educa", "ensino", "faculdade", "universidade", "escola", "colégio", "colegio", "curso", "edtech"],
+        hook: "Várias unidades: mostre a gestão centralizada no Dash RH e a carga separada por unidade." },
+      { id: "varejo", short: "Varejo e moda", label: "Varejo, moda e franquias", keywords: ["varejo", "moda", "loja", "franquia", "farmácia", "farmacia", "comércio", "comercio", "atacado", "cosmét", "cosmet", "supermercado"],
+        hook: "Entre pela Premiação de metas de fim de ano, sem mexer no VR/VA; o VR/VA entra na conversa perto do vencimento." },
+      { id: "tech", short: "Tecnologia, finanças e jurídico", label: "Tecnologia, serviços financeiros, seguros e jurídico", keywords: ["tech", "tecnologia", "software", "saas", "sistema", "fintech", "seguro", "financeir", "banco", "jurídic", "juridic", "advoca", "consultoria"],
+        hook: "Time híbrido: Mobilidade e Home Office no mesmo cartão, em vez de saldo parado no transporte." }
+    ];
+    const COMPETITOR_ANGLES = {
+      tradicional: {
+        advice: "Não brigue por centavo de taxa. Mostre o custo do DP com cartões e fornecedores separados e use o Decreto 12.712 (teto de 3,6% no MDR e repasse em 15 dias) como motivo para revisar o contrato.",
+        msg: "Uma dúvida antes: hoje o DP da {empresa} ainda administra cartões ou fornecedores separados para Refeição, Alimentação e Premiação?"
+      },
+      caju: {
+        advice: "Posicione a Swile como o próximo passo para operações acima de 200 vidas e use a compra da Caju pelo iFood (anunciada em 20/10/2026, pendente de CADE e BC) como motivo para um plano B. Sem falar mal da Caju.",
+        msg: "Com a compra da Caju pelo iFood anunciada em 20/10/2026 e ainda pendente de aprovação, vale ter um plano B comparado lado a lado."
+      },
+      flash: {
+        advice: "Evite guerra de preço. Compare a experiência do time e como cada cartão separa o saldo do PAT na maquininha; confirme o detalhe técnico com a Swile antes de afirmar.",
+        msg: "Não é sobre trocar por preço: é comparar a experiência do time e a segurança do saldo do PAT."
+      },
+      desconhecida: {
+        advice: "Operadora atual não informada: descubra no primeiro contato antes de escolher o argumento.",
+        msg: ""
+      }
+    };
+    function competitorAngleKey(prov) {
+      const p = String(prov || "").toLowerCase();
+      if (!p || p === "a validar") return "desconhecida";
+      if (/caju|ifood/.test(p)) return "caju";
+      if (/flash/.test(p)) return "flash";
+      if (/alelo|ticket|pluxee|sodexo|\bvr\b|vr benef/.test(p)) return "tradicional";
+      return "desconhecida";
+    }
+    function detectRjSector(acc) {
+      const text = [acc.sector, acc.company_name, acc.rh_pains, acc.swile_trigger_2026].join(" ").toLowerCase();
+      for (let i = 0; i < RJ_SECTORS.length; i++) {
+        if (RJ_SECTORS[i].keywords.some(function (k) { return text.indexOf(k) >= 0; })) return RJ_SECTORS[i];
+      }
+      return null;
+    }
+    function coldReading(acc) {
+      const lives = Number(acc.active_card_users) || 0;
+      const ticket = Number(acc.avg_monthly_ticket) || 0;
+      const prov = String(acc.current_provider || "").trim();
+      const key = competitorAngleKey(prov);
+      const gaps = [];
+      if (!lives) gaps.push("número de vidas");
+      if (!ticket) gaps.push("ticket médio");
+      if (key === "desconhecida" && (!prov || prov.toLowerCase() === "a validar")) gaps.push("operadora atual");
+      if (!String(acc.decision_maker_name || "").trim()) gaps.push("decisor");
+      const pat = state.patSims && state.patSims[acc.id] ? Number(state.patSims[acc.id].pat) : null;
+      return {
+        sector: detectRjSector(acc), angleKey: key, angle: COMPETITOR_ANGLES[key], provider: prov,
+        lives: lives || null, ticket: ticket || null, tpv: lives && ticket ? lives * ticket : null,
+        belowCase: lives > 0 && lives < CASE_MIN_LIVES, gaps: gaps, pat: pat
+      };
+    }
+
+    function renderColdPlaybook() {
+      const box = document.getElementById("pbColdReading");
+      if (!box) return;
+      const pillars = [
+        ["#8b5cf6", "Pilar 1 · PAT e segurança fiscal", "No Lucro Real, dedução de 15% do gasto com alimentação, até 3,6% do IRPJ devido (LC 224/2025). Valor só com o IRPJ no Simulador PAT."],
+        ["#d946ef", "Pilar 2 · Um cartão para tudo", "Refeição, Alimentação, Mobilidade, Home Office e Premiação no mesmo Mastercard, com Apple Pay e Google Pay. Prêmio por desempenho fora da base de encargos (CLT art. 457, §§ 2º e 4º)."],
+        ["#10b981", "Pilar 3 · Implantação assistida", "Sem custo de implementação: planilha, comunicação interna, primeira carga e ativação acompanhadas."]
+      ];
+      const acts = [
+        ["Ato 1 · Conexão", "Abra pelo ponto cego de fim de ano: premiação por meta e benefícios do time híbrido. Modelo: D+0 · Ponto cego de novembro."],
+        ["Ato 2 · Diagnóstico", "Faça o RH dizer quanto custa premiar hoje e o que precisa estar na proposta. Modelo: Follow-up · Diagnóstico (Ato 2)."],
+        ["Ato 3 · Proposta", "Leve os 3 pilares com os números da ficha e a simulação PAT salva. Botão: 📄 Proposta 3 Pilares, na ficha da conta."]
+      ];
+      const facts = [
+        ["Fundada na França em 2016 por Loïc Soubeyrand (como Lunchr)", "Wikipedia"],
+        ["Rodada de US$ 200 milhões em 2021, com o SoftBank; virou unicórnio", "TechCrunch, 11/10/2021"],
+        ["85 mil empresas e 5,5 milhões de usuários no mundo", "Wikipedia / dados globais"],
+        ["Fusão com a Vee Benefícios no Brasil em fevereiro de 2021", "Startupi, 25/02/2021"],
+        ["Certificada B Corp", "B Lab"],
+        ["Custo zero de implementação de VA e VR", "oportunidade.swile.com.br"]
+      ];
+      const noSource = [
+        "!\"Fundada em 2018\": a fundação é de 2016",
+        "\"10 anos no Brasil / Vee desde 2016\"",
+        "Netflix, Lacoste, TOTVS, Bayer e Iveco como clientes no Brasil",
+        "App de clima, mural e vaquinha incluídos no Brasil",
+        "Economia de R$ 10 a R$ 25 por vida/mês em software de clima",
+        "Pós-pagamento (prazo na fatura) e \"aceito em 100% das maquininhas\""
+      ];
+      box.innerHTML =
+        '<div class="flex flex-col md:flex-row md:items-center justify-between gap-2"><div><h3 class="card-title">Leitura fria RJ · novembro de 2026</h3><p class="card-sub">Setor da conta + operadora atual definem o argumento. A ficha mostra a leitura de cada conta.</p></div></div>' +
+        '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">' + pillars.map(function (p) {
+          return '<div class="rounded-xl border p-3.5 space-y-1.5" style="background:var(--surface-2);border-color:var(--line);border-top:3px solid ' + p[0] + '"><p class="text-[13px] font-medium text-white">' + esc(p[1]) + '</p><p class="text-xs leading-relaxed" style="color:var(--muted)">' + esc(p[2]) + '</p></div>';
+        }).join("") + '</div>' +
+        '<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">' +
+          '<div class="space-y-2"><p class="eyebrow">5 setores do RJ (acima de ' + CASE_MIN_LIVES + ' vidas)</p><ul class="space-y-1.5 text-xs">' + RJ_SECTORS.map(function (sc) {
+            return '<li class="rounded-lg border p-2.5" style="border-color:var(--line)"><span class="font-medium text-white">' + esc(sc.label) + '</span><span class="block mt-0.5" style="color:var(--muted)">' + esc(sc.hook) + '</span></li>';
+          }).join("") + '</ul></div>' +
+          '<div class="space-y-3"><div class="space-y-2"><p class="eyebrow">Roteiro em 3 atos</p><ol class="space-y-1.5 text-xs">' + acts.map(function (a) {
+            return '<li class="rounded-lg border p-2.5" style="border-color:var(--line)"><span class="font-medium text-white">' + esc(a[0]) + '</span><span class="block mt-0.5" style="color:var(--muted)">' + esc(a[1]) + '</span></li>';
+          }).join("") + '</ol></div>' +
+          '<div class="space-y-1.5"><p class="eyebrow">Ângulo por operadora</p><ul class="space-y-1 text-xs" style="color:var(--muted)">' +
+            '<li><span class="text-white">Alelo, Ticket, Pluxee, VR:</span> ' + esc(COMPETITOR_ANGLES.tradicional.advice) + '</li>' +
+            '<li><span class="text-white">Caju / iFood:</span> ' + esc(COMPETITOR_ANGLES.caju.advice) + '</li>' +
+            '<li><span class="text-white">Flash:</span> ' + esc(COMPETITOR_ANGLES.flash.advice) + '</li></ul></div></div>' +
+        '</div>' +
+        '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">' +
+          '<div class="rounded-xl border p-3 space-y-1.5" style="border-color:rgba(52,211,153,.25)"><p class="font-medium" style="color:#6ee7b7">Pode usar (com fonte)</p><ul class="space-y-1">' + facts.map(function (f) { return '<li style="color:#c3c8d4">' + esc(f[0]) + ' <span class="chip chip-ok">' + esc(f[1]) + '</span></li>'; }).join("") + '</ul></div>' +
+          '<div class="rounded-xl border p-3 space-y-1.5" style="border-color:rgba(251,191,36,.25)"><p class="font-medium" style="color:#fcd34d">Sem fonte: não usar como fato</p><ul class="space-y-1">' + noSource.map(function (f) { const wrong = f.charAt(0) === "!"; return '<li style="color:#c3c8d4">' + esc(wrong ? f.slice(1) : f) + (wrong ? ' <span class="chip chip-bad">incorreto</span>' : ' <span class="chip chip-warn">informado pelo usuário</span>') + '</li>'; }).join("") + '</ul></div>' +
+        '</div>';
+    }
+
+    // PROPOSTA 3 PILARES: só fatos com fonte e números da ficha/simulação salva.
+    function buildProposal3P(acc) {
+      const cr = coldReading(acc);
+      const empresa = String(acc.company_name || "sua empresa").trim();
+      const polo = String(acc.polo_rj || "").trim();
+      const money = function (v) { return "R$ " + Math.round(v).toLocaleString("pt-BR"); };
+      const head = ["PROPOSTA DE PARCERIA · SWILE & " + empresa.toUpperCase(),
+        "Data: " + new Date().toLocaleDateString("pt-BR") + (cr.lives ? " · " + cr.lives.toLocaleString("pt-BR") + " vidas" : "") + (cr.tpv ? " · benefícios estimados em " + money(cr.tpv) + "/mês" : "")];
+      const patLine = cr.pat
+        ? "Na simulação feita com o IRPJ devido informado, o incentivo estimado é de até " + money(cr.pat) + " por ano."
+        : "O valor exato depende do IRPJ devido; calculamos juntos com o financeiro.";
+      const lines = head.concat([
+        "",
+        "1. QUEM É A SWILE",
+        "• Fundada na França em 2016 por Loïc Soubeyrand; em 2021 captou US$ 200 milhões, com participação do SoftBank, e se tornou unicórnio.",
+        "• 85 mil empresas clientes e 5,5 milhões de usuários no mundo.",
+        "• No Brasil, uniu-se à Vee Benefícios em fevereiro de 2021.",
+        "• Certificada B Corp pelo B Lab.",
+        "",
+        "2. TRÊS PILARES PARA A " + empresa.toUpperCase(),
+        "Pilar 1 · PAT e segurança fiscal",
+        "Refeição e Alimentação dentro do PAT. No Lucro Real, a empresa deduz do IRPJ 15% do gasto com alimentação, até 3,6% do IRPJ devido (LC 224/2025). " + patLine,
+        "",
+        "Pilar 2 · Um cartão para tudo",
+        "Refeição, Alimentação, Mobilidade, Home Office e Premiação no mesmo cartão Mastercard, com Apple Pay e Google Pay e acesso ao Swile Shop. Prêmios por desempenho acima do esperado não integram a remuneração nem são base de encargos, desde que cumpridos os requisitos da CLT (art. 457, §§ 2º e 4º).",
+        "",
+        "Pilar 3 · Implantação assistida" + (polo ? " em " + polo : ""),
+        "Sem custo de implementação: planilha de colaboradores, comunicação interna, primeira carga e ativação acompanhadas de perto.",
+        "",
+        "3. PRÓXIMOS PASSOS",
+        "• Validar vidas, valores por carteira e regime tributário com RH e financeiro.",
+        "• Fechar a simulação do PAT com o IRPJ devido.",
+        "• Definir a data da primeira carga."
+      ]);
+      const sig = sellerSignature();
+      if (sig) lines.push("", sig);
+      return lines.join("\n");
+    }
+    var proposalAccountId = null;
+    function openProposal3P(accId) {
+      const acc = findAccount(accId || document.getElementById("accFormId").value);
+      if (!acc) return;
+      proposalAccountId = acc.id;
+      const cr = coldReading(acc);
+      document.getElementById("proposalTitle").textContent = "Proposta 3 Pilares · " + acc.company_name;
+      document.getElementById("proposalText").value = buildProposal3P(acc);
+      const warn = document.getElementById("proposalWarn");
+      const msgs = [];
+      if (cr.gaps.length) msgs.push("Faltam na ficha: " + cr.gaps.join(", ") + ".");
+      if (!cr.pat) msgs.push("Sem simulação PAT salva com IRPJ: a proposta não mostra valor do incentivo.");
+      warn.textContent = msgs.join(" ");
+      warn.hidden = !msgs.length;
+      document.getElementById("proposalModal").classList.remove("hidden");
+    }
+    function closeProposal3P() { document.getElementById("proposalModal").classList.add("hidden"); }
+    function proposalAction(kind) {
+      const acc = findAccount(proposalAccountId);
+      const text = document.getElementById("proposalText").value;
+      if (kind === "copy") return copyTextSafe(text, "Proposta copiada!");
+      if (kind === "download") {
+        downloadFile("Proposta_Swile_" + String(acc ? acc.company_name : "conta").replace(/[^\w\-]+/g, "_") + ".txt", text, "text/plain;charset=utf-8");
+        return;
+      }
+      if (kind === "email" && acc) {
+        openExternal(composeEmailUrl(integ().emailApp, acc.email_rh || "", "Proposta Swile para a " + acc.company_name, text));
+        logInteraction(acc.id, "E-mail", "Proposta 3 Pilares aberta no e-mail para envio", true);
+      }
+    }
+
     const PROVIDER_TRIGGER = {
       "Caju": "a compra da Caju pelo iFood (pendente de CADE e BC), que traz incerteza sobre app e regras",
       "iFood Benefícios": "a integração com a Caju após a compra, que pode mudar app e regras",
@@ -7633,16 +7871,28 @@
         (idle !== null ? "; último contato há " + idle + " dia(s)" : "; ainda sem contato registrado") + (pend.length ? "" : "; sem próximo passo agendado") + ".";
       const dor = acc.rh_pains ? String(acc.rh_pains).split(/[.;\n]/)[0] : acc.swile_trigger_2026 ? String(acc.swile_trigger_2026).split(/[.;\n]/)[0] : (PROVIDER_TRIGGER[acc.current_provider] ? "Gatilho: " + PROVIDER_TRIGGER[acc.current_provider] : "Dor ainda não mapeada: pergunte no discovery o que o RH mais resolve no fechamento do mês");
       const who = w >= 3 ? "envolva o CFO junto com o RH" : "fale com o RH (Gente/DP)";
-      const how = (w ? "Em " + SF_STAGE_NAMES[w] + ": " + stageAdvice(w) : "Sem oportunidade aberta: crie uma e " + stageAdvice(1)) + "; " + who + ". Com " + (acc.active_card_users || 0) + " vidas, o TPV estimado é " + fmtK(tpv) + "/mês.";
+      const how = (w ? "Na fase " + SF_STAGE_NAMES[w] + ": " + stageAdvice(w) : "Sem oportunidade aberta: crie uma e " + stageAdvice(1)) + "; " + who + ". Com " + (acc.active_card_users || 0) + " vidas, o TPV estimado é " + fmtK(tpv) + "/mês.";
       let action;
       if (w >= 3 && w <= 4) action = { label: "Abrir simulação PAT", run: "openPatFromDiagnosis()" };
       else if (w === 2) action = { label: "Marcar reunião", run: "scheduleMeetingInvite('" + acc.id + "')" };
       else action = { label: "Enviar WhatsApp", run: "contactAccount('" + acc.id + "', 'wa')" };
-      return { level: level, why: why, pain: dor, how: how, action: action, facts: { empresa: acc.company_name, vidas: acc.active_card_users, beneficio: acc.avg_monthly_ticket, tpv: tpv, operadora: acc.current_provider, status: acc.status, interesse: acc.interest_level, fase: w ? SF_STAGE_NAMES[w] : "sem oportunidade", dias_sem_contato: idle, proximos_passos: pend.slice(0, 3).map(function (f) { return f.action_title + " (" + f.due_date + ")"; }), dores_rh: acc.rh_pains || "", gatilho: acc.swile_trigger_2026 || "", historico: (state.interactions || []).filter(function (i) { return i.account_id === acc.id; }).slice(-6).map(function (i) { return i.type + ": " + String(i.text).slice(0, 300); }) } };
+      return { level: level, why: why, pain: dor, how: how, action: action, facts: { empresa: acc.company_name, leitura_fria: (function () { const cr = coldReading(acc); return { setor_rj: cr.sector ? cr.sector.label : null, angulo_operadora: cr.angle.advice, falta_na_ficha: cr.gaps }; })(), vidas: acc.active_card_users, beneficio: acc.avg_monthly_ticket, tpv: tpv, operadora: acc.current_provider, status: acc.status, interesse: acc.interest_level, fase: w ? SF_STAGE_NAMES[w] : "sem oportunidade", dias_sem_contato: idle, proximos_passos: pend.slice(0, 3).map(function (f) { return f.action_title + " (" + f.due_date + ")"; }), dores_rh: acc.rh_pains || "", gatilho: acc.swile_trigger_2026 || "", historico: (state.interactions || []).filter(function (i) { return i.account_id === acc.id; }).slice(-6).map(function (i) { return i.type + ": " + String(i.text).slice(0, 300); }) } };
     }
     function openPatFromDiagnosis() {
       const d = document.getElementById("accPatSim");
       if (d) { d.open = true; d.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+    }
+
+    function coldReadingHtml(acc) {
+      const cr = coldReading(acc);
+      const item = function (label, html) { return '<li><span style="color:var(--faint)">' + label + ':</span> ' + html + '</li>'; };
+      return '<div id="accColdReading" class="rounded-lg p-2.5 space-y-1" style="background:rgba(255,255,255,.03);border:1px solid var(--line)">' +
+        '<p class="eyebrow">Leitura fria</p><ul class="space-y-1" style="color:#c3c8d4">' +
+        item("Setor RJ", cr.sector ? esc(cr.sector.label) + ". " + esc(cr.sector.hook) : "não identificado pelo setor da ficha") +
+        item("Contra " + esc(cr.provider && cr.angleKey !== "desconhecida" ? cr.provider : "a operadora atual"), esc(cr.angle.advice)) +
+        (cr.belowCase ? item("Corte do Case", "<span style='color:#fcd34d'>" + cr.lives + " vidas, abaixo do corte de " + CASE_MIN_LIVES + "</span>") : "") +
+        (cr.gaps.length ? item("Falta na ficha", "<span style='color:#fcd34d'>" + esc(cr.gaps.join(", ")) + "</span>") : "") +
+        '</ul></div>';
     }
 
     function renderLeadDiagnosis(acc) {
@@ -7660,8 +7910,10 @@
         '<p><span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '55">' + esc(d.level) + '</span> <span style="color:#c3c8d4">' + esc(d.why) + '</span></p>' +
         '<p style="color:#c3c8d4"><span style="color:var(--faint)">Dor/gatilho:</span> ' + esc(d.pain) + '</p>' +
         '<p style="color:#c3c8d4"><span style="color:var(--faint)">Como trabalhar agora:</span> ' + esc(d.how) + '</p>' +
+        coldReadingHtml(acc) +
         '<div class="flex flex-wrap gap-1.5 pt-0.5">' +
           '<button type="button" class="btn btn-primary btn-sm" onclick="' + esc(local.action.run) + '">' + esc(local.action.label) + '</button>' +
+          '<button type="button" id="btnProposal3P" class="btn btn-sm" onclick="openProposal3P(\'' + acc.id + '\')">📄 Proposta 3 Pilares</button>' +
           '<button type="button" class="btn btn-sm" onclick="refreshLeadDiagnosisGemini()">' + icon("spark") + 'Atualizar com Agente Swile</button>' +
         '</div>';
       box.classList.remove("hidden");
@@ -8641,6 +8893,7 @@
         document.getElementById("patLives").value = Number(acc.active_card_users) || 0;
         document.getElementById("patTicket").value = Number(acc.avg_monthly_ticket) || 0;
         document.getElementById("patFlex").value = 0;
+        if (document.getElementById("patClimate")) document.getElementById("patClimate").value = "";
         document.getElementById("patIrpj").value = "";
         document.getElementById("patFeeNow").value = 0;
         document.getElementById("patFeeSwile").value = 0;
@@ -8658,7 +8911,8 @@
         irpjDue: irpjRaw === "" ? null : n("patIrpj"),
         feeNow: Number(document.getElementById("patFeeNow").value) || 0,
         feeSwile: Number(document.getElementById("patFeeSwile").value) || 0,
-        hrHours: n("patHrHours"), hrCost: n("patHrCost")
+        hrHours: n("patHrHours"), hrCost: n("patHrCost"),
+        climatePerLife: document.getElementById("patClimate") ? n("patClimate") : 0
       };
     }
 
@@ -8686,7 +8940,9 @@
       }
       const fees = tpvAnnual * ((i.feeNow - i.feeSwile) / 100);
       const hr = i.lives > 0 ? i.hrHours * i.hrCost * 12 : 0;
-      return { tpvMonthly: tpvMonthly, tpvAnnual: tpvAnnual, foodAnnual: foodAnnual, pat: pat, patGross: patGross, patCap: patCap, patStatus: patStatus, capPct: capPct, lc224: i.lc224 !== false, patLegacy: patLegacy, fees: fees, hr: hr, total: pat + fees + hr };
+      // Premissa do usuário: custo atual de software de clima que deixaria de existir (vidas × R$/mês × 12). Vazio = fora da conta.
+      const climate = i.lives * (Number(i.climatePerLife) || 0) * 12;
+      return { climate: climate, tpvMonthly: tpvMonthly, tpvAnnual: tpvAnnual, foodAnnual: foodAnnual, pat: pat, patGross: patGross, patCap: patCap, patStatus: patStatus, capPct: capPct, lc224: i.lc224 !== false, patLegacy: patLegacy, fees: fees, hr: hr, total: pat + fees + hr + climate };
     }
 
     function renderPatResult() {
@@ -8710,6 +8966,7 @@
         row("Incentivo PAT no IRPJ (ano)", patTxt, patNote) +
         row("Diferença de taxas (ano)", formatCurrencyBRL(r.fees), r.fees === 0 ? "Preencha as taxas se houver cobrança" : "") +
         row("Tempo do RH poupado (ano)", formatCurrencyBRL(r.hr), "Premissa: " + i.hrHours + " h/mês × " + formatCurrencyBRL(i.hrCost) + "/h") +
+        (r.climate > 0 ? row("Software de clima substituído (ano)", formatCurrencyBRL(r.climate), "Informado pelo usuário: " + i.lives.toLocaleString("pt-BR") + " vidas × " + formatCurrencyBRL(i.climatePerLife) + "/mês × 12") : "") +
         '<div class="divider pt-1.5"></div>' +
         '<div class="flex justify-between gap-3 font-semibold"><span class="text-white">Ganho anual estimado</span><span class="num" style="color:#6ee7b7">' + formatCurrencyBRL(r.total) + '</span></div>' +
         (r.patStatus === "need_irpj" ? '<p class="text-[10px]" style="color:#fcd34d">O total não inclui o PAT até você informar o IRPJ devido.</p>' : '');
@@ -8731,9 +8988,10 @@
         "• " + patLine,
         "• Diferença de taxas: " + formatCurrencyBRL(r.fees) + "/ano",
         "• Tempo do RH poupado: " + formatCurrencyBRL(r.hr) + "/ano (premissa " + i.hrHours + " h/mês)",
+        r.climate > 0 ? "• Software de clima substituído: " + formatCurrencyBRL(r.climate) + "/ano (premissa informada: " + formatCurrencyBRL(i.climatePerLife) + " por vida/mês)" : null,
         "• Ganho anual estimado: " + formatCurrencyBRL(r.total) + (r.patStatus === "need_irpj" ? " (sem o PAT)" : ""),
         "Valores estimados; o incentivo do PAT depende do IRPJ devido no Lucro Real."
-      ].join("\n");
+      ].filter(function (l) { return l !== null; }).join("\n");
     }
 
     function sharePatSummary(kind) {

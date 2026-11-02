@@ -236,6 +236,10 @@
     html[data-ui-edition="v24"] .v24-only.v24-flex { display: flex !important; }
     html[data-ui-edition="v24"] .v24-only.v24-grid { display: grid !important; }
     html[data-ui-edition="v24"] .v1-only { display: none !important; }
+    /* Relatórios 2.4: visão executiva única; o restante fica atrás de "Ver detalhes", sem duplicar o painel */
+    html[data-ui-edition="v24"] #repMore:not(.open) { display: none; }
+    html[data-ui-edition="v24"] #repMore .rep-tab:not(.v1-only) { display: block !important; }
+    @media print { html[data-ui-edition="v24"] #repMore { display: block !important; } }
     .k24-tpv { white-space: nowrap; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 18px; font-weight: 700; color: #F8FAFC; letter-spacing: -0.02em; line-height: 1.1; }
     .k24-ring { position: relative; width: 2.25rem; height: 2.25rem; flex: none; }
     .k24-ring span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 10px 'JetBrains Mono', monospace; color: #fff; }
@@ -1123,15 +1127,20 @@
 
           <div id="reportExecDiag" class="card p-4 avoid-break" style="border-color:rgba(139,92,246,.35)"></div>
 
-          <div id="t24Panel" class="v24-only space-y-4" aria-label="Painel de gráficos Swile OS 2.4"></div>
+          <div id="t24Panel" class="v24-only space-y-3" aria-label="Visão executiva Swile OS 2.4"></div>
 
-          <div class="seg no-print" role="group" aria-label="Seções do relatório">
+          <div class="v24-only no-print">
+            <button type="button" id="btnRepMore" class="btn btn-sm w-full justify-center" aria-expanded="false" aria-controls="repMore" onclick="toggleRepMore()">Ver detalhes da carteira: status, polos, atividades, ganhos e perdas</button>
+          </div>
+
+          <div id="repMore" class="space-y-4">
+          <div class="seg no-print v1-only" role="group" aria-label="Seções do relatório">
             <button type="button" data-rtab="case" onclick="setReportTab('case')">Metas, Tendência &amp; Simulador</button>
             <button type="button" data-rtab="funnel" onclick="setReportTab('funnel')">Funil Salesforce &amp; KPIs do Case</button>
             <button type="button" data-rtab="carteira" onclick="setReportTab('carteira')">Carteira &amp; Operadoras</button>
           </div>
 
-          <div id="rep-case" class="rep-tab space-y-4">
+          <div id="rep-case" class="rep-tab space-y-4 v1-only">
             <div id="caseKpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div class="card p-4 lg:col-span-2 avoid-break">
@@ -1174,13 +1183,13 @@
               <div id="directorTiles" class="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3"></div>
               <div id="directorDetail" class="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3 text-[12px]"></div>
             </div>
-            <div class="card overflow-hidden avoid-break">
+            <div class="card overflow-hidden avoid-break v1-only">
               <div class="card-head pb-3"><div><h3 class="card-title">Questão 5 · Funil mensal de referência × CRM hoje</h3><p class="card-sub">Volume por fase do Salesforce para fechar R$ 600 mil/mês. "CRM hoje" conta as oportunidades abertas em cada fase agora.</p></div></div>
               <div class="overflow-x-auto"><table class="w-full text-[12px]"><thead><tr class="text-left" style="color:var(--faint)">
                 <th class="px-4 py-2 font-medium">Fase</th><th class="px-3 py-2 font-medium text-right">Prob.</th><th class="px-3 py-2 font-medium text-right">Referência/mês</th><th class="px-3 py-2 font-medium text-right">CRM hoje</th><th class="px-3 py-2 font-medium text-right">TPV no CRM</th><th class="px-4 py-2 font-medium text-right">Diferença</th>
               </tr></thead><tbody id="caseFunnelTable"></tbody></table></div>
             </div>
-            <div class="card p-4 avoid-break">
+            <div class="card p-4 avoid-break v1-only">
               <h3 class="card-title">Questão 3 · 8 KPIs de esforço, funil e resultado</h3>
               <p class="card-sub">Meta do case ao lado do que o CRM registrou neste mês. "Sem dados" quando o CRM ainda não tem o necessário para calcular.</p>
               <div id="caseKpiGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3"></div>
@@ -1224,7 +1233,7 @@
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div class="card overflow-hidden avoid-break">
+            <div class="card overflow-hidden avoid-break v1-only">
               <div class="card-head pb-3"><div><h3 class="card-title">Maiores oportunidades abertas</h3><p class="card-sub">Ordenadas pelo forecast ponderado</p></div></div>
               <div id="reportTopOpps"></div>
             </div>
@@ -1232,6 +1241,7 @@
               <div class="card-head pb-3"><div><h3 class="card-title">Ganhos e perdas</h3><p class="card-sub">No período selecionado, com motivos de perda</p></div></div>
               <div id="reportWinLoss"></div>
             </div>
+          </div>
           </div>
           </div>
         </section>
@@ -1580,10 +1590,28 @@
         <div class="lg:col-span-8 space-y-4">
           <input id="accFormId" type="hidden" />
 
+          <!-- Busca de lead: CNPJ (Receita via BrasilAPI) ou nome (Agente Swile + Google, só com chave) -->
+          <div id="leadLookup" class="rounded-xl border p-3.5 space-y-2.5 text-xs" style="border-color:rgba(6,182,212,.35);background:rgba(6,182,212,.05)">
+            <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+              <p id="leadLookupTitle" class="font-medium text-white">🔍 Buscar empresa por CNPJ ou nome</p>
+              <span class="text-[10.5px]" style="color:var(--faint)">CNPJ: Receita Federal via BrasilAPI · Nome: Agente Swile com Google (precisa da chave)</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <label for="leadLookupQuery" class="sr-only">CNPJ ou nome da empresa</label>
+              <input id="leadLookupQuery" type="text" class="input flex-1 min-w-0" placeholder="CNPJ (14 dígitos) ou nome da empresa" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();runLeadLookup();}" />
+              <button id="btnLeadLookup" type="button" class="btn btn-primary btn-sm h-9 shrink-0 justify-center" onclick="runLeadLookup()">⚡ Buscar dados</button>
+            </div>
+            <div id="leadLookupOut" class="space-y-2"></div>
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="sm:col-span-2">
               <label for="accFormCompany" class="label">Empresa *</label>
               <input id="accFormCompany" type="text" class="input" placeholder="Nome da empresa" />
+            </div>
+            <div>
+              <label for="accFormCnpj" class="label">CNPJ</label>
+              <input id="accFormCnpj" type="text" inputmode="numeric" class="input num" placeholder="00.000.000/0000-00" />
             </div>
             <div>
               <label for="accFormSector" class="label">Setor</label>
@@ -1731,6 +1759,13 @@
         <!-- Histórico da conta -->
         <aside class="lg:col-span-4 space-y-3">
           <div id="accDiagnosis" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:rgba(139,92,246,.35);background:rgba(139,92,246,.06)"></div>
+          <details id="accDossier" class="hidden rounded-xl border text-xs" style="border-color:rgba(6,182,212,.35);background:rgba(6,182,212,.04)">
+            <summary class="flex items-center justify-between gap-2 px-3.5 py-2.5 cursor-pointer">
+              <span class="font-medium text-white">🕵️ Dossiê pré-contato · plano em 5 etapas</span>
+              <span id="accDossierBadge" class="text-[10.5px] shrink-0" style="color:var(--faint)"></span>
+            </summary>
+            <div id="accDossierBody" class="px-3.5 pb-3.5 space-y-2.5"></div>
+          </details>
           <div id="accSnapshot" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line);background:var(--surface-2)"></div>
           <div id="accComposer" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line)"></div>
           <div id="accHomeOffice" class="hidden rounded-xl border p-3.5 text-xs space-y-2.5" style="border-color:var(--line)">
@@ -4045,7 +4080,10 @@
       if (!key) return { ok: false, error: "sem chave" };
       const models = [resolveInternalModelId(geminiModel())];
       if (models[0] !== GEMINI_FALLBACK_MODEL) models.push(GEMINI_FALLBACK_MODEL);
-      const body = JSON.stringify({ systemInstruction: { parts: [{ text: AGENT_SYSTEM_INSTRUCTION }] }, contents: [{ role: "user", parts: parts }], generationConfig: Object.assign({ temperature: 0.3 }, opts.json ? { responseMimeType: "application/json" } : {}) });
+      // Com ferramenta (google_search), o modo JSON nativo não é usado: o JSON vem no texto e é extraído abaixo
+      const reqBody = { systemInstruction: { parts: [{ text: AGENT_SYSTEM_INSTRUCTION }] }, contents: [{ role: "user", parts: parts }], generationConfig: Object.assign({ temperature: 0.3 }, opts.json && !opts.search ? { responseMimeType: "application/json" } : {}) };
+      if (opts.search) reqBody.tools = [{ google_search: {} }];
+      const body = JSON.stringify(reqBody);
       if (body.length > GEMINI_INLINE_MAX_BYTES) return { ok: false, error: "conteúdo acima do limite de 20 MB por requisição" };
       let lastErr = "";
       for (let i = 0; i < models.length; i++) {
@@ -4066,8 +4104,12 @@
           const txt = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts &&
             j.candidates[0].content.parts.map(function (p) { return p.text || ""; }).join("");
           if (!txt) return { ok: false, error: "resposta vazia" };
-          if (!opts.json) return { ok: true, text: String(txt), model: models[i] };
-          try { return { ok: true, data: JSON.parse(String(txt).replace(/^```json\s*|```\s*$/g, "")), model: models[i] }; }
+          const gm = j.candidates[0].groundingMetadata;
+          const sources = gm && Array.isArray(gm.groundingChunks) ? gm.groundingChunks.map(function (c) { return c && c.web ? { uri: String(c.web.uri || ""), title: String(c.web.title || c.web.uri || "") } : null; }).filter(function (c) { return c && /^https:\/\//.test(c.uri); }) : [];
+          if (!opts.json) return { ok: true, text: String(txt), model: models[i], sources: sources };
+          let raw = String(txt).replace(/^```json\s*|```\s*$/g, "");
+          if (opts.search) { const a = raw.indexOf("{"), b = raw.lastIndexOf("}"); if (a >= 0 && b > a) raw = raw.slice(a, b + 1); }
+          try { return { ok: true, data: JSON.parse(raw), model: models[i], sources: sources }; }
           catch (e) { return { ok: false, error: "resposta fora do formato JSON" }; }
         } catch (e) {
           lastErr = e && e.name === "AbortError" ? "tempo esgotado" : "falha de rede";
@@ -4701,7 +4743,12 @@
     function demoCase(target) {
       if (target === "agenda") switchTab("followups");
       else if (target === "pipeline") switchTab("pipeline");
-      else if (target === "reports-funnel") { reportTab = "funnel"; switchTab("reports"); setReportTab("funnel"); }
+      else if (target === "reports-funnel") {
+        reportTab = "funnel"; switchTab("reports"); setReportTab("funnel");
+        // Swile OS 2.4: o funil oficial fica na visão executiva (seção 2)
+        const f = document.documentElement.getAttribute("data-ui-edition") === "v24" ? document.getElementById("t24Funnel") : null;
+        if (f && f.scrollIntoView) f.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
       else if (target === "playbook-matrix") setPlaybookTab("matrix");
       else if (target === "playbook-chave") setPlaybookTab("chave");
       else if (target === "accounts-feed") {
@@ -6203,6 +6250,8 @@
       document.getElementById("accFormId").value = acc ? acc.id : "";
       document.getElementById("accFormCompany").value = acc ? (acc.company_name || "") : "";
       document.getElementById("accFormSector").value = acc ? (acc.sector || "") : "";
+      document.getElementById("accFormCnpj").value = acc && acc.cnpj ? formatCnpj(cnpjDigits(acc.cnpj)) : "";
+      resetLeadLookup(acc);
       setSelectValue("accFormPolo", acc ? acc.polo_rj : "Centro / Porto Maravilha");
       setSelectValue("accFormProvider", acc ? acc.current_provider : "A Validar");
       document.getElementById("accFormLives").value = acc ? acc.active_card_users : CASE_MIN_LIVES;
@@ -6251,9 +6300,11 @@
         document.getElementById("accHomeOffice").classList.add("hidden");
         document.getElementById("accCopilot").classList.add("hidden");
         renderLeadDiagnosis(null);
+        renderAccountDossier(null);
         return;
       }
       renderLeadDiagnosis(acc);
+      renderAccountDossier(acc);
       const a = esc(acc.id);
       const hasPhone = !!phoneDigits(acc.phone);
       const btn = function (kind, ic, label, extra) {
@@ -6371,6 +6422,7 @@
       const payload = {
         company_name: comp,
         sector: (document.getElementById("accFormSector").value || "").trim(),
+        cnpj: formatCnpjField(document.getElementById("accFormCnpj").value),
         polo_rj: document.getElementById("accFormPolo").value,
         current_provider: document.getElementById("accFormProvider").value,
         active_card_users: lives,
@@ -7943,6 +7995,458 @@
       renderLeadDiagnosis(acc);
     }
 
+    // =====================================================================
+    // 7z. BUSCA DE LEAD (CNPJ via BrasilAPI · nome via Agente Swile + Google)
+    // Nada de vidas, ticket, operadora ou decisor padrão: o que a fonte não traz fica "a preencher".
+    // =====================================================================
+    function cnpjDigits(s) { return String(s || "").replace(/\D/g, ""); }
+    function isValidCnpj(d) {
+      d = cnpjDigits(d);
+      if (d.length !== 14 || /^(\d)\1{13}$/.test(d)) return false;
+      const calc = function (len) {
+        const w = len === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+        let sum = 0;
+        for (let i = 0; i < len; i++) sum += Number(d.charAt(i)) * w[i];
+        const r = sum % 11;
+        return r < 2 ? 0 : 11 - r;
+      };
+      return calc(12) === Number(d.charAt(12)) && calc(13) === Number(d.charAt(13));
+    }
+    function formatCnpj(d) {
+      d = cnpjDigits(d);
+      return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5") : d;
+    }
+    function formatCnpjField(v) { const d = cnpjDigits(v); return d.length === 14 ? formatCnpj(d) : String(v || "").trim(); }
+
+    const BRASILAPI_CNPJ_URL = "https://brasilapi.com.br/api/cnpj/v1/";
+    async function fetchCnpjBrasilApi(digits) {
+      const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
+      try {
+        const r = await fetch(BRASILAPI_CNPJ_URL + digits, { headers: { Accept: "application/json" }, signal: ctrl ? ctrl.signal : undefined, referrerPolicy: "no-referrer" });
+        if (r.status === 404) return { ok: false, error: "CNPJ não encontrado na base da Receita consultada pela BrasilAPI." };
+        if (r.status === 400) return { ok: false, error: "A BrasilAPI recusou o CNPJ (formato inválido)." };
+        if (r.status === 429) return { ok: false, error: "Limite de consultas da BrasilAPI atingido. Tente de novo em um minuto." };
+        if (!r.ok) return { ok: false, error: "A BrasilAPI respondeu com erro " + r.status + "." };
+        const j = await r.json();
+        if (!j || !(j.razao_social || j.nome_fantasia)) return { ok: false, error: "Resposta da BrasilAPI sem razão social." };
+        return { ok: true, info: normalizeCnpjInfo(j, digits) };
+      } catch (e) {
+        return { ok: false, network: true, error: e && e.name === "AbortError" ? "A BrasilAPI demorou mais de 15 segundos." : "Não consegui falar com a BrasilAPI (sem internet, rede corporativa bloqueando ou serviço fora do ar)." };
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    }
+    function cleanStr(v) { return v === null || v === undefined ? "" : String(v).replace(/\s+/g, " ").trim(); }
+    function normalizeCnpjInfo(j, digits) {
+      const qsa = Array.isArray(j.qsa) ? j.qsa.slice(0, 8).map(function (q) { return { nome: cleanStr(q.nome_socio || q.nome), qual: cleanStr(q.qualificacao_socio || q.qual) }; }).filter(function (q) { return q.nome; }) : [];
+      const tel = cnpjDigits(j.ddd_telefone_1);
+      return {
+        cnpj: formatCnpj(digits || j.cnpj),
+        razao: cleanStr(j.razao_social),
+        fantasia: cleanStr(j.nome_fantasia),
+        cnae: cleanStr(j.cnae_fiscal),
+        cnaeDesc: cleanStr(j.cnae_fiscal_descricao),
+        porte: cleanStr(j.descricao_porte || j.porte),
+        natureza: cleanStr(j.natureza_juridica),
+        situacao: cleanStr(j.descricao_situacao_cadastral),
+        abertura: cleanStr(j.data_inicio_atividade),
+        simples: j.opcao_pelo_simples === true ? true : j.opcao_pelo_simples === false ? false : null,
+        mei: j.opcao_pelo_mei === true,
+        capital: Number(j.capital_social) || null,
+        logradouro: [cleanStr(j.descricao_tipo_de_logradouro), cleanStr(j.logradouro)].filter(Boolean).join(" "),
+        numero: cleanStr(j.numero),
+        complemento: cleanStr(j.complemento),
+        bairro: cleanStr(j.bairro),
+        municipio: cleanStr(j.municipio),
+        uf: cleanStr(j.uf).toUpperCase(),
+        cep: cleanStr(j.cep),
+        telefone: tel.length >= 10 ? "+55 " + tel.slice(0, 2) + " " + tel.slice(2) : "",
+        email: cleanStr(j.email).toLowerCase(),
+        qsa: qsa,
+        fetched_at: new Date().toISOString(),
+        source: "Receita Federal via BrasilAPI"
+      };
+    }
+    function cnpjIntelOf(acc) {
+      const d = acc ? cnpjDigits(acc.cnpj) : "";
+      return d.length === 14 && state.cnpjIntel ? state.cnpjIntel[d] || null : null;
+    }
+    function saveCnpjIntel(info) {
+      if (!state.cnpjIntel) state.cnpjIntel = {};
+      const d = cnpjDigits(info.cnpj);
+      state.cnpjIntel[d] = info;
+      const keys = Object.keys(state.cnpjIntel);
+      if (keys.length > 200) keys.sort(function (a, b) { return String(state.cnpjIntel[a].fetched_at).localeCompare(String(state.cnpjIntel[b].fetched_at)); })
+        .slice(0, keys.length - 200).forEach(function (k) { delete state.cnpjIntel[k]; });
+      persistState();
+    }
+    function titleCaseBR(s) {
+      const small = ["de", "da", "do", "das", "dos", "e"];
+      return String(s || "").toLowerCase().split(" ").map(function (w, i) {
+        if (!w) return w;
+        if (/^(s\/?a|ltda|me|epp|eireli|rj|sp)\.?$/i.test(w)) return w.toUpperCase();
+        if (i > 0 && small.indexOf(w) >= 0) return w;
+        return w.charAt(0).toUpperCase() + w.slice(1);
+      }).join(" ");
+    }
+    // Polo do RJ a partir do município/bairro da Receita. Sem correspondência clara, não preenche.
+    function poloFromAddress(municipio, bairro) {
+      const m = normalizeText(municipio), b = normalizeText(bairro);
+      if (/niteroi|sao goncalo|duque de caxias|nova iguacu|sao joao de meriti|belford roxo|nilopolis|mesquita|itaborai|marica|queimados|mage|itaguai|seropedica|japeri|guapimirim|tangua|rio bonito|paracambi/.test(m)) return "Niterói / Região Metropolitana";
+      if (m !== "rio de janeiro") return "";
+      if (/barra da tijuca|recreio|jacarepagua|itanhanga|vargem|camorim|joa/.test(b)) return "Barra da Tijuca / Recreio";
+      if (/campo grande|bangu|realengo|santa cruz|guaratiba|sepetiba|padre miguel|inhoaiba|cosmos|paciencia|senador/.test(b)) return "Zona Oeste - Campo Grande";
+      if (/centro|saude|gamboa|santo cristo|lapa|cidade nova|caju|porto/.test(b)) return "Centro / Porto Maravilha";
+      if (/botafogo|copacabana|ipanema|leblon|flamengo|laranjeiras|catete|gloria|humaita|urca|lagoa|gavea|jardim botanico|leme|sao conrado|cosme velho/.test(b)) return "Zona Sul / Barra";
+      if (/tijuca|meier|del castilho|penha|madureira|maracana|vila isabel|bonsucesso|ilha do governador|irajá|iraja|pavuna|sao cristovao|benfica|engenho|cachambi|inhauma|ramos|olaria|grajau|andarai|todos os santos|maria da graca|higienopolis/.test(b)) return "Zona Norte / Del Castilho";
+      return "";
+    }
+    function cnpjAddress(info) {
+      const street = [titleCaseBR(info.logradouro), info.numero].filter(Boolean).join(", ");
+      return [street + (info.complemento ? " " + titleCaseBR(info.complemento) : ""), titleCaseBR(info.bairro), [titleCaseBR(info.municipio), info.uf].filter(Boolean).join(" - ")].filter(function (x) { return x && x.trim(); }).join(" · ");
+    }
+    /** Avisos objetivos a partir dos dados da Receita (sem estimar vidas). */
+    function cnpjFlags(info) {
+      const f = [];
+      if (info.situacao && !/ativa/i.test(info.situacao)) f.push({ bad: true, t: "Situação cadastral: " + info.situacao + ". Confirme antes de prospectar." });
+      if (info.uf && info.uf !== "RJ") f.push({ bad: true, t: "Endereço do CNPJ fora do RJ (" + info.uf + "). Confirme se há operação no Rio." });
+      if (info.mei) f.push({ bad: true, t: "MEI: fora do perfil do Case (acima de " + CASE_MIN_LIVES + " vidas)." });
+      else if (info.simples === true) f.push({ bad: true, t: "Optante do Simples Nacional: não há dedução de PAT no IRPJ (vale só no Lucro Real). Não use o argumento fiscal." });
+      else if (info.simples === false) f.push({ bad: false, t: "Não optante do Simples: pode ser Lucro Real ou Presumido. Pergunte ao financeiro antes de falar em PAT." });
+      if (/micro|pequeno|^me$|^epp$/i.test(info.porte)) f.push({ bad: true, t: "Porte " + info.porte + " na Receita (faturamento anual até R$ 4,8 mi): indício de operação abaixo de " + CASE_MIN_LIVES + " vidas. Confirme o número de pessoas." });
+      return f;
+    }
+
+    let leadLookupState = null; // { kind, fields: [{key, label, value, src, checked}], info, ai }
+    function resetLeadLookup(acc) {
+      leadLookupState = null;
+      const q = document.getElementById("leadLookupQuery");
+      const out = document.getElementById("leadLookupOut");
+      const t = document.getElementById("leadLookupTitle");
+      if (q) q.value = acc && acc.cnpj ? formatCnpj(cnpjDigits(acc.cnpj)) : "";
+      if (t) t.textContent = acc ? "🔍 Atualizar pelo CNPJ (Receita) ou pelo nome" : "🔍 Buscar empresa por CNPJ ou nome";
+      if (out) {
+        const info = cnpjIntelOf(acc);
+        out.innerHTML = info ? '<p style="color:var(--faint)">Dados da Receita salvos em ' + esc(formatDateShort(String(info.fetched_at).slice(0, 10))) + ': ' + esc(info.razao) + ' · ' + esc(info.cnaeDesc || "CNAE não informado") + '.</p>' :
+          '<p style="color:var(--faint)">CNPJ traz os dados oficiais da Receita. Nome usa o Agente Swile com busca no Google, como sugestão para você conferir. Vidas, benefício médio, operadora e decisor não vêm dessas fontes: ficam a preencher.</p>';
+      }
+    }
+
+    async function runLeadLookup() {
+      const q = (document.getElementById("leadLookupQuery").value || "").trim();
+      const out = document.getElementById("leadLookupOut");
+      const btn = document.getElementById("btnLeadLookup");
+      if (!q) { showToast("Digite um CNPJ ou o nome da empresa.", "⚠️"); return; }
+      const d = cnpjDigits(q);
+      const looksCnpj = d.length >= 11 && d.length / q.replace(/\s/g, "").length > 0.7;
+      btn.disabled = true;
+      try {
+        if (looksCnpj) await lookupByCnpj(d, out);
+        else await lookupByName(q, out);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function lookupByCnpj(d, out, extra) {
+      if (d.length !== 14 || !isValidCnpj(d)) {
+        out.innerHTML = '<p style="color:#fca5a5">CNPJ inválido: confira os 14 dígitos (o dígito verificador não bate).</p>';
+        return;
+      }
+      out.innerHTML = '<p style="color:var(--faint)">Consultando a Receita Federal pela BrasilAPI…</p>';
+      const r = await fetchCnpjBrasilApi(d);
+      if (!r.ok) {
+        out.innerHTML = '<p style="color:#fca5a5">' + esc(r.error) + '</p>' +
+          '<p style="color:var(--muted)">Você pode conferir no site oficial e preencher à mão: ' +
+          '<a class="underline hover:text-white" href="https://solucoes.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp" target="_blank" rel="noopener noreferrer">Comprovante de CNPJ da Receita</a>.</p>' +
+          (extra || "");
+        return;
+      }
+      const info = r.info;
+      saveCnpjIntel(info);
+      const cur = function (id) { return (document.getElementById(id).value || "").trim(); };
+      const fields = [];
+      const add = function (key, label, value, src, checked) { if (value) fields.push({ key: key, label: label, value: value, src: src, checked: checked }); };
+      const name = info.fantasia ? titleCaseBR(info.fantasia) : titleCaseBR(info.razao);
+      add("company", "Empresa", name, "Receita", !cur("accFormCompany"));
+      add("cnpj", "CNPJ", info.cnpj, "Receita", true);
+      add("sector", "Setor (CNAE " + info.cnae + ")", info.cnaeDesc, "Receita", !cur("accFormSector"));
+      add("address", "Endereço", cnpjAddress(info), "Receita", !cur("accFormAddress"));
+      const polo = poloFromAddress(info.municipio, info.bairro);
+      add("polo", "Polo RJ", polo, "derivado do bairro", !!polo);
+      add("phone", "Telefone", info.telefone, "Receita · pode ser do contador", false);
+      add("email", "E-mail", info.email, "Receita · pode ser do contador", false);
+      leadLookupState = { kind: "cnpj", fields: fields, info: info };
+      renderLeadLookupResult(out, extra);
+    }
+
+    async function lookupByName(q, out) {
+      const nq = normalizeText(q);
+      const dup = state.accounts.find(function (a) { const n = normalizeText(a.company_name); return n && (n === nq || (nq.length >= 4 && n.indexOf(nq) >= 0)); });
+      const dupHtml = dup && dup.id !== document.getElementById("accFormId").value
+        ? '<p class="rounded-lg p-2" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fde68a">Já existe na carteira: <b>' + esc(dup.company_name) + '</b>. <button type="button" class="underline" onclick="openAccountModal(\'' + esc(dup.id) + '\')">Abrir a conta</button></p>' : "";
+      const links = '<p style="color:var(--muted)">Buscar à mão: ' +
+        '<a class="underline hover:text-white" href="https://www.google.com/search?q=' + encodeURIComponent('"' + q + '" CNPJ Rio de Janeiro') + '" target="_blank" rel="noopener noreferrer">CNPJ no Google</a> · ' +
+        '<a class="underline hover:text-white" href="https://www.linkedin.com/search/results/companies/?keywords=' + encodeURIComponent(q) + '" target="_blank" rel="noopener noreferrer">LinkedIn</a>. Com o CNPJ em mãos, cole aqui para puxar os dados da Receita.</p>';
+      if (!geminiKey()) {
+        leadLookupState = null;
+        out.innerHTML = dupHtml + '<p style="color:#fcd34d">Busca por nome usa o Agente Swile com Google e precisa da chave de ativação (Integrações). Sem a chave, use o CNPJ.</p>' + links;
+        return;
+      }
+      out.innerHTML = dupHtml + '<p style="color:var(--faint)">Agente Swile pesquisando no Google…</p>';
+      const prompt = "Pesquise na web a empresa \"" + q + "\", com foco na operação no estado do Rio de Janeiro. " +
+        "Responda só com um objeto JSON, sem texto fora dele: {\"encontrada\": true|false, \"razao_social\": \"\", \"nome_fantasia\": \"\", \"cnpj\": \"\", \"site\": \"\", \"setor\": \"\", \"endereco_rj\": \"\", \"funcionarios\": \"\", \"fonte_funcionarios\": \"\", \"operadora_beneficio\": \"\", \"fonte_operadora\": \"\", \"observacao\": \"\"}. " +
+        "Regras: preencha cada campo só com o que a pesquisa mostrar; deixe vazio o que não encontrar. Não estime número de funcionários nem operadora de benefícios: só informe se houver fonte, e cite a fonte no campo correspondente. Não invente nomes de pessoas.";
+      const r = await geminiRequest([{ text: prompt }], { json: true, search: true, timeout: 45000 });
+      if (!r.ok || !r.data || typeof r.data !== "object") {
+        leadLookupState = null;
+        out.innerHTML = dupHtml + '<p style="color:#fca5a5">O Agente Swile não respondeu (' + esc(r.error || "formato inválido") + ').</p>' + links;
+        return;
+      }
+      const g = r.data;
+      if (g.encontrada === false) {
+        leadLookupState = null;
+        out.innerHTML = dupHtml + '<p style="color:#fcd34d">O Agente Swile não encontrou a empresa com segurança.</p>' + links;
+        return;
+      }
+      const s = function (v) { return cleanStr(v).slice(0, 300); };
+      const fields = [];
+      const add = function (key, label, value, src, checked) { if (value) fields.push({ key: key, label: label, value: value, src: src, checked: checked }); };
+      add("company", "Empresa", s(g.nome_fantasia) || s(g.razao_social), "sugestão não verificada", !(document.getElementById("accFormCompany").value || "").trim());
+      add("sector", "Setor", s(g.setor), "sugestão não verificada", !(document.getElementById("accFormSector").value || "").trim());
+      const site = safeExternalUrl(s(g.site));
+      add("website", "Site", site, "sugestão não verificada", !!site);
+      add("address", "Endereço no RJ", s(g.endereco_rj), "sugestão não verificada", false);
+      const op = s(g.operadora_beneficio);
+      if (op) add("provider", "Operadora atual", op, s(g.fonte_operadora) ? "fonte: " + s(g.fonte_operadora) + " · não verificada" : "sem fonte · não verificada", false);
+      const info = [];
+      if (s(g.razao_social)) info.push("Razão social: " + s(g.razao_social));
+      if (s(g.funcionarios)) info.push("Funcionários: " + s(g.funcionarios) + (s(g.fonte_funcionarios) ? " (fonte: " + s(g.fonte_funcionarios) + ")" : " (sem fonte)") + ". Funcionários não é o mesmo que vidas no cartão: confirme na call.");
+      if (s(g.observacao)) info.push(s(g.observacao));
+      const cnpj = cnpjDigits(g.cnpj);
+      leadLookupState = { kind: "name", fields: fields, ai: { notes: info, sources: (r.sources || []).slice(0, 6), cnpj: cnpj.length === 14 && isValidCnpj(cnpj) ? cnpj : "" } };
+      renderLeadLookupResult(out, dupHtml);
+    }
+
+    function renderLeadLookupResult(out, extraTop) {
+      const st = leadLookupState;
+      if (!st) return;
+      const chip = function (src) {
+        const ok = src === "Receita";
+        return '<span class="chip shrink-0" style="' + (ok ? "color:#6ee7b7" : /não verificada/.test(src) ? "color:#fcd34d" : "color:#c4b5fd") + '">' + esc(src) + '</span>';
+      };
+      let html = extraTop || "";
+      if (st.kind === "cnpj") {
+        const i = st.info;
+        html += '<div class="rounded-lg p-2.5 space-y-1" style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.3)">' +
+          '<p class="text-white font-medium">' + esc(i.razao) + (i.fantasia ? ' <span style="color:var(--muted)">(' + esc(i.fantasia) + ')</span>' : '') + '</p>' +
+          '<p style="color:#c3c8d4">' + esc([i.cnpj, i.situacao, i.porte, i.natureza].filter(Boolean).join(" · ")) + '</p>' +
+          (i.qsa.length ? '<p style="color:var(--muted)">Sócios e administradores (QSA): ' + esc(i.qsa.slice(0, 4).map(function (q) { return q.nome + (q.qual ? " (" + q.qual + ")" : ""); }).join("; ")) + '. Não são, necessariamente, o decisor de RH.</p>' : '') +
+          '<p class="text-[10.5px]" style="color:var(--faint)">Fonte: ' + esc(i.source) + ', consulta em ' + esc(formatDateTimeBR(i.fetched_at)) + '.</p></div>' +
+          cnpjFlags(i).map(function (f) { return '<p style="color:' + (f.bad ? "#fcd34d" : "#c3c8d4") + '">• ' + esc(f.t) + '</p>'; }).join("");
+      } else {
+        html += '<p class="rounded-lg p-2" style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fde68a">Sugestão do Agente Swile com busca no Google. A IA pode errar: confira cada campo antes de salvar.</p>' +
+          (st.ai.notes.length ? '<ul class="space-y-0.5" style="color:#c3c8d4">' + st.ai.notes.map(function (n) { return '<li>• ' + esc(n) + '</li>'; }).join("") + '</ul>' : '') +
+          (st.ai.sources.length ? '<p style="color:var(--muted)">Páginas usadas: ' + st.ai.sources.map(function (src) { return '<a class="underline hover:text-white" href="' + esc(src.uri) + '" target="_blank" rel="noopener noreferrer">' + esc(src.title.slice(0, 40)) + '</a>'; }).join(" · ") + '</p>' : '') +
+          (st.ai.cnpj ? '<button type="button" class="btn btn-sm" onclick="confirmLeadCnpj()">Conferir CNPJ ' + esc(formatCnpj(st.ai.cnpj)) + ' na Receita</button>' : '');
+      }
+      html += st.fields.length ? '<div class="space-y-1">' + st.fields.map(function (f, idx) {
+        return '<label class="flex items-start gap-2 rounded-lg px-2 py-1.5 cursor-pointer" style="background:var(--surface-2)">' +
+          '<input type="checkbox" class="accent-violet-500 mt-0.5" data-lead-field="' + idx + '"' + (f.checked ? ' checked' : '') + ' />' +
+          '<span class="min-w-0 flex-1"><span style="color:var(--faint)">' + esc(f.label) + ':</span> <span class="text-white break-words">' + esc(f.value) + '</span></span>' + chip(f.src) + '</label>';
+      }).join("") + '</div>' : '';
+      html += '<p style="color:var(--muted)">Vidas no cartão, benefício médio, operadora e decisor: <b style="color:#fcd34d">a preencher</b> (não vêm da Receita' + (st.kind === "name" ? " nem da busca" : "") + ').</p>';
+      if (st.fields.length) html += '<div class="flex flex-wrap gap-1.5"><button type="button" id="btnLeadApply" class="btn btn-primary btn-sm" onclick="applyLeadLookup()">Aplicar os marcados no formulário</button></div>';
+      html += '<div id="leadPlanPreview"></div>';
+      out.innerHTML = html;
+    }
+
+    async function confirmLeadCnpj() {
+      const st = leadLookupState;
+      if (!st || !st.ai || !st.ai.cnpj) return;
+      const keep = st;
+      const out = document.getElementById("leadLookupOut");
+      document.getElementById("leadLookupQuery").value = formatCnpj(keep.ai.cnpj);
+      await lookupByCnpj(keep.ai.cnpj, out, '<p style="color:var(--faint)">CNPJ sugerido pelo Agente Swile e conferido na Receita abaixo.</p>');
+    }
+
+    function applyLeadLookup() {
+      const st = leadLookupState;
+      if (!st) return;
+      const map = { company: "accFormCompany", cnpj: "accFormCnpj", sector: "accFormSector", address: "accFormAddress", phone: "accFormPhone", email: "accFormEmail", website: "accFormWebsite" };
+      let n = 0;
+      document.querySelectorAll("[data-lead-field]").forEach(function (cb) {
+        const f = st.fields[Number(cb.getAttribute("data-lead-field"))];
+        if (!f || !cb.checked) return;
+        if (f.key === "polo") setSelectValue("accFormPolo", f.value);
+        else if (f.key === "provider") setSelectValue("accFormProvider", f.value);
+        else if (map[f.key]) document.getElementById(map[f.key]).value = f.value;
+        n++;
+      });
+      if (st.kind === "cnpj" && !document.getElementById("accFormCnpj").value) document.getElementById("accFormCnpj").value = st.info.cnpj;
+      if (st.kind === "name") {
+        const trig = document.getElementById("accFormTrigger");
+        if (trig && !trig.value.trim()) trig.value = "Dados da busca do Agente Swile (sugestão não verificada): conferir porte (≥ " + CASE_MIN_LIVES + " vidas), operadora e decisor.";
+      }
+      showToast(n ? n + " campo(s) aplicado(s). Confira e complete vidas, benefício, operadora e decisor." : "Nenhum campo marcado.", n ? "✅" : "ℹ️");
+      renderLeadPlanPreview();
+    }
+
+    function accountFromForm() {
+      const v = function (id) { const el = document.getElementById(id); return el ? (el.value || "").trim() : ""; };
+      const id = v("accFormId");
+      return {
+        id: id || null, company_name: v("accFormCompany"), cnpj: v("accFormCnpj"), sector: v("accFormSector"),
+        current_provider: v("accFormProvider"), active_card_users: Number(v("accFormLives")) || 0, avg_monthly_ticket: Number(v("accFormTicket")) || 0,
+        decision_maker_name: v("accFormDecisor"), polo_rj: v("accFormPolo"), status: v("accFormStatus") || "Lead Mapeado",
+        rh_pains: v("accFormRhPains"), user_complaints: v("accFormUserPains"), swile_trigger_2026: v("accFormTrigger")
+      };
+    }
+    function renderLeadPlanPreview() {
+      const box = document.getElementById("leadPlanPreview");
+      if (!box) return;
+      const dz = buildDossier(accountFromForm());
+      box.innerHTML = '<div class="rounded-lg p-2.5 space-y-1 mt-1" style="background:rgba(255,255,255,.03);border:1px solid var(--line)">' +
+        '<p class="eyebrow">Prévia do plano em 5 etapas</p><ol class="list-decimal pl-4 space-y-0.5" style="color:#c3c8d4">' +
+        dz.steps.map(function (s) { return '<li><span class="text-white">' + esc(s.title) + ':</span> ' + esc(s.lines[0]) + '</li>'; }).join("") + '</ol>' +
+        '<p class="text-[10.5px]" style="color:var(--faint)">Ao salvar, o dossiê completo fica na ficha da conta e se atualiza com o que você preencher.</p></div>';
+    }
+
+    // =====================================================================
+    // DOSSIÊ PRÉ-CONTATO + PLANO EM 5 ETAPAS (ficha da conta)
+    // Só dados da ficha, da Receita (se buscada) e fatos com fonte do Playbook.
+    // =====================================================================
+    const DOSSIER_OBJECTIONS = {
+      tradicional: { q: "Já temos a {operadora} há anos e trocar dá trabalho para o DP.", a: "Faz sentido. Por isso a implantação da Swile é sem custo de implementação, com planilha, comunicação e primeira carga acompanhadas. A pergunta é se o DP quer seguir administrando cartões separados, quando dá para ter até 8 categorias no mesmo Mastercard." },
+      caju: { q: "Estamos satisfeitos com a Caju.", a: "Ótimo, não é sobre trocar agora. Com a compra da Caju pelo iFood anunciada em 20/10/2026 e ainda pendente de CADE e Banco Central, vale ter um comparativo pronto. Posso te mandar lado a lado?" },
+      flash: { q: "A Flash já resolve e custa menos.", a: "Não vou brigar por preço. Proponho comparar a experiência do time: Mastercard com ampla aceitação, Apple Pay, Google Pay e Samsung Pay, e o Mastercard Surpreenda sem custo adicional." },
+      desconhecida: { q: "Já temos fornecedor de benefícios.", a: "Faz sentido. Qual é hoje? Pergunto porque a conversa muda conforme a operadora. São 15 minutos para eu entender o cenário, e só volto se fizer sentido para vocês." }
+    };
+    function dossierTemplateId(kind, prefer) {
+      const list = integ().waTemplates || [];
+      for (let i = 0; i < prefer.length; i++) if (list.some(function (t) { return t.id === prefer[i]; })) return prefer[i];
+      return null;
+    }
+    function buildDossier(acc) {
+      const cr = coldReading(acc);
+      const info = cnpjIntelOf(acc);
+      const empresa = String(acc.company_name || "a empresa").trim() || "a empresa";
+      const prov = cr.angleKey !== "desconhecida" ? cr.provider : "";
+      const simples = info ? info.simples : null;
+      const fill = function (v, label) { return v ? v : "a preencher (" + label + ")"; };
+      const money = function (v) { return "R$ " + Math.round(v).toLocaleString("pt-BR"); };
+
+      // Bloco A · quem é o cliente
+      const who = [];
+      who.push(["Empresa", empresa + (acc.cnpj ? " · CNPJ " + formatCnpjField(acc.cnpj) : "")]);
+      if (info) who.push(["Receita", [info.razao, info.cnaeDesc, info.porte, info.situacao, [info.municipio, info.uf].filter(Boolean).join("/")].filter(Boolean).join(" · ") + " (consulta de " + formatDateShort(String(info.fetched_at).slice(0, 10)) + ")"]);
+      who.push(["Setor RJ", cr.sector ? cr.sector.label : fill(acc.sector, "setor não identificado")]);
+      who.push(["Tamanho", cr.lives ? cr.lives.toLocaleString("pt-BR") + " vidas" + (cr.ticket ? " × " + money(cr.ticket) + " = " + money(cr.tpv) + "/mês de TPV" : " · benefício médio a preencher") + (cr.belowCase ? " (abaixo do corte de " + CASE_MIN_LIVES + ")" : "") : "a preencher (vidas no cartão)"]);
+      who.push(["Operadora atual", prov || "a preencher (pergunte no 1º contato)"]);
+      who.push(["Regime fiscal", simples === true ? "Simples Nacional (Receita): sem dedução de PAT" : simples === false ? "Não optante do Simples (Receita): Lucro Real ou Presumido, confirmar com o financeiro" : "a preencher (busque o CNPJ ou pergunte se é Lucro Real)"]);
+      who.push(["Dor do RH", fill(String(acc.rh_pains || "").trim(), "pergunte o que mais pesa no DP")]);
+      who.push(["Reclamações do time", fill(String(acc.user_complaints || "").trim(), "Reclame Aqui, Glassdoor ou na call")]);
+      const traps = ["Não peça para \"cotar VR\": a conversa vai para Compras e vira disputa de taxa. Conduza pelo custo do DP (RH) e pelo PAT (CFO)."];
+      if (cr.belowCase) traps.push("Abaixo de " + CASE_MIN_LIVES + " vidas: fora do foco do Case. Confirme o número antes de investir tempo.");
+      if (simples === true) traps.push("Optante do Simples: não use o argumento do PAT.");
+      if (cr.angleKey === "caju") traps.push("Não fale mal da Caju: trate como plano B, não como troca.");
+
+      // Bloco B · 5 etapas
+      const steps = [];
+      steps.push({ title: "Porta de entrada", lines: [
+        cr.angle.advice,
+        cr.sector ? "Setor: " + cr.sector.hook : "Setor não identificado: abra pelo ponto cego de fim de ano (premiação de metas e benefícios do time híbrido)."
+      ].concat(cr.angle.msg ? ["Frase de abertura: \"" + cr.angle.msg.replace(/\{empresa\}/g, empresa) + "\""] : []) });
+      const patLine = simples === true ? "CFO: o PAT não se aplica no Simples. Fale do prêmio por desempenho fora da base de encargos (CLT art. 457, §§ 2º e 4º)."
+        : cr.pat ? "CFO: dedução PAT estimada em " + money(cr.pat) + "/ano na simulação salva (15% do gasto, teto de 3,6% do IRPJ devido, só Lucro Real), mais o prêmio por desempenho fora da base de encargos (CLT art. 457)."
+        : "CFO: no Lucro Real, o PAT deduz 15% do gasto com alimentação, até 3,6% do IRPJ devido (LC 224/2025). Valor só com o IRPJ no Simulador PAT. Mais o prêmio fora da base de encargos (CLT art. 457).";
+      steps.push({ title: "Mapa de decisão", lines: [
+        "RH (quem vai defender): experiência do time com Mastercard de ampla aceitação, Apple Pay e Google Pay, até 8 categorias no mesmo cartão e Premiação.",
+        patLine,
+        "Jurídico e Compras: implantação sem custo de implementação, acompanhada pela Swile. Contrato e condições comerciais confirmados com a Swile antes de prometer."
+      ] });
+      const qs = [];
+      if (!cr.lives) qs.push("Quantas pessoas recebem VR ou VA hoje, e quantas estão no Rio?");
+      if (!prov) qs.push("Qual operadora vocês usam hoje e quando vence o contrato?");
+      else qs.push("Quando vence o contrato com a " + prov + " e do que o time mais reclama?");
+      if (simples !== true) qs.push("A empresa apura o IRPJ pelo Lucro Real? Quem no financeiro acompanha o PAT?");
+      if (!String(acc.decision_maker_name || "").trim()) qs.push("Além de você, quem participa da decisão: RH, financeiro, compras?");
+      qs.push("Como vocês premiam metas hoje e quanto isso custa em encargos?");
+      steps.push({ title: "3 perguntas para a call", lines: qs.slice(0, 3) });
+      const ob = DOSSIER_OBJECTIONS[cr.angleKey] || DOSSIER_OBJECTIONS.desconhecida;
+      steps.push({ title: "Vacina de objeção", lines: ["Objeção provável: \"" + ob.q.replace(/\{operadora\}/g, prov || "operadora atual") + "\"", "Resposta: \"" + ob.a + "\""] });
+      const opp = acc.id ? openOppOf(acc.id) : null;
+      const close = opp && opp.close_date && daysFromToday(opp.close_date) >= 6 ? formatDateShort(opp.close_date) : null;
+      const t0 = dossierTemplateId("wa", ["w-d0-pontocego", "w-d0"]), t2 = dossierTemplateId("wa", cr.angleKey !== "desconhecida" ? ["w-d2-leitura", "w-d2"] : ["w-d2", "w-d2-leitura"]), t5 = dossierTemplateId("wa", ["w-d5-premiacao"]);
+      const tname = function (id) { const t = (integ().waTemplates || []).find(function (x) { return x.id === id; }); return t ? t.name : "mensagem livre"; };
+      steps.push({ title: "Cronograma", lines: [
+        "Hoje: WhatsApp com \"" + tname(t0) + "\".",
+        "D+2: " + (t2 ? "\"" + tname(t2) + "\"" : "follow-up com o argumento da operadora") + ".",
+        "D+5: " + (t5 ? "\"" + tname(t5) + "\"" : "entrada por Premiação") + ".",
+        "Fechamento: Proposta 3 Pilares" + (close ? " até " + close + " (data prevista da oportunidade)" : " e data de assinatura combinada na call") + "."
+      ], tpl: { d0: t0, d2: t2, d5: t5 } });
+      const gaps = cr.gaps.slice();
+      if (!info && !acc.cnpj) gaps.push("CNPJ");
+      return { who: who, traps: traps, steps: steps, gaps: gaps, info: info };
+    }
+    function dossierText(acc) {
+      const dz = buildDossier(acc);
+      let t = "DOSSIÊ PRÉ-CONTATO · " + (acc.company_name || "") + "\n\nQUEM É O CLIENTE\n" + dz.who.map(function (w) { return "- " + w[0] + ": " + w[1]; }).join("\n") +
+        "\n\nARMADILHAS\n" + dz.traps.map(function (x) { return "- " + x; }).join("\n") + "\n\nPLANO EM 5 ETAPAS\n";
+      dz.steps.forEach(function (s, i) { t += (i + 1) + ". " + s.title + "\n" + s.lines.map(function (l) { return "   - " + l; }).join("\n") + "\n"; });
+      return t + "\nFontes: ficha da conta" + (dz.info ? ", " + dz.info.source : "") + " e fatos com fonte do Playbook. Campos \"a preencher\" ainda não foram levantados.";
+    }
+    function renderAccountDossier(acc) {
+      const box = document.getElementById("accDossier");
+      if (!box) return;
+      if (!acc) { box.classList.add("hidden"); return; }
+      const dz = buildDossier(acc);
+      const a = esc(acc.id);
+      document.getElementById("accDossierBadge").textContent = dz.gaps.length ? dz.gaps.length + " dado(s) a preencher" : "ficha completa";
+      document.getElementById("accDossierBody").innerHTML =
+        '<p class="eyebrow">Quem é o cliente</p><ul class="space-y-1" style="color:#c3c8d4">' + dz.who.map(function (w) {
+          return '<li><span style="color:var(--faint)">' + esc(w[0]) + ':</span> ' + (/^a preencher/.test(w[1]) ? '<span style="color:#fcd34d">' + esc(w[1]) + '</span>' : esc(w[1])) + '</li>';
+        }).join("") + '</ul>' +
+        '<div class="rounded-lg p-2 space-y-0.5" style="background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.25)"><p class="font-medium" style="color:#fca5a5">Armadilha a evitar</p>' + dz.traps.map(function (x) { return '<p style="color:#c3c8d4">• ' + esc(x) + '</p>'; }).join("") + '</div>' +
+        '<p class="eyebrow pt-1">Plano em 5 etapas</p><ol id="accDossierSteps" class="space-y-1.5">' + dz.steps.map(function (s, i) {
+          return '<li class="rounded-lg border p-2" style="border-color:var(--line)"><p class="text-white font-medium">' + (i + 1) + '. ' + esc(s.title) + '</p>' + s.lines.map(function (l) { return '<p class="mt-0.5" style="color:#c3c8d4">' + esc(l) + '</p>'; }).join("") + '</li>';
+        }).join("") + '</ol>' +
+        '<div class="flex flex-wrap gap-1.5"><button type="button" id="btnApplyPlan" class="btn btn-primary btn-sm" onclick="applyDossierPlan(\'' + a + '\')">⚡ Aplicar plano na conta</button>' +
+        '<button type="button" class="btn btn-sm" onclick="copyTextSafe(dossierText(findAccount(\'' + a + '\')), \'Dossiê copiado.\')">📋 Copiar dossiê</button></div>' +
+        '<p class="text-[10.5px]" style="color:var(--faint)">Monta só com a ficha' + (dz.info ? ", a consulta da Receita" : "") + ' e os fatos com fonte do Playbook. "Aplicar" agenda Hoje, D+2, D+5 e o fechamento, sem duplicar passos já agendados, e deixa a mensagem de hoje pronta.</p>';
+      box.open = !openOppOf(acc.id) || Number(openOppOf(acc.id).stage_weight) <= 2;
+      box.classList.remove("hidden");
+    }
+    function applyDossierPlan(accId) {
+      const acc = findAccount(accId);
+      if (!acc) return;
+      const dz = buildDossier(acc);
+      const tpl = dz.steps[4].tpl;
+      const opp = openOppOf(acc.id);
+      const pend = state.followups.filter(function (f) { return f.account_id === acc.id && f.status === "Pendente"; });
+      const has = function (prefix) { return pend.some(function (f) { return String(f.action_title || "").indexOf(prefix) === 0; }); };
+      const closeDue = opp && opp.close_date && daysFromToday(opp.close_date) >= 6 ? opp.close_date : addDaysIso(7);
+      const plan = [
+        { p: "Plano · Hoje", t: "Plano · Hoje: primeiro contato pelo WhatsApp", due: todayIso(), skip: pend.some(function (f) { return daysFromToday(f.due_date) <= 0; }) },
+        { p: "Plano · D+2", t: "Plano · D+2: follow-up com o argumento da operadora", due: addDaysIso(2) },
+        { p: "Plano · D+5", t: "Plano · D+5: entrada por Premiação", due: addDaysIso(5) },
+        { p: "Plano · Fechamento", t: "Plano · Fechamento: Proposta 3 Pilares e data de assinatura", due: closeDue }
+      ];
+      const created = [];
+      plan.forEach(function (s) {
+        if (s.skip || has(s.p)) return;
+        const fu = { id: newUuid(), account_id: acc.id, opportunity_id: opp ? opp.id : null, action_title: s.t, due_date: s.due, channel: "WhatsApp", status: "Pendente", priority: acc.priority_icp === "Baixa" ? "Média" : "Alta" };
+        state.followups.unshift(fu);
+        created.push(fu);
+      });
+      if (tpl.d0) { composerState = { accountId: acc.id, kind: "wa", tplId: tpl.d0, custom: null }; }
+      refreshAllViews();
+      renderAccountSidePanel(acc);
+      if (created.length) remoteWrite("Follow-up", function () { return db.upsert("crm_follow_ups", created.map(followupToRow), "id"); });
+      showToast(created.length ? "Plano aplicado: " + created.length + " passo(s) na agenda e a mensagem de hoje pronta." : "Os passos do plano já estavam na agenda. Mensagem de hoje pronta.", "⚡");
+    }
+
     function renderIntegrations() {
       const cfg = integ();
       renderSfPayload();
@@ -8171,6 +8675,14 @@
     let reportTab = "case";
     try { const t = localStorage.getItem(REPORT_TAB_KEY); if (t === "case" || t === "funnel" || t === "carteira") reportTab = t; } catch (e) { /* ignore */ }
 
+    function toggleRepMore(force) {
+      const box = document.getElementById("repMore"), btn = document.getElementById("btnRepMore");
+      if (!box) return;
+      const open = typeof force === "boolean" ? force : !box.classList.contains("open");
+      box.classList.toggle("open", open);
+      if (btn) { btn.setAttribute("aria-expanded", String(open)); btn.textContent = open ? "Ocultar detalhes da carteira" : "Ver detalhes da carteira: status, polos, atividades, ganhos e perdas"; }
+      if (open && typeof renderReportCharts === "function") renderReportCharts(computeReportData());
+    }
     function setReportTab(tab) {
       reportTab = tab;
       try { localStorage.setItem(REPORT_TAB_KEY, tab); } catch (e) { /* ignore */ }
@@ -8430,109 +8942,194 @@
       r = r || computeReportData();
       const m = computeCaseMetrics();
       const d = directorIntel();
+      const prem = loadCasePremises();
       const realWin = m.winRate !== null && m.winRate !== undefined;
       const winRate = realWin ? m.winRate : (d.proj && d.proj.winRate !== null ? d.proj.winRate : null);
       const velocity = d.velocityDay !== null ? d.velocityDay : (d.proj ? d.proj.velocityDay : null);
-      const pace = CASE_TARGET_MONTH / 30;
-      const bigAccounts = r.accounts.filter(function (a) { return (Number(a.active_card_users) || 0) >= CASE_MIN_LIVES; }).length;
+      const bar = function (frac, color) { const f = Math.max(0, Math.min(1, frac || 0)); return '<div class="h-1.5 rounded-full mt-2 overflow-hidden" style="background:rgba(255,255,255,.08)"><div class="h-full rounded-full" style="width:' + Math.round(f * 100) + '%;background:' + color + '"></div></div>'; };
+      const k = function (label) { return '<div class="t24-k">' + label + '</div>'; };
+      const sub = function (html) { return '<div class="text-[11px] mt-1" style="color:#94A3B8">' + html + '</div>'; };
 
-      // 1. KPIs
-      const kpis =
-        t24Kpi("TPV mensal mapeado", formatCompactBRL(r.mappedTpv), r.accounts.length + " contas", "#10B981", t24Spark(t24CumulativeSeries(r.accounts, computeMonthlyTpv), "#10B981")) +
-        t24Kpi("Vidas mapeadas", t24Num(r.lives), bigAccounts + " contas ≥" + CASE_MIN_LIVES + " vidas", "#06B6D4", t24Spark(t24CumulativeSeries(r.accounts, function (a) { return Number(a.active_card_users) || 0; }), "#06B6D4")) +
-        t24Kpi("Win rate" + (realWin ? "" : " ponderado"), winRate === null ? "sem dados" : (winRate * 100).toFixed(1).replace(".", ",") + "%", realWin ? "ganhos ÷ decididos" : "Projeção do funil", "#8B5CF6", t24MiniBar(winRate, "#8B5CF6")) +
-        t24Kpi("Velocidade do pipeline", velocity === null ? "sem dados" : fmtK(velocity) + "/dia", d.velocityDay !== null ? "ciclo real" : "Projeção · ciclo " + loadCyclePremise() + "d", "#F59E0B", t24MiniBar(velocity === null ? 0 : velocity / pace, "#F59E0B"));
+      // SEÇÃO 1 · Termômetro da meta (4 cards)
+      const gapMonth = Math.max(0, CASE_TARGET_MONTH - m.wonMonthTpv);
+      const c1 = '<div class="t24-card" id="t24CardMonth">' + k("Meta mensal RJ · " + fmtK(CASE_TARGET_MONTH)) +
+        '<div class="t24-v">' + fmtK(m.wonMonthTpv) + '</div>' + sub("assinado no mês · " + (gapMonth ? "faltam <b class='text-white'>" + fmtK(gapMonth) + "</b>" : "<b style='color:#6ee7b7'>meta batida</b>")) +
+        bar(m.wonMonthTpv / CASE_TARGET_MONTH, "#10B981") + sub("Forecast ponderado do funil: <b class='text-white'>" + fmtK(r.weighted) + "</b> (TPV × probabilidade da fase)") + '</div>';
+      const m3 = Math.max(0, CASE_TARGET_QUARTER - prem.m1 - prem.m2);
+      const accQ = prem.m1 + prem.m2 + m.wonMonthTpv;
+      const seg = function (v, color) { return '<div class="h-full" style="width:' + Math.max(0, Math.min(100, v / CASE_TARGET_QUARTER * 100)).toFixed(1) + '%;background:' + color + '"></div>'; };
+      const c2 = '<div class="t24-card" id="t24CardQuarter">' + k("Meta trimestral · " + fmtK(CASE_TARGET_QUARTER)) +
+        '<div class="t24-v">' + fmtK(accQ) + '</div>' + sub("M1 + M2 (rampa informada) + assinado no M3") +
+        '<div class="flex h-1.5 rounded-full mt-2 overflow-hidden" style="background:rgba(255,255,255,.08)">' + seg(prem.m1, "#64748B") + seg(prem.m2, "#94A3B8") + seg(m.wonMonthTpv, "#10B981") + '</div>' +
+        '<div class="flex flex-wrap items-end gap-1.5 mt-2 no-print">' +
+          '<label class="text-[10.5px]" style="color:#94A3B8">M1 <input id="t24M1" type="number" step="10000" min="0" class="input h-7 w-24 num" value="' + prem.m1 + '" onchange="saveT24Ramp()" /></label>' +
+          '<label class="text-[10.5px]" style="color:#94A3B8">M2 <input id="t24M2" type="number" step="10000" min="0" class="input h-7 w-24 num" value="' + prem.m2 + '" onchange="saveT24Ramp()" /></label>' +
+          '<span class="text-[10.5px] pb-1" style="color:#94A3B8">M3 = <b class="text-white num" id="t24M3">' + fmtK(m3) + '</b></span></div>' +
+        '<div class="text-[10px] mt-1" style="color:#64748B">Rampa M1/M2: premissa informada pelo usuário (editável). M3 = meta − M1 − M2.</div></div>';
+      const cov = m.coverage, frac = Math.max(0, Math.min(1, cov / CASE_COVERAGE));
+      const R = 34, cx = 46, cy = 44, a0 = 150 * Math.PI / 180, sweep = 240 * Math.PI / 180;
+      const pt = function (a) { return (cx + R * Math.cos(a)).toFixed(1) + " " + (cy + R * Math.sin(a)).toFixed(1); };
+      const arc = function (f) { const a1 = a0 + sweep * f; return "M" + pt(a0) + " A" + R + " " + R + " 0 " + (sweep * f > Math.PI ? 1 : 0) + " 1 " + pt(a1); };
+      const gColor = frac >= 1 ? "#10B981" : frac >= .5 ? "#06B6D4" : "#F59E0B";
+      const covGap = Math.max(0, CASE_TARGET_MONTH * CASE_COVERAGE - m.coverageTpv);
+      const inContact = state.opportunities.filter(function (o) { return Number(o.stage_weight) === 3; }).length;
+      const c3 = '<div class="t24-card flex items-center gap-2" id="t24CardCoverage"><svg width="92" height="80" viewBox="0 0 92 80" style="flex:none" role="img" aria-label="Cobertura do pipeline">' +
+        '<path d="' + arc(1) + '" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8" stroke-linecap="round"/>' +
+        (frac > 0 ? '<path d="' + arc(frac) + '" fill="none" stroke="' + gColor + '" stroke-width="8" stroke-linecap="round"/>' : '') +
+        '<text x="46" y="49" text-anchor="middle" fill="#F8FAFC" font-size="15" font-weight="700" font-family="JetBrains Mono, monospace">' + cov.toFixed(1).replace(".", ",") + 'x</text>' +
+        '<text x="46" y="76" text-anchor="middle" fill="#94A3B8" font-size="9">meta ' + CASE_COVERAGE + ',0x</text></svg>' +
+        '<div class="min-w-0">' + k("Cobertura de pipeline") + sub(fmtK(m.coverageTpv) + " em Negociando + Contrato enviado. Meta " + CASE_COVERAGE + "x = " + fmtK(CASE_TARGET_MONTH * CASE_COVERAGE) + ".") +
+        sub(covGap ? "Faltam <b class='text-white'>" + fmtK(covGap) + "</b>. " + inContact + " oportunidade(s) em Em contato podem subir para Negociando." : "<b style='color:#6ee7b7'>Cobertura batida.</b>") + '</div></div>';
+      const actDay = m.activitiesPerDay || 0;
+      const c4 = '<div class="t24-card" id="t24CardPace">' + k("Velocidade e ritmo") +
+        '<div class="t24-v">' + (velocity === null ? "sem dados" : fmtK(velocity) + "/dia") + '</div>' +
+        sub(velocity === null ? "precisa de oportunidades de Qualificando em diante com vidas e benefício" : d.velocityDay !== null ? "velocidade do pipeline com ciclo real" : "projeção do funil · ciclo de " + loadCyclePremise() + " dias (premissa)") +
+        sub("Atividades por dia útil: <b class='text-white'>" + num1Br(actDay) + "</b> de 55 · no mês: " + (m.activities || 0).toLocaleString("pt-BR") + " de " + CASE_ACTIVITIES_MONTH.toLocaleString("pt-BR")) +
+        bar(actDay / 55, "#F59E0B") + '</div>';
 
-      // 2. Simulação (AreaChart): base = TPV dos clientes atuais; cada mês soma vidas novas × ticket × win rate
+      // SEÇÃO 2 · Funil oficial × referência do case + gargalo
+      const maxRef = Math.max.apply(null, [1, 2, 3, 4, 5, 6].map(function (w) { return Math.max(CASE_FUNNEL[w], m.byStage[w].count); }));
+      const fcol = ["#22D3EE", "#38BDF8", "#818CF8", "#8B5CF6", "#A855F7", "#10B981"];
+      const rows = [1, 2, 3, 4, 5, 6].map(function (w) {
+        const c = m.byStage[w].count, ref = CASE_FUNNEL[w];
+        return '<div class="grid items-center gap-2" style="grid-template-columns:7.5rem 1fr 3.2rem"><span class="text-[11px] truncate" style="color:#CBD5E1">' + esc(REPORT_STAGE_NAMES[w]) + '</span>' +
+          '<div class="space-y-0.5"><div class="h-2 rounded-full" style="width:' + Math.max(1.5, c / maxRef * 100).toFixed(1) + '%;background:' + fcol[w - 1] + '" title="CRM hoje: ' + c + '"></div>' +
+          '<div class="h-1 rounded-full" style="width:' + (ref / maxRef * 100).toFixed(1) + '%;background:rgba(148,163,184,.35)" title="Referência do case: ' + CASE_FUNNEL_LABEL[w] + '"></div></div>' +
+          '<span class="num text-[11px] text-right" style="color:' + (c >= ref ? "#6ee7b7" : "#F8FAFC") + '">' + c + '<span style="color:#64748B">/' + CASE_FUNNEL_LABEL[w] + '</span></span></div>';
+      }).join("");
+      let gargalo;
+      let gStage = null;
+      if (d.bottleneck) {
+        gStage = d.bottleneck.from;
+        gargalo = "Gargalo atual: " + pct0(d.bottleneck.rate) + " de conversão em " + SF_STAGE_NAMES[d.bottleneck.from] + " → " + (SF_STAGE_NAMES[d.bottleneck.to] || "Contrato assinado") + " (" + d.bottleneck.passed + " de " + d.bottleneck.base + ").";
+      } else {
+        let worst = null;
+        [2, 3, 4, 5].forEach(function (w) { const ratio = m.byStage[w].count / CASE_FUNNEL[w]; if (worst === null || ratio < worst.ratio) worst = { w: w, ratio: ratio }; });
+        if (state.opportunities.some(function (o) { return isOpenStage(o.stage_weight); }) && worst) {
+          gStage = worst.w - 1;
+          gargalo = "Maior falta frente à referência: " + SF_STAGE_NAMES[worst.w] + " (" + m.byStage[worst.w].count + " de " + CASE_FUNNEL_LABEL[worst.w] + "). Sem histórico suficiente para medir a conversão entre fases.";
+        } else gargalo = "Gargalo: sem dados (nenhuma oportunidade aberta).";
+      }
+      let gAction = "";
+      if (gStage) {
+        const names = state.opportunities.filter(function (o) { return Number(o.stage_weight) === gStage; })
+          .map(function (o) { const a = findAccount(o.account_id); return a ? { a: a, tpv: computeMonthlyTpv(a) } : null; }).filter(Boolean)
+          .sort(function (x, y) { return y.tpv - x.tpv; }).slice(0, 3);
+        gAction = names.length ? "Ação: " + stageAdvice(gStage) + " em " + names.map(function (n) { return n.a.company_name; }).join(", ") + "." : "Ação: abastecer " + SF_STAGE_NAMES[gStage] + " (nenhuma conta nessa fase hoje).";
+      }
+      const funnel = '<div class="t24-card lg:col-span-6" id="t24Funnel"><div class="text-xs font-semibold text-white">Funil Salesforce · CRM hoje × referência do case</div>' +
+        '<div class="text-[11px] mb-3" style="color:#94A3B8">Barra colorida: oportunidades em cada fase agora. Barra cinza: volume de referência por mês para fechar ' + fmtK(CASE_TARGET_MONTH) + ' (Questão 5).</div>' +
+        '<div class="space-y-2">' + rows + '</div>' +
+        '<div id="t24Bottleneck" class="rounded-lg p-2.5 mt-3 text-[12px]" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);color:#FDE68A">🚨 ' + esc(gargalo) + (gAction ? '<br><span style="color:#E2E8F0">' + esc(gAction) + '</span>' : '') + '</div></div>';
+
+      // Simulador único
+      const withLives = r.accounts.filter(function (a) { return Number(a.active_card_users) > 0; });
+      const avgLives = withLives.length ? withLives.reduce(function (s, a) { return s + Number(a.active_card_users); }, 0) / withLives.length : 0;
       const avgTicket = r.lives ? r.mappedTpv / r.lives : 0;
-      const activeLives = state.opportunities.filter(function (o) { const w = Number(o.stage_weight); return w >= 2 && w < STAGE_WON; })
-        .reduce(function (s, o) { const a = findAccount(o.account_id); return s + (a ? Number(a.active_card_users) || 0 : 0); }, 0);
       if (!t24Sim) t24Sim = {
         ticket: Math.round(avgTicket / 25) * 25 || 800,
         win: winRate === null ? 25 : Math.max(1, Math.round(winRate * 100)),
-        lives: Math.max(50, Math.round(activeLives / 50) * 50)
+        lives: Math.round(avgLives / 10) * 10 || 280
       };
       t24Base = r.clients.reduce(function (s, a) { return s + computeMonthlyTpv(a); }, 0);
+      t24OpenProposals = m.byStage[4].count + m.byStage[5].count;
       const slider = function (id, label, val, min, max, step, shown, accent) {
         return '<label class="block rounded-lg p-2" style="background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.05)"><div class="flex justify-between gap-1 text-[11px]" style="color:#94A3B8"><span>' + label + '</span><strong id="' + id + 'Val" class="num text-white">' + shown + '</strong></div>' +
           '<input id="' + id + '" type="range" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" class="t24-range" style="accent-color:' + accent + '" oninput="t24SimChange()" aria-label="' + label + '" /></label>';
       };
-      const area =
-        '<div class="t24-card lg:col-span-7">' +
-          '<div class="flex flex-wrap items-start justify-between gap-2 mb-3"><div><div class="text-xs font-semibold text-white">Simulação de TPV recorrente · 6 meses</div>' +
-          '<div class="text-[11px]" style="color:#94A3B8">Base: TPV dos clientes atuais (' + fmtK(t24Base) + '). Cada mês soma vidas novas × benefício × win rate. Linha tracejada: base + meta de R$ 600 mil/mês.</div></div>' +
+      const simCard = '<div class="t24-card lg:col-span-6" id="t24SimCard">' +
+          '<div class="flex flex-wrap items-start justify-between gap-2 mb-2"><div><div class="text-xs font-semibold text-white">Simulador · o que precisa para ' + fmtK(CASE_TARGET_MONTH) + '/mês</div>' +
+          '<div class="text-[11px]" style="color:#94A3B8">Ajuste benefício, vidas por conta e win rate das propostas.</div></div>' +
           '<span id="t24PerMonth" class="text-xs num font-bold" style="color:#22D3EE"></span></div>' +
-          '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">' +
+          '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">' +
             slider("t24Ticket", "Benefício por vida", t24Sim.ticket, 200, 2000, 25, "R$ " + t24Num(t24Sim.ticket), "#8B5CF6") +
-            slider("t24Win", "Win rate", t24Sim.win, 1, 90, 1, t24Sim.win + "%", "#22D3EE") +
-            slider("t24Lives", "Vidas novas/mês", t24Sim.lives, 50, 5000, 50, t24Num(t24Sim.lives), "#34D399") +
+            slider("t24Lives", "Vidas por conta", t24Sim.lives, 50, 3000, 10, t24Num(t24Sim.lives), "#34D399") +
+            slider("t24Win", "Win rate das propostas", t24Sim.win, 1, 90, 1, t24Sim.win + "%", "#22D3EE") +
           '</div>' +
+          '<div id="t24Plan" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px] mb-2"></div>' +
           '<div id="t24AreaSvg"></div>' +
-          '<p class="text-[10.5px] mt-1" style="color:#64748B">Simulação com premissas editáveis, não é previsão. Valores iniciais vêm do CRM: benefício médio da carteira, win rate ' + (realWin ? "real" : "projetado") + ' e vidas nas oportunidades abertas.</p>' +
+          '<p class="text-[10.5px] mt-1" style="color:#64748B">Curva: TPV recorrente em 6 meses se as ' + t24OpenProposals + ' proposta(s) abertas hoje (Negociando + Contrato enviado) virarem contratos com esse win rate a cada mês. Linha tracejada: base + meta. Simulação com premissas editáveis, não é previsão; valores iniciais vêm da carteira.</p>' +
         '</div>';
 
-      // 3. Funil vetorial conectado (6 fases): quantas oportunidades chegaram a cada fase
-      const reached = [1, 2, 3, 4, 5, 6].map(function (w) {
-        return state.opportunities.filter(function (o) { const st = Number(o.stage_weight); return st >= w || (st === 0 && Number(o.lost_stage) >= w); }).length;
-      });
-      const top = Math.max(1, reached[0]);
-      const FW = 900, seg = FW / 6, H = 100, mid = 78;
-      const h = function (n) { return Math.max(6, (n / top) * H); };
-      const funnelColors = ["#22D3EE", "#38BDF8", "#818CF8", "#8B5CF6", "#A855F7", "#10B981"];
-      let fsvg = '<defs>' + funnelColors.map(function (c, i) { return '<linearGradient id="t24F' + i + '" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="' + c + '" stop-opacity=".85"/><stop offset="1" stop-color="' + (funnelColors[i + 1] || c) + '" stop-opacity=".7"/></linearGradient>'; }).join("") + '</defs>';
-      for (let i = 0; i < 6; i++) {
-        const x0 = i * seg, x1 = x0 + seg - 4, hl = h(reached[i]), hr = h(i < 5 ? reached[i + 1] : reached[i]);
-        fsvg += '<path d="M' + x0 + ',' + (mid - hl / 2) + ' L' + x1 + ',' + (mid - hr / 2) + ' L' + x1 + ',' + (mid + hr / 2) + ' L' + x0 + ',' + (mid + hl / 2) + ' Z" fill="url(#t24F' + i + ')"><title>' + esc(SF_STAGE_NAMES[i + 1]) + ': ' + reached[i] + '</title></path>';
-        fsvg += '<text x="' + (x0 + seg / 2 - 2) + '" y="' + (mid + 5) + '" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="JetBrains Mono, monospace">' + reached[i] + '</text>';
-        fsvg += '<text x="' + (x0 + seg / 2 - 2) + '" y="146" text-anchor="middle" fill="#94A3B8" font-size="10.5">' + esc(REPORT_STAGE_NAMES[i + 1]) + '</text>';
-        if (i < 5) {
-          const rate = reached[i] ? Math.round(reached[i + 1] / reached[i] * 100) + "%" : "—";
-          fsvg += '<rect x="' + (x1 - 18) + '" y="1" width="38" height="15" rx="7.5" fill="#1E1B4B" stroke="rgba(139,92,246,.6)"/><text x="' + (x1 + 1) + '" y="12" text-anchor="middle" fill="#C4B5FD" font-size="9.5" font-family="JetBrains Mono, monospace">' + rate + '</text>';
-        }
-      }
-      const funnel = '<div class="t24-card"><div class="flex flex-wrap items-baseline justify-between gap-2"><div class="text-xs font-semibold text-white">Funil Salesforce · 6 fases</div>' +
-        '<div class="text-[11px]" style="color:#94A3B8">Oportunidades que chegaram a cada fase (inclui as perdidas depois dela) e a conversão entre fases</div></div>' +
-        '<div class="overflow-x-auto"><svg viewBox="0 0 900 152" class="w-full mt-2" style="min-width:560px;display:block" role="img" aria-label="Funil vetorial">' + fsvg + '</svg></div></div>';
-
-      // 4. Gauge de cobertura + colunas por operadora
-      const cov = m.coverage, frac = Math.max(0, Math.min(1, cov / CASE_COVERAGE));
-      const R = 40, cx = 55, cy = 52, a0 = 150 * Math.PI / 180, sweep = 240 * Math.PI / 180;
-      const pt = function (a) { return (cx + R * Math.cos(a)).toFixed(1) + " " + (cy + R * Math.sin(a)).toFixed(1); };
-      const arc = function (f) { const a1 = a0 + sweep * f; return "M" + pt(a0) + " A" + R + " " + R + " 0 " + (sweep * f > Math.PI ? 1 : 0) + " 1 " + pt(a1); };
-      const gColor = frac >= 1 ? "#10B981" : frac >= .5 ? "#06B6D4" : "#F59E0B";
-      const gauge = '<div class="t24-card flex items-center gap-3"><svg width="110" height="96" viewBox="0 0 110 96" style="flex:none;width:110px;height:96px" role="img" aria-label="Cobertura do pipeline">' +
-        '<path d="' + arc(1) + '" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="9" stroke-linecap="round"/>' +
-        (frac > 0 ? '<path d="' + arc(frac) + '" fill="none" stroke="' + gColor + '" stroke-width="9" stroke-linecap="round" style="filter:drop-shadow(0 0 5px ' + gColor + ')"/>' : '') +
-        '<text x="55" y="57" text-anchor="middle" fill="#F8FAFC" font-size="16" font-weight="700" font-family="JetBrains Mono, monospace">' + cov.toFixed(1).replace(".", ",") + 'x</text>' +
-        '<text x="55" y="88" text-anchor="middle" fill="#94A3B8" font-size="9.5">meta ' + CASE_COVERAGE + ',0x</text></svg>' +
-        '<div class="min-w-0"><div class="text-xs font-semibold text-white">Cobertura do pipeline</div><div class="text-[11px] mt-1" style="color:#94A3B8">' + fmtK(m.coverageTpv) + ' em Negociando + Contrato enviado ÷ meta de ' + fmtK(CASE_TARGET_MONTH) + '/mês. Referência do case: ' + CASE_COVERAGE + 'x = ' + fmtK(CASE_TARGET_MONTH * CASE_COVERAGE) + '.</div></div></div>';
+      // SEÇÃO 3 · Quem fechar agora + 8 KPIs + operadoras
+      const top5 = state.opportunities.filter(function (o) { return isOpenStage(o.stage_weight); }).map(function (o) {
+        const a = findAccount(o.account_id);
+        return a ? { o: o, a: a, w: Number(o.stage_weight), tpv: computeMonthlyTpv(a), pat: state.patSims && state.patSims[a.id] ? Number(state.patSims[a.id].pat) : null } : null;
+      }).filter(Boolean).sort(function (x, y) { return y.w - x.w || y.tpv - x.tpv; }).slice(0, 5);
+      const topTable = '<div class="t24-card lg:col-span-7 overflow-hidden" id="t24Top5"><div class="text-xs font-semibold text-white">Quem fechar agora · top 5 por fase e TPV</div>' +
+        '<div class="text-[11px] mb-2" style="color:#94A3B8">Oportunidades abertas mais perto da assinatura. PAT só aparece com simulação salva (com IRPJ).</div>' +
+        (top5.length ? '<div class="overflow-x-auto"><table class="w-full text-[12px]"><thead><tr class="text-left" style="color:#64748B"><th class="py-1 pr-2 font-medium">Conta</th><th class="py-1 px-2 font-medium">Fase</th><th class="py-1 px-2 font-medium text-right">TPV/mês</th><th class="py-1 px-2 font-medium text-right">PAT/ano</th><th class="py-1 pl-2"></th></tr></thead><tbody>' +
+          top5.map(function (t) {
+            return '<tr class="divider"><td class="py-1.5 pr-2 text-white max-w-[12rem] truncate">' + esc(t.a.company_name) + '</td><td class="py-1.5 px-2 whitespace-nowrap" style="color:#CBD5E1">' + esc(REPORT_STAGE_NAMES[t.w]) + '</td>' +
+              '<td class="py-1.5 px-2 text-right num text-white">' + (t.tpv ? fmtK(t.tpv) : '<span style="color:#fcd34d">a preencher</span>') + '</td>' +
+              '<td class="py-1.5 px-2 text-right num" style="color:#CBD5E1">' + (t.pat ? fmtK(t.pat) : '<span style="color:#64748B">simular</span>') + '</td>' +
+              '<td class="py-1.5 pl-2 text-right no-print"><button type="button" class="btn btn-sm whitespace-nowrap" onclick="openAccountModal(\'' + esc(t.a.id) + '\')">⚡ Abrir e avançar</button></td></tr>';
+          }).join("") + '</tbody></table></div>' : '<p class="text-[12px]" style="color:#94A3B8">Nenhuma oportunidade aberta.</p>') + '</div>';
       const prov = {};
-      r.accounts.forEach(function (a) { const k = a.current_provider || "A validar"; if (!prov[k]) prov[k] = { n: 0, lives: 0 }; prov[k].n++; prov[k].lives += Number(a.active_card_users) || 0; });
-      const provList = Object.keys(prov).map(function (k) { return { k: k, n: prov[k].n, lives: prov[k].lives }; }).sort(function (a, b) { return b.lives - a.lives; }).slice(0, 6);
+      r.accounts.forEach(function (a) { const kk = a.current_provider || "A validar"; if (!prov[kk]) prov[kk] = { n: 0, lives: 0 }; prov[kk].n++; prov[kk].lives += Number(a.active_card_users) || 0; });
+      const provList = Object.keys(prov).map(function (kk) { return { k: kk, n: prov[kk].n, lives: prov[kk].lives }; }).sort(function (a, b) { return b.lives - a.lives; }).slice(0, 6);
       const pMax = Math.max.apply(null, provList.map(function (p) { return p.lives; }).concat([1]));
       const colColors = ["#7C3AED", "#06B6D4", "#10B981", "#F59E0B", "#EC4899", "#64748B"];
-      const cols = '<div class="t24-card"><div class="text-xs font-semibold text-white">Vidas por operadora atual</div><div class="text-[11px]" style="color:#94A3B8">Carteira mapeada · número de contas acima de cada coluna</div>' +
-        (provList.length ? '<div class="flex items-end gap-2 mt-3" style="height:8.5rem">' + provList.map(function (p, i) {
+      const groups = { tradicional: 0, caju: 0, flash: 0, desconhecida: 0 };
+      r.accounts.forEach(function (a) { groups[competitorAngleKey(a.current_provider)]++; });
+      const cols = '<div class="t24-card lg:col-span-5" id="t24Providers"><div class="text-xs font-semibold text-white">Operadoras na carteira RJ</div>' +
+        '<div class="text-[11px]" style="color:#94A3B8">Tradicionais (Alelo, Ticket, Pluxee, VR): <b class="text-white">' + groups.tradicional + '</b> · Caju/iFood: <b class="text-white">' + groups.caju + '</b> · Flash: <b class="text-white">' + groups.flash + '</b> · a validar: <b class="text-white">' + groups.desconhecida + '</b> conta(s)</div>' +
+        (provList.length ? '<div class="flex items-end gap-2 mt-3" style="height:7.5rem">' + provList.map(function (p, i) {
           const hh = Math.max(4, Math.round(p.lives / pMax * 100));
           return '<div class="flex-1 min-w-0 flex flex-col items-center justify-end h-full" title="' + esc(p.k) + ': ' + p.n + ' conta(s), ' + t24Num(p.lives) + ' vidas">' +
             '<span class="num text-[10px]" style="color:#CBD5E1">' + p.n + '</span>' +
-            '<div class="w-full rounded-t-md" style="height:' + hh + '%;background:linear-gradient(180deg,' + colColors[i] + ',' + colColors[i] + '55);box-shadow:0 0 10px ' + colColors[i] + '55"></div>' +
+            '<div class="w-full rounded-t-md" style="height:' + hh + '%;background:linear-gradient(180deg,' + colColors[i] + ',' + colColors[i] + '55)"></div>' +
             '<span class="text-[10px] mt-1 truncate w-full text-center" style="color:#94A3B8">' + esc(String(p.k).replace(/\s*\(.*\)/, "")) + '</span></div>';
-        }).join("") + '</div>' : '<p class="text-[12px] mt-3" style="color:#94A3B8">Sem contas na carteira.</p>') + '</div>';
+        }).join("") + '</div><div class="text-[10px] mt-1" style="color:#64748B">Altura: vidas por operadora · número: contas</div>' : '<p class="text-[12px] mt-3" style="color:#94A3B8">Sem contas na carteira.</p>') + '</div>';
+      const kpi8 = '<div class="t24-card" id="t24Kpi8Card"><div class="text-xs font-semibold text-white">8 KPIs do case · esforço e resultado</div>' +
+        '<div class="text-[11px] mb-2" style="color:#94A3B8">Meta do case × CRM no mês. Sem dado registrado, aparece a projeção do funil ou "sem dados", nunca um número inventado.</div>' +
+        '<div id="t24Kpi8" class="grid grid-cols-2 lg:grid-cols-4 gap-2"></div></div>';
 
       box.innerHTML =
-        '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">' + kpis + '</div>' +
-        '<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">' + area +
-          '<div class="lg:col-span-5 grid grid-cols-1 gap-4">' + gauge + cols + '</div></div>' + funnel;
+        '<p class="eyebrow">1 · Termômetro da meta</p>' +
+        '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">' + c1 + c2 + c3 + c4 + '</div>' +
+        '<p class="eyebrow pt-1">2 · Funil e simulador</p>' +
+        '<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">' + funnel + simCard + '</div>' +
+        '<p class="eyebrow pt-1">3 · Ação imediata</p>' +
+        '<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">' + topTable + cols + '</div>' + kpi8;
       t24DrawArea();
+    }
+    function saveT24Ramp() {
+      const p = { m1: Number(document.getElementById("t24M1").value) || 0, m2: Number(document.getElementById("t24M2").value) || 0 };
+      try { localStorage.setItem(CASE_PREM_KEY, JSON.stringify(p)); } catch (e) { /* ignore */ }
+      renderReports();
+    }
+    /** Copia a grade dos 8 KPIs (calculada em renderCaseReports) para a seção 3 do painel 2.4. */
+    function syncT24Kpi8() {
+      const src = document.getElementById("caseKpiGrid"), dst = document.getElementById("t24Kpi8");
+      if (src && dst) dst.innerHTML = src.innerHTML;
     }
 
     var t24Base = 0;
+    var t24OpenProposals = 0;
+    function t24PlanFor(sim) {
+      const ticket = Math.max(1, sim.lives * sim.ticket);
+      const win = Math.max(0.01, sim.win / 100);
+      const contracts = Math.max(1, Math.ceil(CASE_TARGET_MONTH / ticket - 1e-9));
+      const proposals = Math.ceil(contracts / win - 1e-9);
+      const meetings = Math.ceil(proposals * CASE_FUNNEL[3] / CASE_FUNNEL[4] - 1e-9);
+      const qualifying = Math.ceil(meetings * CASE_FUNNEL[2] / CASE_FUNNEL[3] - 1e-9);
+      const mapped = Math.ceil(qualifying * CASE_FUNNEL[1] / CASE_FUNNEL[2] - 1e-9);
+      const activitiesDay = Math.ceil(CASE_ACTIVITIES_MONTH * (mapped / CASE_FUNNEL[1]) / 21 - 1e-9);
+      return { ticket: ticket, contracts: contracts, proposals: proposals, meetings: meetings, qualifying: qualifying, mapped: mapped, activitiesDay: activitiesDay };
+    }
     function t24DrawArea() {
       const out = document.getElementById("t24AreaSvg");
       if (!out || !t24Sim) return;
+      const plan = t24PlanFor(t24Sim);
+      const planBox = document.getElementById("t24Plan");
+      if (planBox) {
+        const cell = function (label, v) { return '<div class="rounded-md px-2 py-1.5" style="background:rgba(15,23,42,.7)"><div style="color:#94A3B8">' + label + '</div><div class="num text-white font-semibold">' + v + '</div></div>'; };
+        planBox.innerHTML = cell("Ticket por contrato", fmtK(plan.ticket) + "/mês") + cell("Contratos/mês", plan.contracts) + cell("Propostas/mês", plan.proposals) +
+          cell("Reuniões/mês", plan.meetings) + cell("Contas mapeadas", plan.mapped) + cell("Atividades/dia útil", "~" + plan.activitiesDay);
+      }
       const base = t24Base;
-      const perMonth = t24Sim.lives * t24Sim.ticket * (t24Sim.win / 100);
+      const perMonth = t24OpenProposals * (t24Sim.win / 100) * t24Sim.lives * t24Sim.ticket;
       const series = [1, 2, 3, 4, 5, 6].map(function (i) { return base + perMonth * i; });
       const metaSeries = [1, 2, 3, 4, 5, 6].map(function (i) { return base + CASE_TARGET_MONTH * i; });
       const maxV = Math.max.apply(null, series.concat(metaSeries)) || 1;
@@ -8541,13 +9138,13 @@
       const curve = t24Curve(xy);
       const meta = metaSeries.map(function (v, i) { return (i ? "L" : "M") + X(i) + "," + Y(v); }).join(" ");
       const pm = document.getElementById("t24PerMonth");
-      if (pm) pm.textContent = "+" + fmtK(perMonth) + "/mês";
-      out.innerHTML = '<svg viewBox="0 0 660 200" class="w-full" style="height:11rem" role="img" aria-label="Curva simulada de TPV recorrente">' +
+      if (pm) pm.textContent = "Funil atual: +" + fmtK(perMonth) + "/mês";
+      out.innerHTML = '<svg viewBox="0 0 660 200" class="w-full" style="height:10rem" role="img" aria-label="Curva simulada de TPV recorrente">' +
         '<defs><linearGradient id="t24Grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#06B6D4" stop-opacity=".55"/><stop offset="65%" stop-color="#7C3AED" stop-opacity=".2"/><stop offset="100%" stop-color="#090A0F" stop-opacity="0"/></linearGradient></defs>' +
         [25, 72, 118, 165].map(function (y) { return '<line x1="40" y1="' + y + '" x2="620" y2="' + y + '" stroke="rgba(255,255,255,.06)" stroke-dasharray="3 3"/>'; }).join("") +
         '<path d="' + curve + ' L' + X(5) + ',170 L' + X(0) + ',170 Z" fill="url(#t24Grad)"/>' +
         '<path d="' + meta + '" fill="none" stroke="#F59E0B" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="5 4"/>' +
-        '<path id="t24Curve" d="' + curve + '" fill="none" stroke="#06B6D4" stroke-width="3" style="filter:drop-shadow(0 0 6px rgba(6,182,212,.6))"/>' +
+        '<path id="t24Curve" d="' + curve + '" fill="none" stroke="#06B6D4" stroke-width="3"/>' +
         xy.map(function (p, i) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="' + (i === 5 ? "#10B981" : "#06B6D4") + '"><title>Mês ' + (i + 1) + ': ' + fmtK(series[i]) + '/mês</title></circle>'; }).join("") +
         series.map(function (v, i) { return '<text x="' + X(i) + '" y="192" text-anchor="middle" fill="' + (i === 5 ? "#34D399" : "#94A3B8") + '" font-size="10" font-family="JetBrains Mono, monospace">M' + (i + 1) + ' ' + fmtK(v) + '</text>'; }).join("") +
         '</svg>';
@@ -8624,6 +9221,7 @@
       renderReportCharts(r);
       applyReportTab();
       renderCaseReports();
+      syncT24Kpi8();
     }
 
     function renderReportCharts(r) {

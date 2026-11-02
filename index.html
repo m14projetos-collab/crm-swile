@@ -332,7 +332,7 @@
             <div class="gw-card">
               <div class="flex items-center justify-between">
                 <span class="text-lg font-extrabold tracking-tight text-white">swile<span class="text-violet-400">.</span></span>
-                <span class="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded" style="background:rgba(139,92,246,.2);color:#c4b5fd;border:1px solid rgba(139,92,246,.3)">PAT · Multibenefícios</span>
+                <span class="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded" style="background:rgba(139,92,246,.2);color:#c4b5fd;border:1px solid rgba(139,92,246,.3)">Multibenefícios</span>
               </div>
               <div class="flex items-center gap-3">
                 <div class="gw-chip"></div>
@@ -360,9 +360,9 @@
       </section>
       <section class="gw-right">
         <div class="mb-5">
-          <span class="gw-pill vi mb-2">🔒 Login pelo Supabase</span>
+          <span class="gw-pill vi mb-2">🔒 Acesso Executivo Swile OS</span>
           <h1 id="gwTitle" class="text-xl font-bold text-white tracking-tight mt-2">Bem-vindo ao seu centro de comando</h1>
-          <p class="text-xs text-slate-400 mt-1">Entre com o mesmo e-mail e senha do login do CRM para abrir sua carteira do banco.</p>
+          <p class="text-xs text-slate-400 mt-1">Acesse sua carteira Middle Market RJ, o Agente Swile e o forecast do funil.</p>
         </div>
         <div id="gwNotice" class="gw-alert info mb-3" hidden></div>
         <form id="gwForm" class="space-y-4" onsubmit="gatewaySubmit(event)" novalidate>
@@ -380,11 +380,11 @@
           <div id="gwError" class="gw-alert err" role="alert" hidden></div>
           <button id="gwSubmit" type="submit" class="gw-btn primary">Entrar no Swile OS →</button>
         </form>
-        <div class="gw-sep">ou sem login</div>
-        <button id="gwLocal" type="button" onclick="gatewayContinueLocal()" class="gw-btn ghost">⚡ Abrir em modo local / apresentação</button>
-        <label class="mt-2 inline-flex items-center gap-2 text-[11px] text-slate-400 cursor-pointer"><input id="gwRememberLocal" type="checkbox" class="accent-violet-600" /> Lembrar o modo local neste aparelho</label>
-        <p class="text-[11px] text-slate-500 mt-3 leading-relaxed">Modo local usa só os dados guardados neste navegador, sem o banco. Os dados do banco só abrem com login, protegidos por RLS por usuário.</p>
-        <p class="text-[11px] text-slate-500 mt-2">Primeiro acesso? <button type="button" class="underline underline-offset-2 hover:text-white" onclick="gatewayOpenDbTab()">Criar login ou configurar o banco</button></p>
+        <div class="gw-sep">ou acesso direto</div>
+        <button id="gwLocal" type="button" onclick="gatewayContinueLocal()" class="gw-btn ghost" title="Abre com os dados guardados neste navegador, sem login. Para os dados do banco, entre com e-mail e senha.">⚡ Entrar em Modo Apresentação (Acesso Rápido)</button>
+        <label class="mt-2 inline-flex items-center gap-2 text-[11px] text-slate-400 cursor-pointer"><input id="gwRememberLocal" type="checkbox" class="accent-violet-600" /> Abrir direto neste dispositivo</label>
+        <p class="text-[11px] text-slate-500 mt-3">Acesso direto usa os dados deste navegador; os dados do banco abrem só com login.</p>
+        <p class="text-[11px] text-slate-500 mt-3 pt-3 text-center" style="border-top:1px solid rgba(255,255,255,.08)">Ambiente Corporativo Swile OS · Operação Comercial Middle Market RJ <button type="button" class="underline underline-offset-2 hover:text-white ml-1" onclick="gatewayOpenDbTab()" title="Criar login ou configurar o banco">Primeiro acesso</button></p>
       </section>
     </div>
   </div>
@@ -557,11 +557,11 @@
               <ul id="notifList" class="space-y-1.5 max-h-80 overflow-y-auto custom-scroll"></ul>
             </div>
           </div>
-          <button id="btnLock" type="button" class="icon-btn shrink-0" onclick="lockCrm()" aria-label="Bloquear" title="Bloquear: volta à tela de entrada"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>
+          <button id="btnLock" type="button" class="icon-btn shrink-0" onclick="lockCrm()" aria-label="Bloquear" title="Bloquear: volta à tela de entrada. Com login, encerra a sessão; no modo apresentação, só oculta a tela (os dados ficam neste navegador)."><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>
           <button id="btnUiEdition" type="button" class="btn btn-ghost btn-sm hidden md:inline-flex" onclick="toggleUiEdition()" title="Alternar visual (Alt+V)"><span id="uiEditionLabel">Visual: Swile OS 2.4</span></button>
           <button id="btnOpenSupabaseTab" type="button" onclick="switchTab('supabase')" class="btn btn-ghost btn-sm !px-2" title="Status do banco">
             <span id="dbStatusDot" class="dot" style="background:var(--faint)"></span>
-            <span id="dbStatusLabel" class="hidden md:inline">Modo local</span>
+            <span id="dbStatusLabel" class="hidden md:inline">Carteira RJ · modo local</span>
           </button>
           <button type="button" onclick="switchTab('integrations')" class="icon-btn lg:hidden" aria-label="Integrações" title="Integrações"><svg class="ico"><use href="#i-plug"/></svg></button>
           <button id="btnQuickExport" type="button" onclick="exportCrmCsv()" class="btn btn-sm hidden lg:inline-flex" title="Exportar contas em CSV">
@@ -7609,11 +7609,11 @@
       const local = briefLocal(view);
       const cached = geminiCacheGet(briefCacheKey(view, local));
       const b = cached || local;
-      const src = cached ? AI_BRAND + " · em cache" : "motor local";
+      const src = cached ? AI_BRAND + " · em cache" : AI_BRAND + " · leitura local, sem IA";
       el.innerHTML =
         '<div class="flex flex-wrap items-start gap-x-3 gap-y-1.5">' +
           '<p class="flex-1 min-w-[14rem] text-[12.5px] leading-relaxed" style="color:#c3c8d4"><span class="eyebrow mr-1.5">Briefing</span>' + esc(b.head) + '</p>' +
-          '<div class="flex items-center gap-1.5 shrink-0">' +
+          '<div class="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">' +
             '<span class="text-[10.5px]" style="color:var(--faint)">' + src + '</span>' +
             '<button type="button" class="btn btn-ghost btn-sm" onclick="toggleBriefing(\'' + view + '\')">' + (briefOpen[view] ? "Fechar" : "Detalhar") + '</button>' +
             '<button type="button" class="btn btn-sm" onclick="refreshBriefingGemini(\'' + view + '\')">' + icon("spark") + 'Atualizar com Agente Swile</button>' +
@@ -7911,7 +7911,7 @@
       const c = colors[d.level] || "#c4b5fd";
       box.innerHTML =
         '<div class="flex items-center justify-between gap-2"><p class="font-medium text-white">Diagnóstico do lead &amp; próximo passo</p>' +
-          '<span class="text-[10.5px]" style="color:var(--faint)">' + (cached ? AI_BRAND + " · em cache" : "motor local") + '</span></div>' +
+          '<span class="text-[10.5px]" style="color:var(--faint)">' + (cached ? AI_BRAND + " · em cache" : AI_BRAND + " · leitura local, sem IA") + '</span></div>' +
         '<p><span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '55">' + esc(d.level) + '</span> <span style="color:#c3c8d4">' + esc(d.why) + '</span></p>' +
         '<p style="color:#c3c8d4"><span style="color:var(--faint)">Dor/gatilho:</span> ' + esc(d.pain) + '</p>' +
         '<p style="color:#c3c8d4"><span style="color:var(--faint)">Como trabalhar agora:</span> ' + esc(d.how) + '</p>' +
@@ -8336,7 +8336,7 @@
         return '<li><span class="text-white">' + esc(t.acc.company_name) + '</span> <span class="num" style="color:var(--faint)">(' + esc(fmtK(t.tpv)) + '/mês, ' + esc(pct0(t.pctGoal)) + ' da meta · ' + esc(t.why) + ')</span>: ' + esc(opp ? stageAdvice(w) : "criar a oportunidade e " + stageAdvice(1)) + '.</li>';
       });
       box.innerHTML =
-        '<div class="flex flex-wrap items-center justify-between gap-2"><h3 class="card-title">Diagnóstico Executivo do Agente Swile</h3><span class="text-[10.5px]" style="color:var(--faint)">motor local · dados do CRM</span></div>' +
+        '<div class="flex flex-wrap items-center justify-between gap-2"><h3 class="card-title">Diagnóstico Executivo do Agente Swile</h3><span class="text-[10.5px]" style="color:var(--faint)">Agente Swile · leitura local dos dados do CRM, sem IA</span></div>' +
         '<ul class="mt-2 space-y-1 text-[12px]" style="color:#c3c8d4">' + items.map(function (t) { return '<li class="flex gap-2"><span style="color:var(--faint)">•</span><span>' + esc(t) + '</span></li>'; }).join("") + '</ul>' +
         '<p class="eyebrow mt-3 mb-1">3 ações para hoje</p>' +
         (actions.length ? '<ol id="execDiagActions" class="list-decimal pl-5 space-y-1 text-[12px]" style="color:#c3c8d4">' + actions.join("") + '</ol>' : '<p class="text-[12px]" style="color:var(--faint)">Sem contas abertas com vidas e benefício médio cadastrados.</p>');
@@ -9566,7 +9566,7 @@
         connected: ["Sincronizado", "Status: Sincronizado c/ Supabase", "border-emerald-500/40", "#34d399"],
         missing: ["Local · tabelas pendentes", "Status: Tabelas não encontradas", "border-amber-500/40", "#fbbf24"],
         error: ["Local · erro no banco", "Status: Erro de conexão", "border-rose-500/40", "#f87171"],
-        local: ["Modo local", "Status: Cache Local Ativo", "border-slate-700/70", "#5d6579"],
+        local: ["Carteira RJ · modo local", "Status: Cache Local Ativo", "border-slate-700/70", "#5d6579"],
         login: ["Local · entre para sincronizar", "Status: Aguardando login", "border-amber-500/40", "#fbbf24"],
         busy: ["Conectando…", "Status: Conectando…", "border-violet-500/40", "#a78bfa"]
       };
@@ -10158,7 +10158,7 @@
         return;
       }
       gatewayClearLocal();
-      showGateway("Modo local: esta tela esconde o CRM, mas não protege os dados guardados neste navegador.");
+      showGateway("");
     }
 
     // ===================================================================

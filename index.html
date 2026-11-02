@@ -195,6 +195,9 @@
       .lg\:pl-60 { padding-left: 0 !important; }
     }
     .fade-in { animation: fadeIn .18s ease-out; }
+    .cnpj-line { display: inline-flex; align-items: center; gap: .35rem; max-width: 100%; white-space: nowrap; }
+    .cnpj-copy { font-size: 11px; line-height: 1; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: #c3c8d4; cursor: pointer; }
+    .cnpj-copy:hover { color: #fff; border-color: rgba(139,92,246,.6); }
     /* Calendário & Agenda */
     .cal-grid { position: relative; display: grid; grid-template-columns: 3.25rem 1fr; }
     .cal-hours { position: relative; }
@@ -728,6 +731,7 @@
             </div>
           </div>
 
+          <div id="cnpjBanner" class="hidden card p-3.5 text-xs" style="border-color:rgba(6,182,212,.35);background:rgba(6,182,212,.05)"></div>
           <div id="contactFixBanner" class="hidden card p-3.5 text-xs" style="border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.05)"></div>
 
           <details id="weeklyFeed" class="card text-xs" ontoggle="if(this.open)renderWeeklyFeed()">
@@ -1605,6 +1609,7 @@
         <div class="min-w-0">
           <h3 id="accountModalTitle" class="text-[15px] font-semibold text-white truncate">Nova conta</h3>
           <p id="accountModalSub" class="text-xs" style="color:var(--muted)">Score, TPV e pipeline são recalculados ao salvar.</p>
+          <p id="accCnpjHeader" class="hidden text-[11.5px] mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 min-w-0"></p>
         </div>
         <button id="btnCloseAccountModal" type="button" onclick="closeAccountModal()" class="icon-btn" aria-label="Fechar"><svg class="ico"><use href="#i-x"/></svg></button>
       </div>
@@ -1627,6 +1632,8 @@
               <input id="leadLookupQuery" type="text" class="input flex-1 min-w-0" placeholder="CNPJ (14 dígitos) ou nome da empresa" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();runLeadLookup();}" />
               <button id="btnLeadLookup" type="button" class="btn btn-primary btn-sm h-9 shrink-0 justify-center" onclick="runLeadLookup()">⚡ Buscar dados</button>
             </div>
+            <div class="hidden flex flex-col sm:flex-row sm:items-center gap-1.5"><label for="leadLookupSwitch" class="text-[11px] shrink-0" style="color:var(--muted)">Outro cliente da carteira:</label>
+              <select id="leadLookupSwitch" class="input h-8 text-[12px] flex-1 min-w-0" onchange="switchLeadLookupAccount(this.value)"></select></div>
             <div id="leadSuggestions" class="text-[11.5px]"></div>
             <div id="leadLookupOut" class="space-y-2"></div>
           </div>
@@ -2727,6 +2734,7 @@
       if (state.opportunities.filter(migrateOpportunityStage).length) persistState();
       // Regra do Case RJ: Nomus passa de 170 para 210 vidas (pedido do usuário)
       applyCaseRulePatch();
+      if (applyCnpjMap()) setTimeout(persistState, 0);
       // Completa preferências antigas com os campos novos sem apagar o que a pessoa editou
       const base = defaultIntegrations();
       const cur = state.integ || {};
@@ -5168,6 +5176,7 @@
       renderCockpit();
       renderAccountsTable();
       renderContactFixBanner();
+      renderCnpjBanner();
       renderKanbanBoard();
       renderFollowupsTab();
       renderBattlecardDetail();
@@ -5569,6 +5578,7 @@
               (a.status === "Fechado ✅" ? '<span class="chip chip-ok">Cliente</span>' : a.status === "Perdido ❌" ? '<span class="chip chip-bad">Perdido</span>' : '') +
             '</div>' +
             '<div class="text-[11px] mt-0.5 pl-3.5 max-w-[15rem] truncate" style="color:var(--muted)" title="' + esc(a.sector) + '">' + esc(a.sector) + '</div>' +
+            (cnpjDigits(a.cnpj).length === 14 ? '<div class="text-[11px] mt-0.5 pl-3.5">' + cnpjChipHtml(a, true) + '</div>' : '') +
           '</td>' +
           '<td class="whitespace-nowrap"><div class="text-slate-200">' + esc(String(a.polo_rj || "").split("/")[0].trim()) + '</div><div class="text-[11px] max-w-[9rem] truncate" style="color:var(--muted)">' + esc(a.neighborhood) + '</div></td>' +
           '<td><div class="text-slate-200 max-w-[11rem] truncate">' + esc(a.decision_maker_name) + '</div><div class="text-[11px] num" style="color:var(--muted)">' + esc(a.phone) + '</div></td>' +
@@ -5673,6 +5683,7 @@
               '<div class="text-[10.5px] num mt-0.5 truncate" style="color:#94A3B8" title="TPV mensal · probabilidade → ponderado">por mês · ' + esc(opp.probability) + '% → ' + formatCompactBRL(weighted) + '</div></div>' +
             '<div class="text-[11px] num space-y-0.5" style="color:var(--muted)">' +
               '<div>' + esc(acc.current_provider) + ' · ' + Number(acc.active_card_users || 0).toLocaleString("pt-BR") + ' vidas</div>' +
+              (cnpjDigits(acc.cnpj).length === 14 ? '<div>' + cnpjChipHtml(acc, true) + '</div>' : '') +
               '<div class="v1-only"><span class="text-slate-200">' + formatCurrencyBRL(tpv) + '</span> · ' + esc(opp.probability) + '% → ' + formatCompactBRL(weighted) + '</div>' +
               (opp.close_date && st.weight < STAGE_WON ? '<div style="color:' + (closeN < 0 ? '#fca5a5' : 'var(--muted)') + '">Fecha ' + esc(formatDateShort(opp.close_date)) + (closeN < 0 ? ' (vencida)' : '') + '</div>' : '') +
             '</div>' +
@@ -6285,6 +6296,8 @@
       document.getElementById("accFormSector").value = acc ? (acc.sector || "") : "";
       document.getElementById("accFormCnpj").value = acc && acc.cnpj ? formatCnpj(cnpjDigits(acc.cnpj)) : "";
       resetLeadLookup(acc);
+      renderAccountCnpjHeader(acc);
+      renderLeadLookupSwitch(acc);
       setSelectValue("accFormPolo", acc ? acc.polo_rj : "Centro / Porto Maravilha");
       setSelectValue("accFormProvider", acc ? acc.current_provider : "A Validar");
       document.getElementById("accFormLives").value = acc ? acc.active_card_users : CASE_MIN_LIVES;
@@ -6478,6 +6491,7 @@
       let newFu = null;
       const prevStatus = existing ? existing.status : undefined;
       const prevInterest = existing ? existing.interest_level : undefined;
+      if (existing && cnpjDigits(existing.cnpj) !== cnpjDigits(payload.cnpj)) { payload.cnpj_src = ""; payload.razao_social = ""; }
       if (existing) {
         record = Object.assign(existing, payload);
       } else {
@@ -8625,6 +8639,167 @@
     }
     document.addEventListener("DOMContentLoaded", renderInstallButtons);
 
+    // =====================================================================
+    // CNPJ DA CARTEIRA (doc do usuário): mapa nome → CNPJ + razão social.
+    // Entra só o que passa no dígito verificador e só onde a conta ainda não tem CNPJ salvo.
+    // Fica marcado "informado por você" até a consulta na Receita (BrasilAPI) confirmar.
+    // =====================================================================
+    const UNIVERSAL_RJ_CNPJ_MAP = [
+      { keys: ["beep"], cnpj: "28.286.170/0001-01", razao: "BEEP SERVICOS MEDICOS LTDA" },
+      { keys: ["bemobi"], cnpj: "09.042.817/0001-05", razao: "BEMOBI MOBILE TECH S.A." },
+      { keys: ["rjz"], cnpj: "17.976.379/0003-34", razao: "LUANDA EMPREENDIMENTOS IMOBILIARIOS LTDA" },
+      { keys: ["future technologies", "future atp"], cnpj: "02.989.181/0001-86", razao: "FUTURE ATP SERVICOS DE ENGENHARIA CONSULTIVA S.A." },
+      { keys: ["eneva"], cnpj: "04.423.567/0001-21", razao: "ENEVA S.A." },
+      { keys: ["vasco"], cnpj: "47.589.413/0001-17", razao: "VASCO DA GAMA SOCIEDADE ANONIMA DO FUTEBOL" },
+      { keys: ["bip brasil"], cnpj: "11.084.505/0002-89", razao: "BIP BRASIL CONSULTORIA EMPRESARIAL LTDA" },
+      { keys: ["zinzane"], cnpj: "05.027.195/0001-87", razao: "ZINZANE COMERCIO E CONFECCAO DE VESTUARIO LTDA" },
+      { keys: ["nomus"], cnpj: "07.322.649/0001-78", razao: "NOMUS SOFTWARE DE GESTAO INDUSTRIAL LTDA" },
+      { keys: ["granado"], cnpj: "33.109.356/0001-17", razao: "CASA GRANADO LABORATORIOS, FARMACIAS E DROGARIAS S.A." },
+      { keys: ["iconic"], cnpj: "05.524.572/0001-93", razao: "ICONIC LUBRIFICANTES S.A." },
+      { keys: ["grant thornton"], cnpj: "10.830.108/0002-66", razao: "GRANT THORNTON AUDITORES INDEPENDENTES LTDA" },
+      { keys: ["modec"], cnpj: "05.217.376/0017-33", razao: "MODEC SERVICOS DE PETROLEO DO BRASIL LTDA" },
+      { keys: ["technip"], cnpj: "48.122.295/0024-91", razao: "TECHNIP BRASIL - ENGENHARIA, INSTALACOES E APOIO MARITIMO LTDA" },
+      { keys: ["camorim"], cnpj: "00.649.990/0001-93", razao: "CAMORIM SERVICOS MARITIMOS S.A." },
+      { keys: ["adonai"], cnpj: "29.080.946/0010-88", razao: "SUPERMERCADOS ADONAI LTDA" },
+      { keys: ["tursan"], cnpj: "57.512.691/0012-82", razao: "TURSAN TURISMO SANTO ANDRE LTDA" },
+      { keys: ["mag seguros", "grupo mag"], cnpj: "33.608.308/0001-73", razao: "MONGERAL AEGON SEGUROS E PREVIDENCIA S/A" },
+      { keys: ["guaracamp"], cnpj: "73.512.469/0002-64", razao: "RESERVA NATURAL PRODUTOS NATURAIS LTDA" },
+      { keys: ["oeste d"], cnpj: "06.047.087/0033-16", razao: "REDE D'OR SAO LUIZ S.A. - HOSPITAL OESTE D'OR" },
+      { keys: ["michelin"], cnpj: "50.567.288/0007-44", razao: "SOCIEDADE MICHELIN DE PARTICIPACOES INDUST E COMERCIO LTDA" },
+      { keys: ["nasajon"], cnpj: "27.915.735/0001-00", razao: "NASAJON SISTEMAS LTDA" },
+      { keys: ["grupo soma", "animale"], cnpj: "10.285.590/0001-08", razao: "GRUPO DE MODA SOMA S.A." },
+      { keys: ["zona sul"], cnpj: "33.381.286/0078-30", razao: "ZONA SUL S.A." },
+      { keys: ["supermarket"], cnpj: "08.719.835/0001-08", razao: "SUPERMARKET BARRA OESTE SUPERMERCADOS LTDA" },
+      { keys: ["multimarket"], cnpj: "04.882.226/0001-16", razao: "ASSOCIACAO REDEMULTIMARKET DO RIO DE JANEIRO" },
+      { keys: ["cacula"], cnpj: "05.214.053/0018-77", razao: "CACULA DE PAPELARIA E INFORMATICA LTDA" },
+      { keys: ["aquario", "cataratas"], cnpj: "19.624.745/0001-50", razao: "AQUARIO MARINHO DO RIO DE JANEIRO S/A" },
+      { keys: ["frescatto"], cnpj: "23.011.137/0001-47", razao: "FRESCATTO COMPANY S.A." },
+      { keys: ["bram"], cnpj: "07.864.634/0001-31", razao: "BRAM OFFSHORE TRANSPORTES MARITIMOS LTDA" },
+      { keys: ["yduqs", "estacio", "ibmec"], cnpj: "34.075.739/0070-06", razao: "SOCIEDADE DE ENSINO SUPERIOR ESTACIO DE SA LTDA" },
+      { keys: ["veirano"], cnpj: "27.819.937/0001-40", razao: "VEIRANO ADVOGADOS" }
+    ];
+    function cnpjMapEntryFor(acc) {
+      const n = normalizeText(acc && acc.company_name);
+      if (!n) return null;
+      return UNIVERSAL_RJ_CNPJ_MAP.find(function (e) { return e.keys.some(function (k) { return new RegExp("(^|[^a-z])" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(n); }); }) || null;
+    }
+    /** Entradas do documento que não passam no dígito verificador (não são aplicadas). */
+    function cnpjMapInvalid() { return UNIVERSAL_RJ_CNPJ_MAP.filter(function (e) { return !isValidCnpj(cnpjDigits(e.cnpj)); }); }
+    /** Preenche CNPJ e razão social onde estão vazios. Não sobrescreve. Retorna quantas contas mudaram. */
+    function applyCnpjMap(list) {
+      let n = 0;
+      (list || state.accounts).forEach(function (a) {
+        if (cnpjDigits(a.cnpj).length) return;
+        const e = cnpjMapEntryFor(a);
+        if (!e || !isValidCnpj(cnpjDigits(e.cnpj))) return;
+        a.cnpj = e.cnpj;
+        a.cnpj_src = "doc";
+        if (!a.razao_social) a.razao_social = e.razao;
+        n++;
+      });
+      return n;
+    }
+    function normRazao(s) {
+      return normalizeText(s).replace(/[^a-z0-9 ]/g, " ").replace(/\b(s ?a|ltda|me|epp|eireli|cia|companhia|de|da|do|das|dos|e)\b/g, " ").replace(/\s+/g, " ").trim();
+    }
+    /** Situação do CNPJ da conta: receita (conferido), diverge (Receita traz outra razão), doc (informado, a conferir), manual. */
+    function cnpjStatusOf(acc) {
+      const d = cnpjDigits(acc && acc.cnpj);
+      if (d.length !== 14) return null;
+      const info = cnpjIntelOf(acc);
+      if (info) {
+        const e = acc.cnpj_src === "doc" ? cnpjMapEntryFor(acc) : null;
+        const docR = e && cnpjDigits(e.cnpj) === d ? normRazao(e.razao) : "";
+        const rec = normRazao(info.razao);
+        const first = function (s) { return s.split(" ").slice(0, 2).join(" "); };
+        const same = !docR || rec.indexOf(first(docR)) >= 0 || docR.indexOf(first(rec)) >= 0;
+        return { kind: same ? "receita" : "diverge", razao: info.razao, label: same ? "conferido na Receita" : "Receita traz outra razão social" };
+      }
+      if (acc.cnpj_src === "doc") return { kind: "doc", razao: acc.razao_social || "", label: "informado por você · conferir na Receita" };
+      return { kind: "manual", razao: acc.razao_social || "", label: "" };
+    }
+    function cnpjChipHtml(acc, compact) {
+      const d = cnpjDigits(acc && acc.cnpj);
+      if (d.length !== 14) return "";
+      const st = cnpjStatusOf(acc);
+      const color = st.kind === "receita" ? "#6ee7b7" : st.kind === "diverge" ? "#fca5a5" : "#94a3b8";
+      const copy = '<button type="button" class="cnpj-copy" onclick="event.stopPropagation();copyCnpj(\'' + esc(acc.id) + '\')" title="Copiar CNPJ" aria-label="Copiar CNPJ de ' + esc(acc.company_name) + '">' + (compact ? "📋" : "📋 Copiar CNPJ") + '</button>';
+      return '<span class="cnpj-line" title="' + esc((st.razao ? st.razao + " · " : "") + st.label) + '"><span class="num" style="color:' + color + '">🏛 ' + (compact ? "" : "CNPJ: ") + esc(formatCnpj(d)) + '</span>' + copy + '</span>';
+    }
+    function copyCnpj(accId) {
+      const acc = findAccount(accId);
+      const d = cnpjDigits(acc && acc.cnpj);
+      if (d.length !== 14) return;
+      copyTextSafe(formatCnpj(d), "CNPJ copiado: " + formatCnpj(d));
+    }
+    function renderAccountCnpjHeader(acc) {
+      const box = document.getElementById("accCnpjHeader");
+      if (!box) return;
+      if (!acc || cnpjDigits(acc.cnpj).length !== 14) { box.innerHTML = acc ? '<span style="color:var(--faint)">🏛 Sem CNPJ: cole na busca abaixo para puxar da Receita.</span>' : ""; box.classList.toggle("hidden", !acc); return; }
+      const st = cnpjStatusOf(acc);
+      const tone = st.kind === "receita" ? "#6ee7b7" : st.kind === "diverge" ? "#fca5a5" : "#fcd34d";
+      box.innerHTML = cnpjChipHtml(acc, false) + (st.razao ? ' <span class="truncate" style="color:var(--muted)">· ' + esc(st.razao) + '</span>' : '') +
+        (st.label ? ' <span style="color:' + tone + '">· ' + esc(st.label) + '</span>' : '');
+      box.classList.remove("hidden");
+    }
+    /** Seletor da busca: troca de cliente da carteira sem fechar a ficha. */
+    function renderLeadLookupSwitch(acc) {
+      const sel = document.getElementById("leadLookupSwitch");
+      if (!sel) return;
+      const wrap = sel.parentElement;
+      if (!acc) { wrap.classList.add("hidden"); sel.innerHTML = ""; return; }
+      const list = state.accounts.slice().sort(function (x, y) { return String(x.company_name).localeCompare(String(y.company_name), "pt-BR"); });
+      sel.innerHTML = list.map(function (a) {
+        const d = cnpjDigits(a.cnpj);
+        return '<option value="' + esc(a.id) + '"' + (a.id === acc.id ? " selected" : "") + '>' + esc(a.company_name) + (d.length === 14 ? " · " + esc(formatCnpj(d)) : " · sem CNPJ") + '</option>';
+      }).join("");
+      wrap.classList.remove("hidden");
+    }
+    function switchLeadLookupAccount(id) {
+      if (!id || id === document.getElementById("accFormId").value) return;
+      openAccountModal(id);
+    }
+    // Conferência em lote na Receita (BrasilAPI), uma por vez para não estourar o limite
+    let cnpjVerifyRunning = false;
+    function pendingCnpjChecks() {
+      return state.accounts.filter(function (a) { const d = cnpjDigits(a.cnpj); return d.length === 14 && isValidCnpj(d) && !cnpjIntelOf(a); });
+    }
+    async function verifyAllCnpjs() {
+      if (cnpjVerifyRunning) return;
+      const list = pendingCnpjChecks();
+      if (!list.length) { showToast("Todos os CNPJs da carteira já foram conferidos na Receita.", "✅"); return; }
+      cnpjVerifyRunning = true;
+      renderCnpjBanner();
+      let ok = 0, fail = 0;
+      for (let i = 0; i < list.length; i++) {
+        const btn = document.getElementById("btnVerifyCnpjs");
+        if (btn) btn.textContent = "Conferindo " + (i + 1) + " de " + list.length + "…";
+        const r = await fetchCnpjBrasilApi(cnpjDigits(list[i].cnpj));
+        if (r.ok) { saveCnpjIntel(r.info); list[i].razao_social = r.info.razao; ok++; } else fail++;
+        if (i < list.length - 1) await new Promise(function (res) { setTimeout(res, cnpjVerifyDelayMs); });
+      }
+      cnpjVerifyRunning = false;
+      refreshAllViews();
+      const div = state.accounts.filter(function (a) { const s = cnpjStatusOf(a); return s && s.kind === "diverge"; }).length;
+      showToast(ok + " CNPJ(s) conferido(s) na Receita" + (div ? ", " + div + " com razão social diferente da informada" : "") + (fail ? "; " + fail + " sem resposta (tente de novo)" : "") + ".", div || fail ? "⚠️" : "✅");
+    }
+    let cnpjVerifyDelayMs = 1200;
+    function renderCnpjBanner() {
+      const box = document.getElementById("cnpjBanner");
+      if (!box) return;
+      const pend = pendingCnpjChecks();
+      const div = state.accounts.filter(function (a) { const s = cnpjStatusOf(a); return s && s.kind === "diverge"; });
+      const bad = cnpjMapInvalid().filter(function (e) { return state.accounts.some(function (a) { return cnpjMapEntryFor(a) === e && !cnpjDigits(a.cnpj).length; }); });
+      if (!pend.length && !div.length && !bad.length) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+      box.innerHTML = '<div class="flex flex-wrap items-center justify-between gap-2"><p class="text-white font-medium">🏛 CNPJs da carteira' +
+        (pend.length ? ': ' + pend.length + ' ainda não conferido(s) na Receita' : '') + '</p>' +
+        (pend.length ? '<button type="button" id="btnVerifyCnpjs" class="btn btn-primary btn-sm"' + (cnpjVerifyRunning ? " disabled" : "") + ' onclick="verifyAllCnpjs()">' + (cnpjVerifyRunning ? "Conferindo…" : "Conferir na Receita") + '</button>' : '') + '</div>' +
+        (div.length ? '<p class="mt-1" style="color:#fca5a5">Razão social na Receita diferente da informada: ' + div.map(function (a) { return esc(a.company_name) + ' (' + esc(cnpjStatusOf(a).razao) + ')'; }).join("; ") + '. Confira se é a empresa certa.</p>' : '') +
+        (bad.length ? '<p class="mt-1" style="color:#fcd34d">Não preenchido porque o dígito verificador não bate: ' + bad.map(function (e) { return esc(e.cnpj) + ' (' + esc(e.razao) + ')'; }).join("; ") + '. Cole o CNPJ certo na ficha da conta.</p>' : '') +
+        '<p class="mt-1 text-[11px]" style="color:var(--faint)">Os CNPJs vieram do seu documento e só preenchem contas sem CNPJ salvo. "Conferir na Receita" consulta cada um pela BrasilAPI e mostra a razão social oficial.</p>';
+      box.classList.remove("hidden");
+    }
+
     // LEADS SUGERIDOS (doc do usuário): só nome e CNPJ. O CNPJ é conferido na Receita ao clicar;
     // vidas, operadora, decisor e fase ficam a preencher. Nada é inserido sem você salvar.
     const SUGGESTED_LEADS = [
@@ -10556,6 +10731,7 @@
         syncPendingInteractions();
         applyLeadDataPatch();
         applyCaseRulePatch();
+        applyCnpjMap();
         writeStageMigration();
         setDbStatus("connected",
           "<p class='font-bold text-emerald-300'>Conectado (" + esc(db.lastMode) + ").</p>" +

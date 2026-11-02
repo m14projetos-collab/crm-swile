@@ -355,7 +355,7 @@
               </div>
               <div>
                 <div class="text-[10px] font-mono text-slate-400 uppercase">Hunter Executive · RJ</div>
-                <div class="text-xs font-mono font-semibold text-slate-100 tracking-wider mt-0.5">SWILE OS · COMERCIAL</div>
+                <div class="text-xs font-mono font-semibold text-slate-100 tracking-wider mt-0.5">SWILE 2.0 · RIO DE JANEIRO</div>
               </div>
             </div>
           </div>
@@ -461,6 +461,16 @@
   </svg>
 
   <!-- TOAST -->
+  <div id="postContactBar" role="region" aria-label="Registrar resultado do contato" class="hidden fixed bottom-4 z-[61] rounded-xl border px-3.5 py-3 shadow-2xl fade-in" style="left:50%;transform:translateX(-50%);width:min(680px,calc(100vw - 32px));background:#161a24;border-color:rgba(139,92,246,.45)">
+    <div class="flex items-start justify-between gap-2">
+      <p id="postContactText" class="text-[13px] text-white font-medium min-w-0"></p>
+      <button type="button" class="icon-btn !w-6 !h-6 shrink-0" onclick="hidePostContactBar()" aria-label="Fechar"><svg class="ico !w-3.5 !h-3.5"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="mt-2 flex flex-col sm:flex-row gap-2">
+      <button id="postContactDone" type="button" class="btn btn-primary btn-sm justify-center" onclick="postContactRegister(true)">✅ Contato feito</button>
+      <button id="postContactOnly" type="button" class="btn btn-sm justify-center" onclick="postContactRegister(false)">📝 Só registrar o contato</button>
+    </div>
+  </div>
   <div id="toastContainer" role="status" aria-live="polite" class="fixed bottom-5 right-5 z-[60] hidden max-w-sm rounded-xl border px-4 py-3 shadow-2xl fade-in" style="background:#161a24;border-color:rgba(148,163,184,.2)">
     <div class="flex items-center gap-3">
       <span id="toastIcon" class="text-sm">✓</span>
@@ -556,9 +566,6 @@
         <button id="tabBtn-integrations" data-tab="integrations" type="button" onclick="switchTab('integrations')" class="nav-item">
           <svg class="ico"><use href="#i-plug"/></svg><span>Integrações</span>
         </button>
-        <button id="tabBtn-supabase" data-tab="supabase" type="button" onclick="switchTab('supabase')" class="nav-item">
-          <svg class="ico"><use href="#i-db"/></svg><span>Banco e login</span>
-        </button>
       </nav>
 
       <div class="mt-auto p-4">
@@ -567,6 +574,7 @@
           <p><kbd class="text-slate-300">Ctrl K</kbd> buscar · <kbd class="text-slate-300">N</kbd> nova conta · <kbd class="text-slate-300">F</kbd> follow-up</p>
         </div>
         <button id="btnInstallApp" type="button" class="btn btn-sm w-full mt-2 justify-center" onclick="openInstallModal()">📲 Instalar no celular</button>
+        <button id="tabBtn-supabase" data-tab="supabase" type="button" onclick="switchTab('supabase')" class="nav-item mt-2 !py-1.5 text-[12px]" title="Banco de dados, login e SQL"><span aria-hidden="true">⚙️</span><span>Sistema / DB</span></button>
       </div>
     </aside>
 
@@ -874,7 +882,7 @@
               <p id="pipelineSummary" class="text-sm" style="color:var(--muted)">Mover um card atualiza o status da conta e a probabilidade.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-              <button id="btnDemoScenario" type="button" onclick="toggleDemoScenario()" class="btn btn-sm">🎭 Cenário de demonstração</button>
+              <button id="btnDemoScenario" type="button" onclick="toggleDemoScenario()" class="btn btn-sm">🎯 Visão 2: cenário de demonstração</button>
               <button id="btnLostJump" type="button" onclick="openLostPanel()" class="btn btn-sm" title="Ver e reativar contas perdidas"><span class="dot" style="background:#f87171"></span>Perdidas <span id="lostCountBadge" class="num">0</span></button>
               <button id="btnOpenNewOppModal" type="button" onclick="openOpportunityModal()" class="btn btn-primary btn-sm"><svg class="ico"><use href="#i-plus"/></svg>Nova oportunidade</button>
             </div>
@@ -1141,6 +1149,7 @@
               <p id="reportSubtitle" class="text-sm" style="color:var(--muted)">Vendas, funil, prospecção e atividades.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2 no-print">
+              <button id="btnDemoReports" type="button" onclick="toggleDemoScenario()" class="btn btn-sm">🎯 Visão 2: cenário de demonstração</button>
               <label for="reportPeriod" class="sr-only">Período</label>
               <select id="reportPeriod" class="input w-auto h-8" onchange="renderReports()">
                 <option value="7">Últimos 7 dias</option>
@@ -2488,10 +2497,18 @@
       },
       {
         id: "rt-4",
-        name: "Rota 04 — Eixo Zona Norte, Niterói & Zona Oeste Industrial",
-        polos: ["Zona Norte / Del Castilho", "Niterói / Região Metropolitana", "Zona Oeste - Campo Grande"],
+        name: "Rota 04 — Eixo Zona Norte & Niterói",
+        polos: ["Zona Norte / Del Castilho", "Niterói / Região Metropolitana"],
         shift: "Sexta-feira (Campo Estratégico)",
         km: "46 km"
+      },
+      {
+        id: "rt-5",
+        name: "Rota 05 — Polo Zona Oeste / Campo Grande",
+        polos: ["Zona Oeste - Campo Grande"],
+        shift: "Dia a definir • Campo Carro",
+        km: "trajeto calculado no Google Maps",
+        showAddress: true
       }
     ];
 
@@ -2576,6 +2593,12 @@
         title: "6. 'Temos contrato vigente com fidelidade / multa.'",
         cause: "Cortina de fumaça ou cláusula antiga pré-Lei 14.442/22.",
         response: "Perfeito, respeitamos 100% a governança de vocês. Só para eu registrar no nosso radar: desde a Lei 14.442/22 e o Decreto de 2026, cláusulas de fidelidade atreladas a rebate ou taxa negativa no PAT perderam validade jurídica. Quando vence formalmente o aniversário do contrato de vocês? Vamos fazer um diagnóstico de 15 min agora para já deixar a proposta homologada no Compras antes da renovação automática?"
+      },
+      {
+        title: "7. 'Com a interoperabilidade, meu cartão atual já passa em qualquer maquininha. Para que trocar?'",
+        cause: "O Decreto 12.712/2025 (publicado em novembro de 2025) deu até 360 dias para a interoperabilidade, com integração prevista para novembro de 2026: a aceitação deixa de diferenciar as operadoras.",
+        response: "Concordo, e isso é bom para vocês: aceitação deixa de ser o critério. A escolha passa a ser o que o time e o DP ganham no dia a dia. Na Swile é um cartão Mastercard com até 8 categorias de benefício, Apple Pay, Google Pay e Samsung Pay, e o Mastercard Surpreenda e a Swile Shop (mais de 1.000 lojas) sem custo adicional. O mesmo decreto limitou a taxa cobrada dos estabelecimentos (MDR) a 3,6% e o repasse a 15 dias, então a comparação agora é de experiência e gestão. Posso te mandar um comparativo lado a lado com o que vocês usam hoje?",
+        source: "Decreto 12.712/2025: MTE (gov.br, 22/07/2026) e Tribuna de Jundiaí; produto: swile.com.br"
       }
     ];
 
@@ -5045,14 +5068,16 @@
       if (kind === "wa") {
         const tpl = suggestedTemplate("wa", acc);
         sendWhatsApp(acc, fillVars(tpl.text, acc), tpl);
-        if (fu) setTimeout(function () { showToast("Enviou? Marque como feito para agendar o próximo passo.", "💬"); }, 1400);
+        showPostContactBar(acc.id, "wa");
       } else if (kind === "mail") {
         const e = buildEmail(acc);
         sendEmail(acc, e.subject, e.body, e.template);
+        showPostContactBar(acc.id, "mail");
       } else if (kind === "tel") {
         const d = phoneDigits(acc.phone);
         if (!d) { showToast("Conta sem telefone cadastrado.", "⚠️"); return; }
         logInteraction(acc.id, "Ligação", "Ligação iniciada para " + (acc.phone || "+" + d), true);
+        showPostContactBar(acc.id, "tel");
         window.location.href = "tel:+" + d;
       } else if (kind === "cal") {
         openCalendarFor(fu, acc);
@@ -5070,6 +5095,56 @@
         if (!url) { showToast("Conta sem site válido cadastrado.", "⚠️"); return; }
         openExternal(url);
       }
+    }
+
+    // =====================================================================
+    // PÓS-CONTATO EM 1 CLIQUE: depois de WhatsApp, ligação ou e-mail, uma barra pergunta o resultado.
+    // "Contato feito" registra no histórico, agenda follow-up D+2 (sem duplicar) e leva a conta até
+    // "Em contato" se ela ainda estiver antes disso. Nunca avança além de "Em contato" sozinho.
+    // =====================================================================
+    let postContactState = null; // { accId, kind, timer }
+    const POST_CONTACT_LABEL = { wa: "WhatsApp", tel: "Ligação", mail: "E-mail" };
+    function showPostContactBar(accId, kind) {
+      const acc = findAccount(accId);
+      const bar = document.getElementById("postContactBar");
+      if (!acc || !bar || !POST_CONTACT_LABEL[kind]) return;
+      if (postContactState && postContactState.timer) clearTimeout(postContactState.timer);
+      postContactState = { accId: accId, kind: kind, timer: setTimeout(hidePostContactBar, 45000) };
+      const opp = openOppOf(acc.id);
+      const w = opp ? Number(opp.stage_weight) : 0;
+      const willAdvance = w > 0 && w < 3;
+      document.getElementById("postContactText").textContent = "⚡ " + POST_CONTACT_LABEL[kind] + " com " + acc.company_name + ". Registrar o resultado?";
+      document.getElementById("postContactDone").textContent = "✅ Contato feito: registrar + follow-up D+2" + (willAdvance ? " + avançar para Em contato" : "");
+      bar.classList.remove("hidden");
+    }
+    function hidePostContactBar() {
+      const bar = document.getElementById("postContactBar");
+      if (bar) bar.classList.add("hidden");
+      if (postContactState && postContactState.timer) clearTimeout(postContactState.timer);
+      postContactState = null;
+    }
+    function postContactRegister(full) {
+      if (!postContactState) return;
+      const acc = findAccount(postContactState.accId);
+      const kind = postContactState.kind;
+      hidePostContactBar();
+      if (!acc) return;
+      const label = POST_CONTACT_LABEL[kind];
+      logInteraction(acc.id, label, "Contato feito por " + label + " (registro rápido).", false, true);
+      if (!full) { refreshAllViews(); showToast("Contato registrado no histórico de " + acc.company_name + ".", "📝"); return; }
+      const opp = openOppOf(acc.id);
+      const w = opp ? Number(opp.stage_weight) : 0;
+      const moved = w > 0 && w < 3 ? advanceAccountStatus(acc, "Discovery RH/DP") : false;
+      const title = "Follow-up D+2 · retorno do contato por " + label;
+      const dup = state.followups.some(function (f) { return f.account_id === acc.id && f.status === "Pendente" && f.action_title === title; });
+      let fu = null;
+      if (!dup) {
+        fu = { id: newUuid(), account_id: acc.id, opportunity_id: opp ? opp.id : null, action_title: title, due_date: addDaysIso(2), channel: kind === "mail" ? "E-mail" : kind === "tel" ? "Ligação" : "WhatsApp", status: "Pendente", priority: "Alta", notes: "" };
+        state.followups.unshift(fu);
+        remoteWrite("Follow-up", function () { return db.upsert("crm_follow_ups", [followupToRow(fu)], "id"); });
+      }
+      refreshAllViews();
+      showToast("Registrado" + (fu ? ", follow-up em " + formatDateShort(fu.due_date) : " (o follow-up D+2 já estava na agenda)") + (moved ? " e conta em Em contato" : "") + ".", "✅");
     }
 
     // Webhook de saída (Make, n8n, Zapier, Pipedream). "no-cors" + text/plain evita bloqueio de CORS no navegador.
@@ -6103,6 +6178,11 @@
                 }).join("")
                 : '<span class="text-[11px]" style="color:var(--faint)">Nenhuma conta neste polo</span>') +
             '</div>' +
+            (r.showAddress && routeAccs.length ? '<ul class="text-[11px] space-y-0.5" style="color:var(--muted)">' + routeAccs.map(function (c) {
+              const info = cnpjIntelOf(c);
+              const addr = c.address ? [c.address, "ficha"] : info ? [cnpjAddress(info), "Receita"] : null;
+              return '<li><span class="text-slate-200">' + esc(c.company_name) + ':</span> ' + (addr ? esc(addr[0]) + ' <span style="color:var(--faint)">(' + addr[1] + ')</span>' : '<span style="color:var(--faint)">endereço a confirmar (consulte o CNPJ na ficha)</span>') + '</li>';
+            }).join("") + '</ul>' : '') +
           '</div>';
         }
         routesEl.innerHTML = rHtml;
@@ -6230,6 +6310,7 @@
           '<div class="space-y-2">' +
             '<p style="color:var(--muted)"><span class="text-slate-300">Causa real:</span> ' + esc(ob.cause) + '</p>' +
             '<p class="leading-relaxed" style="color:#c3c8d4">' + esc(ob.response) + '</p>' +
+            (ob.source ? '<p class="text-[10.5px]" style="color:var(--faint)">Fonte: ' + esc(ob.source) + '</p>' : '') +
             '<div class="flex gap-1.5 pt-1">' +
               '<button type="button" onclick="copyObjectionResponse(' + i + ')" class="btn btn-sm">' + icon("copy") + 'Copiar resposta</button>' +
               '<button type="button" onclick="openExternal(\'https://wa.me/?text=\' + encodeURIComponent(OBJECTIONS_DATA[' + i + '].response))" class="btn btn-sm">' + icon("chat") + 'WhatsApp</button>' +
@@ -8656,7 +8737,7 @@
       { keys: ["beep"], cnpj: "28.286.170/0001-01", razao: "BEEP SERVICOS MEDICOS LTDA" },
       { keys: ["bemobi"], cnpj: "09.042.817/0001-05", razao: "BEMOBI MOBILE TECH S.A." },
       { keys: ["rjz"], cnpj: "17.976.379/0003-34", razao: "LUANDA EMPREENDIMENTOS IMOBILIARIOS LTDA" },
-      { keys: ["future technologies", "future atp"], cnpj: "02.989.181/0001-86", razao: "FUTURE ATP SERVICOS DE ENGENHARIA CONSULTIVA S.A." },
+      { keys: ["future technologies", "future atp"], cnpj: "02.989.181/0001-56", razao: "FUTURE ATP SERVICOS DE ENGENHARIA CONSULTIVA S.A." },
       { keys: ["eneva"], cnpj: "04.423.567/0001-21", razao: "ENEVA S.A." },
       { keys: ["vasco"], cnpj: "47.589.413/0001-17", razao: "VASCO DA GAMA SOCIEDADE ANONIMA DO FUTEBOL" },
       { keys: ["bip brasil"], cnpj: "11.084.505/0002-89", razao: "BIP BRASIL CONSULTORIA EMPRESARIAL LTDA" },
@@ -8664,7 +8745,7 @@
       { keys: ["nomus"], cnpj: "07.322.649/0001-78", razao: "NOMUS SOFTWARE DE GESTAO INDUSTRIAL LTDA" },
       { keys: ["granado"], cnpj: "33.109.356/0001-17", razao: "CASA GRANADO LABORATORIOS, FARMACIAS E DROGARIAS S.A." },
       { keys: ["iconic"], cnpj: "05.524.572/0001-93", razao: "ICONIC LUBRIFICANTES S.A." },
-      { keys: ["grant thornton"], cnpj: "10.830.108/0002-66", razao: "GRANT THORNTON AUDITORES INDEPENDENTES LTDA" },
+      { keys: ["grant thornton"], cnpj: "10.830.108/0002-46", razao: "GRANT THORNTON AUDITORES INDEPENDENTES LTDA" },
       { keys: ["modec"], cnpj: "05.217.376/0017-33", razao: "MODEC SERVICOS DE PETROLEO DO BRASIL LTDA" },
       { keys: ["technip"], cnpj: "48.122.295/0024-91", razao: "TECHNIP BRASIL - ENGENHARIA, INSTALACOES E APOIO MARITIMO LTDA" },
       { keys: ["camorim"], cnpj: "00.649.990/0001-93", razao: "CAMORIM SERVICOS MARITIMOS S.A." },
@@ -8678,7 +8759,7 @@
       { keys: ["grupo soma", "animale"], cnpj: "10.285.590/0001-08", razao: "GRUPO DE MODA SOMA S.A." },
       { keys: ["zona sul"], cnpj: "33.381.286/0078-30", razao: "ZONA SUL S.A." },
       { keys: ["supermarket"], cnpj: "08.719.835/0001-08", razao: "SUPERMARKET BARRA OESTE SUPERMERCADOS LTDA" },
-      { keys: ["multimarket"], cnpj: "04.882.226/0001-16", razao: "ASSOCIACAO REDEMULTIMARKET DO RIO DE JANEIRO" },
+      { keys: ["multimarket"], cnpj: "04.882.226/0001-14", razao: "ASSOCIACAO REDEMULTIMARKET DO RIO DE JANEIRO" },
       { keys: ["cacula"], cnpj: "05.214.053/0018-77", razao: "CACULA DE PAPELARIA E INFORMATICA LTDA" },
       { keys: ["aquario", "cataratas"], cnpj: "19.624.745/0001-50", razao: "AQUARIO MARINHO DO RIO DE JANEIRO S/A" },
       { keys: ["frescatto"], cnpj: "23.011.137/0001-47", razao: "FRESCATTO COMPANY S.A." },
@@ -8798,7 +8879,14 @@
       const pend = pendingCnpjChecks();
       const div = state.accounts.filter(function (a) { const s = cnpjStatusOf(a); return s && s.kind === "diverge"; });
       const bad = cnpjMapInvalid().filter(function (e) { return state.accounts.some(function (a) { return cnpjMapEntryFor(a) === e && !cnpjDigits(a.cnpj).length; }); });
-      if (!pend.length && !div.length && !bad.length) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+      if (!pend.length && !div.length && !bad.length) {
+        const ok = state.accounts.filter(function (a) { const s = cnpjStatusOf(a); return s && s.kind === "receita"; }).length;
+        const noC = state.accounts.filter(function (a) { return cnpjDigits(a.cnpj).length !== 14; }).length;
+        if (!ok) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+        box.innerHTML = '<p class="font-medium" style="color:#6ee7b7">✅ ' + ok + ' de ' + state.accounts.length + ' contas com CNPJ conferido na Receita Federal (BrasilAPI)' + (noC ? ' · ' + noC + ' sem CNPJ cadastrado' : '') + '</p>';
+        box.classList.remove("hidden");
+        return;
+      }
       box.innerHTML = '<div class="flex flex-wrap items-center justify-between gap-2"><p class="text-white font-medium">🏛 CNPJs da carteira' +
         (pend.length ? ': ' + pend.length + ' ainda não conferido(s) na Receita' : '') + '</p>' +
         (pend.length ? '<button type="button" id="btnVerifyCnpjs" class="btn btn-primary btn-sm"' + (cnpjVerifyRunning ? " disabled" : "") + ' onclick="verifyAllCnpjs()">' + (cnpjVerifyRunning ? "Conferindo…" : "Conferir na Receita") + '</button>' : '') + '</div>' +
@@ -8816,21 +8904,21 @@
     // =====================================================================
     const DEMO_SNAPSHOT_KEY = "swile_crm_demo_snapshot";
     const DEMO_STATUS_BY_STAGE = { 1: "Lead Mapeado", 2: "Qualificado (SQL)", 3: "Discovery RH/DP", 4: "Proposta & Simulação PAT", 5: "Contrato Enviado" };
-    const DEMO_CLOSE_DAYS = { 1: 60, 2: 45, 3: 30, 4: 14, 5: 7 };
+    const DEMO_CLOSE_DAYS = { 1: 60, 2: 45, 3: 30, 4: 14, 5: 7, 6: 0 };
     const DEMO_SCENARIO = [
+      { match: "bemobi", w: 6 },
       { match: "adonai", w: 5, lead: "Adonai Supermercados" },
-      { match: "bemobi", w: 5 },
-      { match: "beep", w: 4 },
-      { match: "tursan", w: 4 },
+      { match: "beep", w: 5 },
       { match: "mag seguros", w: 4, catalog: "mag" },
+      { match: "tursan", w: 4 },
+      { match: "rjz", w: 4 },
+      { match: "granado", w: 4, lead: "Casa Granado" },
       { match: "guaracamp", w: 3, lead: "Guaracamp Indústria de Bebidas" },
       { match: "oeste d", w: 3, lead: "Hospital Oeste D'Or" },
-      { match: "rjz", w: 3 },
       { match: "nomus", w: 3 },
+      { match: "eneva", w: 3, lead: "Eneva" },
       { match: "michelin", w: 2, lead: "Michelin (planta Campo Grande)" },
-      { match: "nasajon", w: 2 },
       { match: "zinzane", w: 2 },
-      { match: "vasco", w: 2 },
       { match: "iconic", w: 1 },
       { match: "camorim", w: 1 }
     ];
@@ -8842,7 +8930,7 @@
       if (item.lead) {
         const l = SUGGESTED_LEADS.find(function (x) { return x.name === item.lead; });
         if (!l) return null;
-        return Object.assign(base, { company_name: l.name, cnpj: l.cnpj });
+        return Object.assign(base, { company_name: l.name, cnpj: l.cnpj, polo_rj: /Campo Grande/.test(l.group) ? "Zona Oeste - Campo Grande" : "" });
       }
       if (item.catalog) {
         const c = RJ_CATALOG.find(function (x) { return x.key === item.catalog; });
@@ -8876,15 +8964,16 @@
         opp.stage = STAGE_LABELS[w];
         opp.probability = STAGE_PROBS[w];
         opp.close_date = addDaysIso(DEMO_CLOSE_DAYS[w]);
+        if (w === STAGE_WON) opp.closed_date = todayIso();
         opp.demo = true;
-        acc.status = DEMO_STATUS_BY_STAGE[w];
+        acc.status = w === STAGE_WON ? "Fechado ✅" : DEMO_STATUS_BY_STAGE[w];
         moved++;
       });
       return { created: created, moved: moved };
     }
     async function startDemoScenario() {
       if (demoActive()) { showToast("O cenário de demonstração já está ativo.", "🎭"); return; }
-      if (!(await uiConfirm("Carregar o cenário de demonstração? As fases das 15 empresas do seu roteiro mudam só neste navegador (5 empresas de Campo Grande e a MAG entram como contas de exemplo). Nada vai para o banco. O que você fizer durante a demonstração some quando voltar aos dados reais.", { title: "Cenário de demonstração", okLabel: "Carregar demonstração", danger: false }))) return;
+      if (!(await uiConfirm("Carregar o cenário de demonstração? As 15 empresas do seu roteiro vão para as fases simuladas (de Não contactado a Contrato assinado), só neste navegador. Empresas que não estão na carteira entram como contas de exemplo, com nome e CNPJ. Nada vai para o banco. O que você fizer durante a demonstração some quando voltar à carteira real.", { title: "Cenário de demonstração", okLabel: "Carregar demonstração", danger: false }))) return;
       const snap = { savedAt: new Date().toISOString(), accounts: state.accounts, opportunities: state.opportunities, followups: state.followups, interactions: state.interactions || [] };
       try {
         localStorage.setItem(DEMO_SNAPSHOT_KEY, JSON.stringify(snap));
@@ -8930,11 +9019,12 @@
       document.documentElement.toggleAttribute("data-demo", on);
       const seal = document.getElementById("demoSeal");
       if (seal) seal.classList.toggle("hidden", !on);
-      const btn = document.getElementById("btnDemoScenario");
-      if (btn) {
-        btn.textContent = on ? "↩️ Voltar aos dados reais" : "🎭 Cenário de demonstração";
+      ["btnDemoScenario", "btnDemoReports"].forEach(function (id) {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.textContent = on ? "📊 Visão 1: voltar à carteira real" : "🎯 Visão 2: cenário de demonstração";
         btn.title = on ? "Sai da demonstração e restaura os dados de antes" : "Carrega fases simuladas só neste navegador, sem gravar no banco";
-      }
+      });
     }
     function toggleDemoScenario() { return demoActive() ? exitDemoScenario() : startDemoScenario(); }
 
@@ -8950,7 +9040,7 @@
       { group: "Outros leads do RJ", name: "Grupo Soma", cnpj: "10.285.590/0001-08" },
       { group: "Outros leads do RJ", name: "Supermercados Zona Sul", cnpj: "33.381.286/0078-30" },
       { group: "Outros leads do RJ", name: "Supermarket (Barra/Zona Oeste)", cnpj: "08.719.835/0001-08" },
-      { group: "Outros leads do RJ", name: "Rede MultiMarket", cnpj: "" },
+      { group: "Outros leads do RJ", name: "Rede MultiMarket", cnpj: "04.882.226/0001-14" },
       { group: "Outros leads do RJ", name: "Lojas Caçula", cnpj: "05.214.053/0018-77" },
       { group: "Outros leads do RJ", name: "Grupo Cataratas (AquaRio)", cnpj: "19.624.745/0001-50" },
       { group: "Outros leads do RJ", name: "Frescatto Company", cnpj: "23.011.137/0001-47" },

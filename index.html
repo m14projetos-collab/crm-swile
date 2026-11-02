@@ -704,6 +704,8 @@
             </div>
           </div>
 
+          <div id="contactFixBanner" class="hidden card p-3.5 text-xs" style="border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.05)"></div>
+
           <details id="weeklyFeed" class="card text-xs" ontoggle="if(this.open)renderWeeklyFeed()">
             <summary class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 cursor-pointer">
               <span class="card-title">Abastecimento Semanal de Contas (&gt;200 vidas · Rio de Janeiro)</span>
@@ -1601,6 +1603,7 @@
               <input id="leadLookupQuery" type="text" class="input flex-1 min-w-0" placeholder="CNPJ (14 dígitos) ou nome da empresa" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();runLeadLookup();}" />
               <button id="btnLeadLookup" type="button" class="btn btn-primary btn-sm h-9 shrink-0 justify-center" onclick="runLeadLookup()">⚡ Buscar dados</button>
             </div>
+            <div id="leadSuggestions" class="text-[11.5px]"></div>
             <div id="leadLookupOut" class="space-y-2"></div>
           </div>
 
@@ -2401,7 +2404,9 @@
         user_complaints: "Motoristas em rotas pela ZO, ZN e Serra enfrentam recusas de bandeira fechada e carregam dois cartões.",
         swile_trigger_2026: "Unificar Vale Alimentação + Vale Premiação de assiduidade dos motoristas em 1 único cartão Swile Mastercard sem taxa."
       }
-    ];
+    ];    // Saneamento da carteira de demonstração (sem e-mail/telefone novo)
+    INITIAL_ACCOUNTS.forEach(function (a) { const f = contactFixFor(a); if (f) Object.assign(a, f.changes); });
+
 
     const INITIAL_OPPORTUNITIES = [
       { id: "opp-1", account_id: "acc-4", stage_weight: 4, probability: 75, close_date: "2026-11-12" },
@@ -3261,7 +3266,8 @@
       const prov = String(acc.current_provider || "");
       const links = [
         { label: "Google", href: "https://www.google.com/search?q=" + e(name + " Rio de Janeiro") },
-        { label: "Decisores no LinkedIn", href: "https://www.linkedin.com/search/results/people/?keywords=" + e(name + " RH benefícios") },
+        { label: "Empresa no LinkedIn", href: "https://www.linkedin.com/search/results/companies/?keywords=" + e(name) },
+        { label: "RH e CFO no LinkedIn", href: "https://www.linkedin.com/search/results/people/?keywords=" + e(name + " RH") },
         { label: "Vagas (Gupy)", href: "https://www.google.com/search?q=" + e(name + " site:gupy.io") },
         { label: "Notícias", href: "https://www.google.com/search?tbm=nws&q=" + e(name) }
       ];
@@ -3269,6 +3275,8 @@
       links.push({ label: integ().navApp === "waze" ? "Waze" : "Como chegar", href: navUrl(acc) });
       const site = safeExternalUrl(acc.website);
       if (site) links.push({ label: "Site", href: site });
+      const careers = safeExternalUrl(acc.careers_url);
+      if (careers && careers !== site) links.push({ label: "Portal de vagas", href: careers });
       links.push({ label: "Google Meet", href: "https://meet.google.com/new" });
       return links;
     }
@@ -5135,6 +5143,7 @@
     function refreshAllViews() {
       renderCockpit();
       renderAccountsTable();
+      renderContactFixBanner();
       renderKanbanBoard();
       renderFollowupsTab();
       renderBattlecardDetail();
@@ -8121,6 +8130,8 @@
     let leadLookupState = null; // { kind, fields: [{key, label, value, src, checked}], info, ai }
     function resetLeadLookup(acc) {
       leadLookupState = null;
+      const sug = document.getElementById("leadSuggestions");
+      if (sug) { if (acc) { sug.classList.add("hidden"); sug.innerHTML = ""; } else { sug.classList.remove("hidden"); renderSuggestedLeads(); } }
       const q = document.getElementById("leadLookupQuery");
       const out = document.getElementById("leadLookupOut");
       const t = document.getElementById("leadLookupTitle");
@@ -8341,6 +8352,15 @@
       const who = [];
       who.push(["Empresa", empresa + (acc.cnpj ? " · CNPJ " + formatCnpjField(acc.cnpj) : "")]);
       if (info) who.push(["Receita", [info.razao, info.cnaeDesc, info.porte, info.situacao, [info.municipio, info.uf].filter(Boolean).join("/")].filter(Boolean).join(" · ") + " (consulta de " + formatDateShort(String(info.fetched_at).slice(0, 10)) + ")"]);
+      if (info && info.logradouro) {
+        const street = normalizeText(info.logradouro);
+        const near = state.accounts.filter(function (o) {
+          if (o.id === acc.id) return false;
+          const oi = cnpjIntelOf(o);
+          return oi && oi.logradouro && normalizeText(oi.logradouro) === street && normalizeText(oi.municipio) === normalizeText(info.municipio);
+        });
+        if (near.length) who.push(["Rota", "mesma via (" + titleCaseBR(info.logradouro) + ", endereços da Receita) que " + near.map(function (o) { return o.company_name; }).join(", ") + ": dá para visitar no mesmo dia"]);
+      }
       who.push(["Setor RJ", cr.sector ? cr.sector.label : fill(acc.sector, "setor não identificado")]);
       who.push(["Tamanho", cr.lives ? cr.lives.toLocaleString("pt-BR") + " vidas" + (cr.ticket ? " × " + money(cr.ticket) + " = " + money(cr.tpv) + "/mês de TPV" : " · benefício médio a preencher") + (cr.belowCase ? " (abaixo do corte de " + CASE_MIN_LIVES + ")" : "") : "a preencher (vidas no cartão)"]);
       who.push(["Operadora atual", prov || "a preencher (pergunte no 1º contato)"]);
@@ -8413,6 +8433,8 @@
           return '<li class="rounded-lg border p-2" style="border-color:var(--line)"><p class="text-white font-medium">' + (i + 1) + '. ' + esc(s.title) + '</p>' + s.lines.map(function (l) { return '<p class="mt-0.5" style="color:#c3c8d4">' + esc(l) + '</p>'; }).join("") + '</li>';
         }).join("") + '</ol>' +
         '<div class="flex flex-wrap gap-1.5"><button type="button" id="btnApplyPlan" class="btn btn-primary btn-sm" onclick="applyDossierPlan(\'' + a + '\')">⚡ Aplicar plano na conta</button>' +
+        '<a class="btn btn-sm" href="https://www.linkedin.com/search/results/companies/?keywords=' + encodeURIComponent(acc.company_name || "") + '" target="_blank" rel="noopener noreferrer">🔗 Empresa no LinkedIn</a>' +
+        '<a class="btn btn-sm" href="https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent((acc.company_name || "") + " RH") + '" target="_blank" rel="noopener noreferrer">👤 RH e CFO no LinkedIn</a>' +
         '<button type="button" class="btn btn-sm" onclick="copyTextSafe(dossierText(findAccount(\'' + a + '\')), \'Dossiê e plano copiados.\')">📋 Copiar dossiê e plano</button></div>' +
         '<p class="text-[10.5px]" style="color:var(--faint)">Monta só com a ficha' + (dz.info ? ", a consulta da Receita" : "") + ' e os fatos com fonte do Playbook. "Aplicar" agenda Hoje, D+2, D+5 e o fechamento, sem duplicar passos já agendados, e deixa a mensagem de hoje pronta.</p>';
       box.open = !openOppOf(acc.id) || Number(openOppOf(acc.id).stage_weight) <= 2;
@@ -8445,6 +8467,126 @@
       renderAccountSidePanel(acc);
       if (created.length) remoteWrite("Follow-up", function () { return db.upsert("crm_follow_ups", created.map(followupToRow), "id"); });
       showToast(created.length ? "Plano aplicado: " + created.length + " passo(s) na agenda e a mensagem de hoje pronta." : "Os passos do plano já estavam na agenda. Mensagem de hoje pronta.", "⚡");
+    }
+
+    // =====================================================================
+    // SANEAMENTO DE CONTATOS: e-mail sem @ (URL ou rótulo) e telefone provisório.
+    // Só move o que já está na ficha (URL → site/portal de vagas, rótulo → área do decisor).
+    // Nunca cria e-mail ou telefone novo.
+    // =====================================================================
+    function contactFixFor(acc) {
+      const emailRe = /^[^\s@|;,]+@[^\s@|;,]+\.[a-z]{2,}$/i;
+      const urlRe = /^(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i;
+      const changes = {}, notes = [];
+      const raw = String(acc.email_rh || "").trim();
+      if (raw && !emailRe.test(raw)) {
+        const parts = raw.split(/\s*[|;,]\s*/).map(function (x) { return x.trim(); }).filter(Boolean);
+        const emails = [], urls = [], labels = [];
+        parts.forEach(function (p) {
+          if (emailRe.test(p)) emails.push(p);
+          else if (!/\s/.test(p) && urlRe.test(p)) urls.push(p);
+          else labels.push(p);
+        });
+        changes.email_rh = emails[0] || "";
+        notes.push(emails[0] ? "e-mail fica " + emails[0] : "e-mail fica vazio (não havia e-mail no campo)");
+        let careers = String(acc.careers_url || "").trim(), site = String(acc.website || "").trim();
+        urls.forEach(function (u) {
+          const href = safeExternalUrl(u);
+          if (!href) return;
+          const portal = /gupy\.io|solides\.com\.br|vagas\.com\.br|kenoby|pandape|infojobs|trabalheconosco/i.test(href);
+          const norm = function (x) { return String(x || "").toLowerCase().replace(/\/+$/, "").replace(/^https?:\/\//, "").replace(/^www\./, ""); };
+          const same = function (x) { return x && norm(x) === norm(href); };
+          if (same(careers) || same(site)) return;
+          if (portal && !careers) { careers = href; changes.careers_url = href; notes.push("portal de vagas: " + href); }
+          else if (!site) { site = href; changes.website = href; notes.push("site: " + href); }
+          else if (!careers) { careers = href; changes.careers_url = href; notes.push("portal de vagas: " + href); }
+        });
+        if (labels.length && !String(acc.decision_maker_role || "").trim()) { changes.decision_maker_role = labels.join(" · "); notes.push("área do decisor: " + labels.join(" · ")); }
+      }
+      const ph = String(acc.phone || "").replace(/\D/g, "");
+      if (/0{6}$/.test(ph)) { changes.phone = ""; notes.push("telefone provisório " + acc.phone + " removido"); }
+      return Object.keys(changes).length ? { changes: changes, notes: notes } : null;
+    }
+    function pendingContactFixes() {
+      return state.accounts.map(function (a) { const f = contactFixFor(a); return f ? { acc: a, fix: f } : null; }).filter(Boolean);
+    }
+    function renderContactFixBanner() {
+      const box = document.getElementById("contactFixBanner");
+      if (!box) return;
+      const list = pendingContactFixes();
+      if (!list.length) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+      box.innerHTML = '<div class="flex flex-wrap items-center justify-between gap-2"><p class="text-white font-medium">🧹 ' + list.length + ' conta(s) com e-mail inválido (endereço de site no lugar do e-mail) ou telefone provisório</p>' +
+        '<button type="button" id="btnApplyContactFix" class="btn btn-primary btn-sm" onclick="applyContactFixes()">Aplicar correções</button></div>' +
+        '<details class="mt-1"><summary class="cursor-pointer" style="color:var(--muted)">Ver o que muda em cada conta</summary><ul class="mt-1.5 space-y-1" style="color:#c3c8d4">' +
+        list.map(function (x) { return '<li><span class="text-white">' + esc(x.acc.company_name) + '</span> <span style="color:var(--faint)">(' + esc(x.acc.email_rh || x.acc.phone || "") + ')</span>: ' + esc(x.fix.notes.join("; ")) + '.</li>'; }).join("") +
+        '</ul></details><p class="mt-1 text-[11px]" style="color:var(--faint)">Só reorganiza o que já está na ficha: nenhum e-mail ou telefone novo é criado. Com login, grava no banco.</p>';
+      box.classList.remove("hidden");
+    }
+    async function applyContactFixes() {
+      const list = pendingContactFixes();
+      if (!list.length) return;
+      if (!(await uiConfirm("Corrigir " + list.length + " conta(s)? E-mails sem @ vão para o site ou portal de vagas e o campo fica vazio quando não há e-mail; telefones provisórios saem. Nada novo é inventado.", { title: "Saneamento de contatos", okLabel: "Aplicar correções", danger: false }))) return;
+      list.forEach(function (x) {
+        Object.assign(x.acc, x.fix.changes);
+        logInteraction(x.acc.id, "Nota", "Saneamento de contatos: " + x.fix.notes.join("; ") + ".", true, true);
+      });
+      refreshAllViews();
+      remoteWrite("Saneamento de contatos", async function () {
+        for (let i = 0; i < list.length; i++) {
+          const r = await db.update("crm_accounts", list[i].acc.id, list[i].fix.changes);
+          if (r && r.error) return r;
+        }
+        return { error: null };
+      });
+      showToast(list.length + " conta(s) corrigida(s).", "🧹");
+    }
+
+    // LEADS SUGERIDOS (doc do usuário): só nome e CNPJ. O CNPJ é conferido na Receita ao clicar;
+    // vidas, operadora, decisor e fase ficam a preencher. Nada é inserido sem você salvar.
+    const SUGGESTED_LEADS = [
+      { group: "Campo Grande · Zona Oeste", name: "Adonai Supermercados", cnpj: "29.080.946/0010-88" },
+      { group: "Campo Grande · Zona Oeste", name: "Guaracamp Indústria de Bebidas", cnpj: "73.512.469/0002-64" },
+      { group: "Campo Grande · Zona Oeste", name: "Michelin (planta Campo Grande)", cnpj: "50.567.288/0007-44" },
+      { group: "Campo Grande · Zona Oeste", name: "Hospital Oeste D'Or", cnpj: "06.047.087/0033-16" },
+      { group: "Campo Grande · Zona Oeste", name: "Tursan Turismo", cnpj: "57.512.691/0012-82" },
+      { group: "Outros leads do RJ", name: "Casa Granado", cnpj: "33.109.356/0001-17" },
+      { group: "Outros leads do RJ", name: "Grupo Soma", cnpj: "10.285.590/0001-08" },
+      { group: "Outros leads do RJ", name: "Supermercados Zona Sul", cnpj: "33.381.286/0078-30" },
+      { group: "Outros leads do RJ", name: "Supermarket (Barra/Zona Oeste)", cnpj: "08.719.835/0001-08" },
+      { group: "Outros leads do RJ", name: "Rede MultiMarket", cnpj: "" },
+      { group: "Outros leads do RJ", name: "Lojas Caçula", cnpj: "05.214.053/0018-77" },
+      { group: "Outros leads do RJ", name: "Grupo Cataratas (AquaRio)", cnpj: "19.624.745/0001-50" },
+      { group: "Outros leads do RJ", name: "Frescatto Company", cnpj: "23.011.137/0001-47" },
+      { group: "Outros leads do RJ", name: "BIP Brasil", cnpj: "11.084.505/0002-89" },
+      { group: "Outros leads do RJ", name: "Bram Offshore", cnpj: "07.864.634/0001-31" },
+      { group: "Outros leads do RJ", name: "TechnipFMC Brasil", cnpj: "48.122.295/0024-91" },
+      { group: "Outros leads do RJ", name: "MODEC do Brasil", cnpj: "05.217.376/0017-33" },
+      { group: "Outros leads do RJ", name: "Eneva", cnpj: "04.423.567/0001-21" },
+      { group: "Outros leads do RJ", name: "Yduqs (Ibmec/Estácio)", cnpj: "34.075.739/0070-06" },
+      { group: "Outros leads do RJ", name: "Veirano Advogados", cnpj: "27.819.937/0001-40" }
+    ];
+    function renderSuggestedLeads() {
+      const box = document.getElementById("leadSuggestions");
+      if (!box) return;
+      const have = state.accounts.map(function (a) { return { n: normalizeText(a.company_name), c: cnpjDigits(a.cnpj) }; });
+      const inCart = function (l) { const d = cnpjDigits(l.cnpj), n = normalizeText(l.name).split(" ")[0]; return have.some(function (h) { return (d && h.c === d) || (n.length >= 4 && h.n.indexOf(n) >= 0); }); };
+      const groups = {};
+      SUGGESTED_LEADS.forEach(function (l, i) { (groups[l.group] = groups[l.group] || []).push({ l: l, i: i }); });
+      box.innerHTML = '<details><summary class="cursor-pointer" style="color:var(--muted)">Leads sugeridos no seu documento (' + SUGGESTED_LEADS.length + '): clique para conferir o CNPJ na Receita</summary>' +
+        Object.keys(groups).map(function (g) {
+          return '<p class="eyebrow mt-2 mb-1">' + esc(g) + '</p><div class="flex flex-wrap gap-1.5">' + groups[g].map(function (x) {
+            const dup = inCart(x.l);
+            return '<button type="button" class="chip hover:text-white" data-lead-pill="' + x.i + '" onclick="pickSuggestedLead(' + x.i + ')"' + (dup ? ' title="Já parece estar na carteira"' : '') + '>' + esc(x.l.name) + (x.l.cnpj ? '' : ' · sem CNPJ') + (dup ? ' · na carteira' : '') + '</button>';
+          }).join("") + '</div>';
+        }).join("") +
+        '<p class="mt-1.5 text-[10.5px]" style="color:var(--faint)">CNPJ informado no documento, a confirmar na Receita: confira se a razão social bate antes de aplicar. Vidas, benefício, operadora, decisor e fase ficam a preencher.</p></details>';
+    }
+    function pickSuggestedLead(i) {
+      const l = SUGGESTED_LEADS[i];
+      if (!l) return;
+      const q = document.getElementById("leadLookupQuery");
+      q.value = l.cnpj || l.name;
+      runLeadLookup();
     }
 
     function renderIntegrations() {

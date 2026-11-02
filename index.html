@@ -4,8 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0d13" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Swile 2.0" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="referrer" content="no-referrer" />
-  <title>Swile OS · CRM Middle Market RJ</title>
+  <title>Swile 2.0 — Executive CRM RJ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -326,7 +333,7 @@
             <div class="gw-brand">
               <div class="gw-logo">S</div>
               <div>
-                <div class="text-sm font-bold tracking-tight text-white">Swile OS <span class="text-xs font-mono text-violet-400 ml-1">2.4</span></div>
+                <div class="text-sm font-bold tracking-tight text-white">Swile 2.0 <span class="text-xs font-normal text-violet-300 ml-1">Executive CRM RJ</span></div>
                 <div class="text-[11px] text-slate-400">Expansão B2B Middle Market · Rio de Janeiro</div>
               </div>
             </div>
@@ -364,7 +371,7 @@
       </section>
       <section class="gw-right">
         <div class="mb-5">
-          <span class="gw-pill vi mb-2">🔒 Acesso Executivo Swile OS</span>
+          <span class="gw-pill vi mb-2">🔒 Acesso Executivo Swile 2.0</span>
           <h1 id="gwTitle" class="text-xl font-bold text-white tracking-tight mt-2">Bem-vindo ao seu centro de comando</h1>
           <p class="text-xs text-slate-400 mt-1">Acesse sua carteira Middle Market RJ, o Agente Swile e o forecast do funil.</p>
         </div>
@@ -382,13 +389,13 @@
             </div>
           </div>
           <div id="gwError" class="gw-alert err" role="alert" hidden></div>
-          <button id="gwSubmit" type="submit" class="gw-btn primary">Entrar no Swile OS →</button>
+          <button id="gwSubmit" type="submit" class="gw-btn primary">Entrar no Swile 2.0 →</button>
         </form>
         <div class="gw-sep">ou acesso direto</div>
         <button id="gwLocal" type="button" onclick="gatewayContinueLocal()" class="gw-btn ghost" title="Abre com os dados guardados neste navegador, sem login. Para os dados do banco, entre com e-mail e senha.">⚡ Entrar em Modo Apresentação (Acesso Rápido)</button>
         <label class="mt-2 inline-flex items-center gap-2 text-[11px] text-slate-400 cursor-pointer"><input id="gwRememberLocal" type="checkbox" class="accent-violet-600" /> Abrir direto neste dispositivo</label>
         <p class="text-[11px] text-slate-500 mt-3">Acesso direto usa os dados deste navegador; os dados do banco abrem só com login.</p>
-        <p class="text-[11px] text-slate-500 mt-3 pt-3 text-center" style="border-top:1px solid rgba(255,255,255,.08)">Ambiente Corporativo Swile OS · Operação Comercial Middle Market RJ <button type="button" class="underline underline-offset-2 hover:text-white ml-1" onclick="gatewayOpenDbTab()" title="Criar login ou configurar o banco">Primeiro acesso</button></p>
+        <p class="text-[11px] text-slate-500 mt-3 pt-3 text-center" style="border-top:1px solid rgba(255,255,255,.08)">Ambiente Corporativo Swile 2.0 · Operação Comercial Middle Market RJ <button type="button" class="underline underline-offset-2 hover:text-white ml-1" onclick="gatewayOpenDbTab()" title="Criar login ou configurar o banco">Primeiro acesso</button> · <button type="button" id="gwInstallBtn" class="underline underline-offset-2 hover:text-white" onclick="openInstallModal()">📲 Instalar no celular</button></p>
       </section>
     </div>
   </div>
@@ -493,6 +500,22 @@
     </div>
   </div>
 
+  <!-- Instalar na tela inicial (celular/tablet) -->
+  <div id="installModal" class="fixed inset-0 z-[70] hidden modal-backdrop flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="installTitle" onclick="if(event.target===this)closeInstallModal()">
+    <div class="modal-panel w-full max-w-md p-5 space-y-3 fade-in">
+      <div class="flex items-center gap-3">
+        <img src="icons/icon-192.png" alt="" class="h-11 w-11 rounded-xl" />
+        <div><h3 id="installTitle" class="text-[15px] font-semibold text-white">Instalar o Swile 2.0</h3>
+        <p class="text-[12px]" style="color:var(--muted)">Ícone na tela inicial, abre em tela cheia, sem barra do navegador.</p></div>
+      </div>
+      <div id="installBody" class="text-[13px] leading-relaxed space-y-2" style="color:#c3c8d4"></div>
+      <div class="flex justify-end gap-2">
+        <button type="button" class="btn btn-sm" onclick="closeInstallModal()">Fechar</button>
+        <button id="installNow" type="button" class="btn btn-sm btn-primary hidden" onclick="runInstallPrompt()">Instalar agora</button>
+      </div>
+    </div>
+  </div>
+
   <div class="lg:flex min-h-screen">
     <!-- SIDEBAR (desktop) -->
     <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
@@ -500,8 +523,8 @@
       <div class="flex items-center gap-2.5 px-5 pt-5 pb-6">
         <div class="h-8 w-8 rounded-lg swile-gradient flex items-center justify-center text-[13px] font-bold text-white">S</div>
         <div class="leading-tight">
-          <p class="text-[13px] font-semibold text-white tracking-tight">Swile OS</p>
-          <p class="text-[11px]" style="color:var(--faint)">Middle Market · RJ</p>
+          <p class="text-[13px] font-semibold text-white tracking-tight">Swile 2.0</p>
+          <p class="text-[11px]" style="color:var(--faint)">Executive CRM RJ</p>
         </div>
       </div>
 
@@ -539,6 +562,7 @@
           <p class="font-medium text-slate-200 mb-1">Atalhos</p>
           <p><kbd class="text-slate-300">Ctrl K</kbd> buscar · <kbd class="text-slate-300">N</kbd> nova conta · <kbd class="text-slate-300">F</kbd> follow-up</p>
         </div>
+        <button id="btnInstallApp" type="button" class="btn btn-sm w-full mt-2 justify-center" onclick="openInstallModal()">📲 Instalar no celular</button>
       </div>
     </aside>
 
@@ -562,7 +586,7 @@
             </div>
           </div>
           <button id="btnLock" type="button" class="icon-btn shrink-0" onclick="lockCrm()" aria-label="Bloquear" title="Bloquear: volta à tela de entrada. Com login, encerra a sessão; no modo apresentação, só oculta a tela (os dados ficam neste navegador)."><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>
-          <button id="btnUiEdition" type="button" class="btn btn-ghost btn-sm hidden md:inline-flex" onclick="toggleUiEdition()" title="Alternar visual (Alt+V)"><span id="uiEditionLabel">Visual: Swile OS 2.4</span></button>
+          <button id="btnUiEdition" type="button" class="btn btn-ghost btn-sm hidden md:inline-flex" onclick="toggleUiEdition()" title="Alternar visual (Alt+V)"><span id="uiEditionLabel">Visual: Swile 2.0</span></button>
           <button id="btnOpenSupabaseTab" type="button" onclick="switchTab('supabase')" class="btn btn-ghost btn-sm !px-2" title="Status do banco">
             <span id="dbStatusDot" class="dot" style="background:var(--faint)"></span>
             <span id="dbStatusLabel" class="hidden md:inline">Carteira RJ · modo local</span>
@@ -1123,13 +1147,13 @@
           </div>
 
           <div class="print-only">
-            <p class="text-xl font-semibold">Swile OS · Relatório comercial Middle Market RJ</p>
+            <p class="text-xl font-semibold">Swile 2.0 · Relatório comercial Middle Market RJ</p>
             <p id="reportPrintMeta" class="text-sm"></p>
           </div>
 
           <div id="reportExecDiag" class="card p-4 avoid-break" style="border-color:rgba(139,92,246,.35)"></div>
 
-          <div id="t24Panel" class="v24-only space-y-3" aria-label="Visão executiva Swile OS 2.4"></div>
+          <div id="t24Panel" class="v24-only space-y-3" aria-label="Visão executiva Swile 2.0"></div>
 
           <div class="v24-only no-print">
             <button type="button" id="btnRepMore" class="btn btn-sm w-full justify-center" aria-expanded="false" aria-controls="repMore" onclick="toggleRepMore()">Ver detalhes da carteira: status, polos, atividades, ganhos e perdas</button>
@@ -3325,7 +3349,7 @@
 
     function buildIcs(events, calName) {
       const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-      const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Swile OS CRM//PT-BR", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:" + icsEscape(calName || "Swile OS CRM")];
+      const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Swile 2.0 CRM//PT-BR", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:" + icsEscape(calName || "Swile 2.0 CRM")];
       events.forEach(function (ev) {
         lines.push(
           "BEGIN:VEVENT",
@@ -4722,7 +4746,7 @@
         body: [
           "Salesforce: fonte oficial de fases, forecast e atividades.",
           "Sales Navigator e Econodata: encontrar empresas acima de 200 vidas no RJ e os decisores de RH e Financeiro.",
-          "Swile OS (este app): rotina do dia, abastecimento semanal, simulação PAT e preparação das reuniões, sempre com os dados levados de volta ao Salesforce."
+          "Swile 2.0 (este app): rotina do dia, abastecimento semanal, simulação PAT e preparação das reuniões, sempre com os dados levados de volta ao Salesforce."
         ] },
       { q: "Q7", title: "Crescer junto com o time", demo: "playbook-chave",
         body: [
@@ -6978,6 +7002,7 @@
       const q = normalizeText(document.getElementById("paletteInput").value.trim());
       const actions = [
         { label: "Nova conta", hint: "N", ic: "plus", run: function () { openAccountModal(); } },
+        { label: "Instalar no celular", hint: "", ic: "plus", run: function () { openInstallModal(); } },
         { label: "Agendar ação", hint: "F", ic: "calplus", run: function () { openFollowupModal(); } },
         { label: "Nova oportunidade", ic: "kanban", run: function () { openOpportunityModal(); } },
         { label: "Ir para Hoje", ic: "home", run: function () { switchTab("cockpit"); } },
@@ -8541,6 +8566,65 @@
       showToast(list.length + " conta(s) corrigida(s).", "🧹");
     }
 
+    // =====================================================================
+    // APP NO CELULAR/TABLET (PWA): manifesto + service worker (sw.js) + instruções de instalação
+    // =====================================================================
+    let deferredInstallPrompt = null;
+    function isStandaloneApp() {
+      try { return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; } catch (e) { return false; }
+    }
+    function installPlatform() {
+      const ua = navigator.userAgent || "";
+      const iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (iOS) return /CriOS|FxiOS|EdgiOS/.test(ua) ? "ios-other" : "ios";
+      if (/Android/.test(ua)) return "android";
+      return "desktop";
+    }
+    function installStepsHtml() {
+      const li = function (arr) { return '<ol class="list-decimal pl-5 space-y-1">' + arr.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol>"; };
+      const p = installPlatform();
+      const ios = li(["Abra este endereço no <b>Safari</b>.", "Toque em <b>Compartilhar</b> (o quadrado com a seta para cima).", "Escolha <b>Adicionar à Tela de Início</b> e toque em <b>Adicionar</b>."]);
+      const android = li(["Abra este endereço no <b>Chrome</b>.", "Toque no menu <b>⋮</b> (canto superior direito).", "Escolha <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>) e confirme."]);
+      const p0 = installPlatform();
+      const note = '<p class="text-[12px]" style="color:var(--faint)">No app instalado, entre com o seu login para abrir os dados do banco.' + (p0 === "android" ? "" : " No iPhone e no iPad, o app instalado guarda os dados locais separados do Safari.") + '</p>';
+      if (isStandaloneApp()) return "<p>✅ Você já está usando o app instalado.</p>";
+      if (p === "ios") return '<p class="font-medium text-white">iPhone e iPad</p>' + ios + note;
+      if (p === "ios-other") return '<p>No iPhone e no iPad, a instalação é feita pelo <b>Safari</b>. Copie o endereço e abra no Safari:</p>' + ios + note;
+      if (p === "android") return (deferredInstallPrompt ? '<p>Toque em <b>Instalar agora</b>. Se preferir pelo menu:</p>' : '<p class="font-medium text-white">Android</p>') + android + note;
+      return (deferredInstallPrompt ? '<p>Neste computador dá para instalar agora. No celular ou tablet:</p>' : '<p>Abra este mesmo endereço no celular ou tablet:</p>') +
+        '<p class="font-mono text-[12px] break-all text-white">' + esc(location.origin + location.pathname) + '</p>' +
+        '<p class="font-medium text-white mt-1">Android</p>' + android + '<p class="font-medium text-white mt-1">iPhone e iPad</p>' + ios + note;
+    }
+    function openInstallModal() {
+      const body = document.getElementById("installBody");
+      if (body) body.innerHTML = installStepsHtml();
+      const now = document.getElementById("installNow");
+      if (now) now.classList.toggle("hidden", !deferredInstallPrompt || isStandaloneApp());
+      document.getElementById("installModal").classList.remove("hidden");
+    }
+    function closeInstallModal() { document.getElementById("installModal").classList.add("hidden"); }
+    async function runInstallPrompt() {
+      if (!deferredInstallPrompt) return openInstallModal();
+      const ev = deferredInstallPrompt;
+      deferredInstallPrompt = null;
+      ev.prompt();
+      try {
+        const choice = await ev.userChoice;
+        if (choice && choice.outcome === "accepted") { closeInstallModal(); showToast("Swile 2.0 instalado na tela inicial.", "📲"); }
+      } catch (e) { /* ignore */ }
+      renderInstallButtons();
+    }
+    function renderInstallButtons() {
+      const inst = isStandaloneApp();
+      ["btnInstallApp", "gwInstallBtn"].forEach(function (id) { const b = document.getElementById(id); if (b) b.classList.toggle("hidden", inst); });
+    }
+    window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferredInstallPrompt = e; renderInstallButtons(); });
+    window.addEventListener("appinstalled", function () { deferredInstallPrompt = null; renderInstallButtons(); });
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+      window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () { /* sem SW: o app segue normal, só não abre sem rede */ }); });
+    }
+    document.addEventListener("DOMContentLoaded", renderInstallButtons);
+
     // LEADS SUGERIDOS (doc do usuário): só nome e CNPJ. O CNPJ é conferido na Receita ao clicar;
     // vidas, operadora, decisor e fase ficam a preencher. Nada é inserido sem você salvar.
     const SUGGESTED_LEADS = [
@@ -9531,7 +9615,7 @@
     function buildWorkbookSheets() {
       const r = computeReportData();
       const resumo = [
-        ["Relatório comercial Swile OS · Middle Market RJ"],
+        ["Relatório comercial Swile 2.0 · Middle Market RJ"],
         ["Gerado em", todayIso()],
         ["Período (ganhos, perdas, atividades)", reportPeriodLabel()],
         [],
@@ -10838,7 +10922,7 @@
         if (left <= 0) {
           clearInterval(gatewayLockTimer); gatewayLockTimer = null;
           gatewayFails = 0;
-          if (btn) { btn.disabled = false; btn.textContent = "Entrar no Swile OS →"; }
+          if (btn) { btn.disabled = false; btn.textContent = "Entrar no Swile 2.0 →"; }
           gatewaySetError("");
           return;
         }
@@ -10868,7 +10952,7 @@
       } catch (e) {
         res = { error: { message: "network" }, network: true };
       }
-      btn.disabled = false; btn.textContent = "Entrar no Swile OS →";
+      btn.disabled = false; btn.textContent = "Entrar no Swile 2.0 →";
       if (!res || res.error) {
         const msg = res && res.network ? "Falha de rede: sem conexão com o Supabase." : "Login recusado: " + translateAuthError(res && res.error ? res.error.message : "");
         gatewayFails++;
@@ -11199,7 +11283,7 @@
     }
     setInterval(updateUpNext, 60000);
 
-    // Visual: Swile OS 2.4 (padrão) ⇄ Clássico v1 (Alt+V ou ?visual=v1)
+    // Visual: Swile 2.0 (padrão) ⇄ Clássico v1 (Alt+V ou ?visual=v1)
     const UI_EDITION_KEY = "swile_ui_edition";
     (function () {
       try {
@@ -11212,14 +11296,14 @@
       document.documentElement.setAttribute("data-ui-edition", ed);
       try { if (typeof updateUpNext === "function") updateUpNext(); } catch (e) { /* ignore */ }
       const l = document.getElementById("uiEditionLabel");
-      if (l) l.textContent = ed === "v24" ? "Visual: Swile OS 2.4" : "Visual: Clássico v1";
+      if (l) l.textContent = ed === "v24" ? "Visual: Swile 2.0" : "Visual: Clássico v1";
     }
     function toggleUiEdition() {
       const ed = uiEdition() === "v24" ? "v1" : "v24";
       try { localStorage.setItem(UI_EDITION_KEY, ed); } catch (e) { /* ignore */ }
       applyUiEdition(ed);
       applyAgendaView(defaultAgendaView());
-      showToast(ed === "v24" ? "Visual Swile OS 2.4 ativado. Alt+V volta ao Clássico v1." : "Visual Clássico v1 restaurado.", "🎨");
+      showToast(ed === "v24" ? "Visual Swile 2.0 ativado. Alt+V volta ao Clássico v1." : "Visual Clássico v1 restaurado.", "🎨");
     }
     applyUiEdition(uiEdition());
     applyAgendaView(defaultAgendaView());
@@ -11238,6 +11322,7 @@
       const modals = ["paletteModal", "lossModal", "followupModal", "opportunityModal", "accountModal"];
       if (e.key === "Escape") {
         if (!document.getElementById("confirmModal").classList.contains("hidden")) { resolveConfirm(false); return; }
+        if (!document.getElementById("installModal").classList.contains("hidden")) { closeInstallModal(); return; }
         const sb = document.getElementById("appSidebar");
         if (sb && sb.classList.contains("is-open")) { toggleSidebar(false); return; }
         for (let i = 0; i < modals.length; i++) {

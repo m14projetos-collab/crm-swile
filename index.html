@@ -8413,7 +8413,7 @@
           return '<li class="rounded-lg border p-2" style="border-color:var(--line)"><p class="text-white font-medium">' + (i + 1) + '. ' + esc(s.title) + '</p>' + s.lines.map(function (l) { return '<p class="mt-0.5" style="color:#c3c8d4">' + esc(l) + '</p>'; }).join("") + '</li>';
         }).join("") + '</ol>' +
         '<div class="flex flex-wrap gap-1.5"><button type="button" id="btnApplyPlan" class="btn btn-primary btn-sm" onclick="applyDossierPlan(\'' + a + '\')">⚡ Aplicar plano na conta</button>' +
-        '<button type="button" class="btn btn-sm" onclick="copyTextSafe(dossierText(findAccount(\'' + a + '\')), \'Dossiê copiado.\')">📋 Copiar dossiê</button></div>' +
+        '<button type="button" class="btn btn-sm" onclick="copyTextSafe(dossierText(findAccount(\'' + a + '\')), \'Dossiê e plano copiados.\')">📋 Copiar dossiê e plano</button></div>' +
         '<p class="text-[10.5px]" style="color:var(--faint)">Monta só com a ficha' + (dz.info ? ", a consulta da Receita" : "") + ' e os fatos com fonte do Playbook. "Aplicar" agenda Hoje, D+2, D+5 e o fechamento, sem duplicar passos já agendados, e deixa a mensagem de hoje pronta.</p>';
       box.open = !openOppOf(acc.id) || Number(openOppOf(acc.id).stage_weight) <= 2;
       box.classList.remove("hidden");

@@ -192,6 +192,7 @@
       #view-reports .grid > * { min-width: 0; }
       #view-reports canvas { max-width: 100% !important; height: auto !important; }
       .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+      html[data-demo] #view-reports::before { content: "Cenário de demonstração: empresas reais, fases simuladas"; display: block; visibility: visible; font-weight: 700; color: #92400e; margin-bottom: 8px; }
       .lg\:pl-60 { padding-left: 0 !important; }
     }
     .fade-in { animation: fadeIn .18s ease-out; }
@@ -605,6 +606,10 @@
       </header>
 
       <main class="mx-auto w-full max-w-[1280px] px-4 lg:px-8 pt-6 pb-28 lg:pb-10 space-y-6">
+        <div id="demoSeal" class="hidden card p-3 text-xs flex flex-wrap items-center justify-between gap-2" role="status" style="border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.08)">
+          <p><span class="font-semibold" style="color:#fbbf24">🎭 Cenário de demonstração</span> <span style="color:#c3c8d4">· empresas reais, fases simuladas para mostrar o fluxo · nada é gravado no banco</span></p>
+          <button type="button" class="btn btn-sm no-print" onclick="exitDemoScenario()">Voltar aos dados reais</button>
+        </div>
 
         <!-- =============================================================== -->
         <!-- HOJE                                                            -->
@@ -869,6 +874,7 @@
               <p id="pipelineSummary" class="text-sm" style="color:var(--muted)">Mover um card atualiza o status da conta e a probabilidade.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+              <button id="btnDemoScenario" type="button" onclick="toggleDemoScenario()" class="btn btn-sm">🎭 Cenário de demonstração</button>
               <button id="btnLostJump" type="button" onclick="openLostPanel()" class="btn btn-sm" title="Ver e reativar contas perdidas"><span class="dot" style="background:#f87171"></span>Perdidas <span id="lostCountBadge" class="num">0</span></button>
               <button id="btnOpenNewOppModal" type="button" onclick="openOpportunityModal()" class="btn btn-primary btn-sm"><svg class="ico"><use href="#i-plus"/></svg>Nova oportunidade</button>
             </div>
@@ -2718,6 +2724,7 @@
         state.sellerRole = saved.sellerRole || "";
         state.integ = saved.integ || null;
         state.interactions = Array.isArray(saved.interactions) ? saved.interactions : [];
+        if (saved.demoMode) state.demoMode = saved.demoMode;
       } else {
         // Preferências pessoais sobrevivem mesmo sem contas salvas
         if (saved) {
@@ -5177,6 +5184,7 @@
       renderAccountsTable();
       renderContactFixBanner();
       renderCnpjBanner();
+      renderDemoSeal();
       renderKanbanBoard();
       renderFollowupsTab();
       renderBattlecardDetail();
@@ -8800,6 +8808,136 @@
       box.classList.remove("hidden");
     }
 
+    // =====================================================================
+    // CENÁRIO DE DEMONSTRAÇÃO (doc _19): fases simuladas em empresas reais, só neste navegador.
+    // Guarda uma cópia dos dados antes de entrar; "Voltar aos dados reais" restaura a cópia.
+    // Enquanto ativo, nenhuma escrita vai para o Supabase (db.upsert/update/remove ficam mudos).
+    // Não cria e-mail, telefone, vidas, ticket nem operadora: só a fase de cada conta.
+    // =====================================================================
+    const DEMO_SNAPSHOT_KEY = "swile_crm_demo_snapshot";
+    const DEMO_STATUS_BY_STAGE = { 1: "Lead Mapeado", 2: "Qualificado (SQL)", 3: "Discovery RH/DP", 4: "Proposta & Simulação PAT", 5: "Contrato Enviado" };
+    const DEMO_CLOSE_DAYS = { 1: 60, 2: 45, 3: 30, 4: 14, 5: 7 };
+    const DEMO_SCENARIO = [
+      { match: "adonai", w: 5, lead: "Adonai Supermercados" },
+      { match: "bemobi", w: 5 },
+      { match: "beep", w: 4 },
+      { match: "tursan", w: 4 },
+      { match: "mag seguros", w: 4, catalog: "mag" },
+      { match: "guaracamp", w: 3, lead: "Guaracamp Indústria de Bebidas" },
+      { match: "oeste d", w: 3, lead: "Hospital Oeste D'Or" },
+      { match: "rjz", w: 3 },
+      { match: "nomus", w: 3 },
+      { match: "michelin", w: 2, lead: "Michelin (planta Campo Grande)" },
+      { match: "nasajon", w: 2 },
+      { match: "zinzane", w: 2 },
+      { match: "vasco", w: 2 },
+      { match: "iconic", w: 1 },
+      { match: "camorim", w: 1 }
+    ];
+    function demoActive() { return !!(state && state.demoMode); }
+    function demoAccountFor(item, n) {
+      const base = { id: "demo-acc-" + n, code: "DEMO-" + String(n).padStart(2, "0"), demo: true, sector: "A confirmar", polo_rj: "Zona Oeste - Campo Grande",
+        employees_count: 0, active_card_users: 0, avg_monthly_ticket: 0, current_provider: "", priority_icp: "Média", interest_level: "Morno",
+        rh_pains: "", user_complaints: "", swile_trigger_2026: "Conta incluída só no cenário de demonstração." };
+      if (item.lead) {
+        const l = SUGGESTED_LEADS.find(function (x) { return x.name === item.lead; });
+        if (!l) return null;
+        return Object.assign(base, { company_name: l.name, cnpj: l.cnpj });
+      }
+      if (item.catalog) {
+        const c = RJ_CATALOG.find(function (x) { return x.key === item.catalog; });
+        if (!c) return null;
+        // Só o que tem fonte no catálogo: nome, endereço, site e o decisor verificado. Vidas, ticket e operadora ficam vazios.
+        const dm = String(c.decisorSrc && c.decisorSrc.kind === "ok" ? c.decisor : "");
+        const m = dm.match(/^(.*?)\s*\((.*)\)$/);
+        return Object.assign(base, { company_name: c.name, sector: c.sector, polo_rj: c.polo, address: c.address, website: c.website,
+          decision_maker_name: m ? m[1] : dm, decision_maker_role: m ? m[2] : "" });
+      }
+      return null;
+    }
+    /** Aplica as fases do cenário sobre o estado atual (já com a cópia guardada). Retorna o resumo. */
+    function applyDemoScenario() {
+      let created = 0, moved = 0;
+      DEMO_SCENARIO.forEach(function (item) {
+        let acc = state.accounts.find(function (a) { return normalizeText(a.company_name).indexOf(item.match) >= 0; });
+        if (!acc) {
+          acc = demoAccountFor(item, created + 1);
+          if (!acc) return;
+          state.accounts.push(acc);
+          created++;
+        }
+        const w = item.w;
+        let opp = openOppOf(acc.id);
+        if (!opp) {
+          opp = { id: newUuid(), account_id: acc.id };
+          state.opportunities.push(opp);
+        }
+        opp.stage_weight = w;
+        opp.stage = STAGE_LABELS[w];
+        opp.probability = STAGE_PROBS[w];
+        opp.close_date = addDaysIso(DEMO_CLOSE_DAYS[w]);
+        opp.demo = true;
+        acc.status = DEMO_STATUS_BY_STAGE[w];
+        moved++;
+      });
+      return { created: created, moved: moved };
+    }
+    async function startDemoScenario() {
+      if (demoActive()) { showToast("O cenário de demonstração já está ativo.", "🎭"); return; }
+      if (!(await uiConfirm("Carregar o cenário de demonstração? As fases das 15 empresas do seu roteiro mudam só neste navegador (5 empresas de Campo Grande e a MAG entram como contas de exemplo). Nada vai para o banco. O que você fizer durante a demonstração some quando voltar aos dados reais.", { title: "Cenário de demonstração", okLabel: "Carregar demonstração", danger: false }))) return;
+      const snap = { savedAt: new Date().toISOString(), accounts: state.accounts, opportunities: state.opportunities, followups: state.followups, interactions: state.interactions || [] };
+      try {
+        localStorage.setItem(DEMO_SNAPSHOT_KEY, JSON.stringify(snap));
+        if (!localStorage.getItem(DEMO_SNAPSHOT_KEY)) throw new Error("sem cópia");
+      } catch (e) {
+        showToast("Não deu para guardar a cópia dos dados reais neste navegador; a demonstração não foi carregada.", "⚠️");
+        return;
+      }
+      state.accounts = JSON.parse(JSON.stringify(snap.accounts));
+      state.opportunities = JSON.parse(JSON.stringify(snap.opportunities));
+      state.followups = JSON.parse(JSON.stringify(snap.followups));
+      state.interactions = JSON.parse(JSON.stringify(snap.interactions));
+      state.demoMode = { startedAt: snap.savedAt };
+      const r = applyDemoScenario();
+      refreshAllViews();
+      renderDemoSeal();
+      showToast("Cenário de demonstração carregado: " + r.moved + " empresas com fase simulada.", "🎭");
+    }
+    async function exitDemoScenario() {
+      if (!demoActive()) return;
+      if (!(await uiConfirm("Voltar aos dados reais? As fases simuladas e tudo o que foi feito durante a demonstração saem; os dados de antes voltam.", { title: "Sair da demonstração", okLabel: "Voltar aos dados reais", danger: false }))) return;
+      let snap = null;
+      try { snap = JSON.parse(localStorage.getItem(DEMO_SNAPSHOT_KEY) || "null"); } catch (e) { snap = null; }
+      if (snap && Array.isArray(snap.accounts)) {
+        state.accounts = snap.accounts;
+        state.opportunities = snap.opportunities || [];
+        state.followups = snap.followups || [];
+        state.interactions = snap.interactions || [];
+      } else {
+        // Sem cópia (armazenamento limpo): tira só o que o cenário criou; com login, o banco recarrega os dados reais
+        state.accounts = state.accounts.filter(function (a) { return !a.demo; });
+        state.opportunities = state.opportunities.filter(function (o) { return !o.demo; });
+      }
+      delete state.demoMode;
+      try { localStorage.removeItem(DEMO_SNAPSHOT_KEY); } catch (e) { /* ignore */ }
+      refreshAllViews();
+      renderDemoSeal();
+      showToast(snap ? "Dados reais de volta." : "Cenário removido. Entre com login para recarregar os dados do banco.", "✅");
+      if (state.autoConnect && state.supabaseUrl && state.supabaseKey) connectAndSyncSupabase({ silent: true });
+    }
+    function renderDemoSeal() {
+      const on = demoActive();
+      document.documentElement.toggleAttribute("data-demo", on);
+      const seal = document.getElementById("demoSeal");
+      if (seal) seal.classList.toggle("hidden", !on);
+      const btn = document.getElementById("btnDemoScenario");
+      if (btn) {
+        btn.textContent = on ? "↩️ Voltar aos dados reais" : "🎭 Cenário de demonstração";
+        btn.title = on ? "Sai da demonstração e restaura os dados de antes" : "Carrega fases simuladas só neste navegador, sem gravar no banco";
+      }
+    }
+    function toggleDemoScenario() { return demoActive() ? exitDemoScenario() : startDemoScenario(); }
+
     // LEADS SUGERIDOS (doc do usuário): só nome e CNPJ. O CNPJ é conferido na Receita ao clicar;
     // vidas, operadora, decisor e fase ficam a preencher. Nada é inserido sem você salvar.
     const SUGGESTED_LEADS = [
@@ -9833,6 +9971,7 @@
           Status: f.status || "", Concluido_em: f.completed_date || "", Notas: f.notes || ""
         };
       });
+      if (demoActive()) resumo.unshift(["CENÁRIO DE DEMONSTRAÇÃO: empresas reais, fases simuladas", ""]);
       return { resumo: resumo, contas: contas, oportunidades: oportunidades, followups: followups };
     }
 
@@ -9863,7 +10002,7 @@
 
     function reportSummaryText() {
       const r = computeReportData();
-      return [
+      return (demoActive() ? ["🎭 CENÁRIO DE DEMONSTRAÇÃO: empresas reais, fases simuladas", ""] : []).concat([
         "Resumo comercial · Swile Middle Market RJ (" + formatDateShort(todayIso()) + ")",
         "",
         "• Contas na carteira: " + r.accounts.length + " (" + r.lives.toLocaleString("pt-BR") + " vidas)",
@@ -9875,7 +10014,7 @@
         "• Atividades concluídas (" + reportPeriodLabel() + "): " + r.done.length + " · atrasadas: " + r.overdue.length,
         "",
         sellerSignature()
-      ].join("\n").trim();
+      ]).join("\n").trim();
     }
 
     function shareReport(kind) {
@@ -10397,6 +10536,7 @@
 
       upsert: function (table, rows, onConflict, ignoreDuplicates) {
         const self = this;
+        if (demoActive()) return Promise.resolve({ data: [], error: null, demo: true });
         rows = this.withOwner(rows);
         return this.run(
           function (c) { return c.from(table).upsert(rows, { onConflict: onConflict, ignoreDuplicates: !!ignoreDuplicates }).select(); },
@@ -10410,6 +10550,7 @@
 
       update: function (table, id, patch) {
         const self = this;
+        if (demoActive()) return Promise.resolve({ data: [], error: null, demo: true });
         if (!isUuid(id)) {
           return Promise.resolve({ data: null, error: { code: "LOCAL_ID", message: "registro ainda não enviado ao banco (use ⬆️ Enviar Contas)" } });
         }
@@ -10463,6 +10604,7 @@
 
       remove: function (table, id) {
         const self = this;
+        if (demoActive()) return Promise.resolve({ data: [], error: null, demo: true });
         if (!isUuid(id)) return Promise.resolve({ data: null, error: null });
         return this.run(
           function (c) { return c.from(table).delete().eq("id", id); },
@@ -10600,7 +10742,7 @@
 
     // Grava no Supabase em segundo plano quando conectado; o estado local já foi atualizado.
     async function remoteWrite(label, fn) {
-      if (!state.supabaseConnected) return;
+      if (!state.supabaseConnected || demoActive()) return;
       try {
         const res = await fn();
         if (res && res.error) {
@@ -10663,6 +10805,11 @@
 
     async function connectAndSyncSupabase(opts) {
       const silent = opts && opts.silent;
+      if (demoActive()) {
+        setDbStatus("local", "<p class='font-bold text-amber-300'>Cenário de demonstração ativo: o banco fica pausado.</p><p>Use “Voltar aos dados reais” para sair e sincronizar de novo.</p>");
+        if (!silent) showToast("Saia do cenário de demonstração para sincronizar com o banco.", "🎭");
+        return;
+      }
       const cfg = readSupabaseInputs();
       if (!cfg.url || !cfg.key) {
         showToast("Preencha a Supabase URL e a chave pública primeiro.", "⚠️");

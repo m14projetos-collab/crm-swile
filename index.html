@@ -333,6 +333,14 @@
     #accountModal[data-acctab="pat"] [data-acc-tab]:not([data-acc-tab="pat"]) { display: none !important; }
     #accountModal[data-acctab="plano"] .acc-left, #accountModal[data-acctab="pat"] .acc-left { display: none; }
     #accountModal[data-acctab="plano"] .acc-aside, #accountModal[data-acctab="pat"] .acc-aside { grid-column: 1 / -1; }
+    .case-bar { border:1px solid var(--line); background:var(--surface); border-radius:14px; padding:8px 10px; }
+    .case-bar-title { font-size:12px; font-weight:600; color:#fff; white-space:nowrap; }
+    .case-bar.collapsed .case-pills, .case-bar.collapsed #caseGuideCard { display:none !important; }
+    .case-pills { scrollbar-width:thin; }
+    .case-pill { white-space:nowrap; font-size:11.5px; padding:4px 10px; border-radius:999px; border:1px solid var(--line-strong); color:#c3c8d4; background:var(--surface-2); }
+    .case-pill b { color:#c4b5fd; font-weight:600; }
+    .case-pill:hover, .case-pill[aria-pressed="true"] { border-color:#6D28D9; background:rgba(109,40,217,.22); color:#fff; }
+    @media (max-width: 639px) { #caseActCount { display:none; } .case-bar-title { font-size:0; } .case-bar-title::before { content:"🎯"; font-size:14px; } }
     .one-click-btn { background: #6D28D9 !important; border-color: #6D28D9 !important; color: #fff !important; font-weight: 600; }
     .one-click-btn:hover { background: #5B21B6 !important; }
     .k-tpv { font-size: 11.5px; font-weight: 700; color: #fff; background: #6D28D9; border-radius: 9999px; padding: .1rem .55rem; white-space: nowrap; }
@@ -607,6 +615,15 @@
       </header>
 
       <main class="mx-auto w-full max-w-[1280px] px-4 lg:px-8 pt-6 pb-28 lg:pb-10 space-y-6">
+        <div id="caseGuideBar" class="case-bar no-print">
+          <div class="flex items-center gap-2 min-w-0">
+            <button type="button" class="case-bar-title shrink-0" onclick="toggleCaseGuideBar()" title="Mostrar ou recolher o roteiro">🎯 Roteiro Ao Vivo do Case Swile</button>
+            <div id="caseGuidePills" class="case-pills flex gap-1.5 overflow-x-auto min-w-0 flex-1"></div>
+            <span id="caseActCount" class="pill-soft shrink-0"></span>
+            <button id="btnResetDemo" type="button" class="btn btn-sm shrink-0" onclick="resetDemoScenario()" aria-label="Restaurar Estado Inicial da Apresentação">🔄 Resetar Demo</button>
+          </div>
+          <div id="caseGuideCard" class="hidden mt-2 rounded-xl border p-3 text-xs" role="region" aria-label="Resposta do case" style="border-color:rgba(109,40,217,.45);background:rgba(109,40,217,.08)"></div>
+        </div>
         <div id="demoSeal" class="hidden card p-3 text-xs flex flex-wrap items-center justify-between gap-2" role="status" style="border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.08)">
           <p><span class="font-semibold" style="color:#fbbf24">🎭 Cenário de demonstração</span> <span style="color:#c3c8d4">· empresas reais, fases simuladas para mostrar o fluxo · nada é gravado no banco</span></p>
           <button type="button" class="btn btn-sm no-print" onclick="exitDemoScenario()">Voltar aos dados reais</button>
@@ -1628,6 +1645,30 @@
 
       <!-- Barra de ações rápidas (só em conta existente) -->
       <div id="accQuickActions" class="hidden px-5 py-3 border-b flex flex-wrap gap-2" style="border-color:var(--line)"></div>
+      <!-- Auto-Pilot: atualizar tudo pela conversa (só em conta existente) -->
+      <details id="accAutoPilot" class="hidden ap-panel mx-5 mt-3 rounded-xl border" style="border-color:rgba(109,40,217,.45);background:rgba(109,40,217,.07)">
+        <summary class="cursor-pointer select-none px-3 py-2 text-[12.5px] font-semibold text-white">🤖 Auto-Pilot: Atualizar Tudo pela Conversa (Ligação / Vídeo / WhatsApp)</summary>
+        <div class="px-3 pb-3 space-y-2 text-xs">
+          <div class="flex flex-wrap gap-1.5">
+            <button id="apVoiceBtn" type="button" class="btn btn-sm" onclick="apToggleVoice()">🎙 Ouvir Ligação / Ditar por Voz</button>
+          </div>
+          <div id="apSims" class="hidden space-y-1">
+            <p class="text-[10.5px]" style="color:#fbbf24">🎭 Simulações rápidas (só no cenário de demonstração)</p>
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" class="btn btn-sm ap-sim" data-ap-sim="wa" onclick="apSample('wa')">💬 WhatsApp: confirmou 480 vidas (R$ 850), pediu PAT, quinta 14h</button>
+              <button type="button" class="btn btn-sm ap-sim" data-ap-sim="video" onclick="apSample('video')">📹 Vídeo Call: RH e CFO aprovaram, pediram minuta</button>
+              <button type="button" class="btn btn-sm ap-sim" data-ap-sim="won" onclick="apSample('won')">🎉 Fechamento: contrato assinado, 1ª recarga</button>
+            </div>
+          </div>
+          <label for="apText" class="sr-only">Conversa</label>
+          <textarea id="apText" rows="3" class="input w-full text-[12px]" style="height:auto" placeholder="Cole aqui a conversa do WhatsApp ou as notas da call/vídeo, ou dite por voz…"></textarea>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="apRun" type="button" class="btn btn-sm one-click-btn" onclick="apInterpret()">⚡ Interpretar &amp; Atualizar CRM Automaticamente</button>
+            <span class="text-[10.5px]" style="color:var(--faint)">Leitura local: só muda vidas, ticket, fase e agenda que estiverem escritos no texto. A fase só avança.</span>
+          </div>
+          <div id="apResult" class="hidden rounded-lg p-2.5" role="status" style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.35)"></div>
+        </div>
+      </details>
       <!-- Ficha em 3 abas (só em conta existente) -->
       <div id="accTabs" class="hidden acc-tabs px-5 pt-3 flex gap-1.5 overflow-x-auto" role="tablist" aria-label="Seções da ficha">
         <button type="button" role="tab" id="accTab-dossie" data-acctab-btn="dossie" onclick="setAccTab('dossie')">1. Dossiê &amp; CNPJ</button>
@@ -1931,6 +1972,8 @@
       <div class="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 border-t" style="background:var(--surface);border-color:var(--line)">
         <div class="flex flex-wrap gap-2">
           <button id="btnOneClick" type="button" onclick="oneClickWhatsApp()" class="btn btn-sm hidden one-click-btn"></button>
+          <button id="btnSendProposal" type="button" onclick="sendProposalMilestone()" class="btn btn-sm hidden" title="Registra Simulação PAT + Proposta enviadas, leva o card para Negociando (65%) e agenda a reunião de fechamento em D+2 às 14:00">📊 PAT + Proposta enviadas</button>
+          <button id="btnSendContract" type="button" onclick="sendContractMilestone()" class="btn btn-sm hidden" title="Registra a minuta enviada, leva o card para Contrato enviado (85%) e agenda o lembrete de assinatura em D+2">📄 Enviar Minuta / Contrato</button>
           <button id="btnCopyAccountPitch" type="button" onclick="copyPersonalizedPitchFromModal()" class="btn btn-sm"><svg class="ico"><use href="#i-copy"/></svg>Copiar mensagem CHAVE</button>
           <button id="btnDeleteAccount" type="button" onclick="deleteAccountFromModal()" class="btn btn-danger btn-sm hidden"><svg class="ico"><use href="#i-trash"/></svg>Excluir</button>
         </div>
@@ -4924,7 +4967,7 @@
       renderFollowupsTab();
     }
 
-    function sendWhatsApp(acc, text, tpl) {
+    function sendWhatsApp(acc, text, tpl, opts) {
       const d = phoneDigits(acc.phone);
       if (!d) {
         copyTextSafe(text, "Conta sem celular: mensagem copiada. Escolha o contato no WhatsApp.");
@@ -4933,7 +4976,7 @@
         if (!isLikelyMobile(acc.phone)) showToast("Este número parece fixo: o WhatsApp só abre se ele tiver WhatsApp Business.", "ℹ️");
         openExternal(waUrl(acc.phone, text));
       }
-      logInteraction(acc.id, "WhatsApp", "Contato via WhatsApp iniciado" + (tpl && tpl.name ? " (modelo: " + tpl.name + ")" : ""), true);
+      logInteraction(acc.id, "WhatsApp", (opts && opts.auto ? "📞 Contato iniciado via WhatsApp — Follow-up automático agendado para D+2" : "Contato via WhatsApp iniciado") + (tpl && tpl.name ? " (modelo: " + tpl.name + ")" : ""), true);
       if (tpl && tpl.advance_to) advanceAccountStatus(acc, tpl.advance_to);
     }
 
@@ -5078,7 +5121,8 @@
 
       if (kind === "wa") {
         const tpl = suggestedTemplate("wa", acc);
-        sendWhatsApp(acc, fillVars(tpl.text, acc), tpl);
+        sendWhatsApp(acc, fillVars(tpl.text, acc), tpl, { auto: true });
+        autoContactFollowup(acc, "wa");
         showPostContactBar(acc.id, "wa");
       } else if (kind === "mail") {
         const e = buildEmail(acc);
@@ -5087,7 +5131,8 @@
       } else if (kind === "tel") {
         const d = phoneDigits(acc.phone);
         if (!d) { showToast("Conta sem telefone cadastrado.", "⚠️"); return; }
-        logInteraction(acc.id, "Ligação", "Ligação iniciada para " + (acc.phone || "+" + d), true);
+        logInteraction(acc.id, "Ligação", "📞 Contato iniciado via Telefone (" + (acc.phone || "+" + d) + ") — Follow-up automático agendado para D+2", true);
+        autoContactFollowup(acc, "tel");
         showPostContactBar(acc.id, "tel");
         window.location.href = "tel:+" + d;
       } else if (kind === "cal") {
@@ -5156,6 +5201,343 @@
       }
       refreshAllViews();
       showToast("Registrado" + (fu ? ", follow-up em " + formatDateShort(fu.due_date) : " (o follow-up D+2 já estava na agenda)") + (moved ? " e conta em Em contato" : "") + ".", "✅");
+    }
+
+    // =====================================================================
+    // AUTO-PILOT (doc _21): gatilhos de 1 clique e leitura da conversa.
+    // Cada gatilho registra no histórico, agenda na Agenda e rotas (follow-up + calendário)
+    // e só AVANÇA a fase (nunca recua). No cenário de demonstração nada vai para o banco.
+    // =====================================================================
+    const DAILY_ACTIVITY_GOAL = 55; // meta da rotina do plano (Q1), não é resultado
+    function todayActivityCount() {
+      const t = todayIso();
+      return (state.interactions || []).filter(function (i) { return isoFromDate(new Date(i.at)) === t; }).length;
+    }
+    /** Agenda D+N em um horário: follow-up (Next Step da conta) + bloco no calendário, sem duplicar pelo título. */
+    function autoSchedule(acc, title, days, hm, dur, channel, notes, keepTime) {
+      if (!acc) return null;
+      const date = addDaysIso(days);
+      const dup = state.followups.find(function (f) { return f.account_id === acc.id && f.status === "Pendente" && f.action_title === title; });
+      if (dup) return { fu: dup, ev: null, date: dup.due_date, start: null, dup: true };
+      const opp = openOppOf(acc.id);
+      const fu = createFollowup({ account_id: acc.id, opportunity_id: opp ? opp.id : null, action_title: title, due_date: date,
+        channel: channel || "WhatsApp", priority: "Alta", notes: notes || "Agendado automaticamente pelo Auto-Pilot." });
+      let start = hmToMin(hm), ev = null;
+      dur = dur || 30;
+      // Horário combinado com o cliente (keepTime) fica como está e o conflito é avisado; o resto vai para o próximo horário livre
+      const clash = start !== null ? findCalendarConflicts(date, start, dur) : [];
+      if (clash.length && !keepTime) start = nextFreeSlot(date, dur, start);
+      if (start !== null && start !== undefined && start + dur <= CAL_END_MIN) {
+        ev = { id: newUuid(), kind: "client", title: acc.company_name + " · " + title, account_id: acc.id, date: date, start: minToHm(start), dur: dur, followup_id: fu.id };
+        calEvents().push(ev);
+      }
+      persistState();
+      return { fu: fu, ev: ev, date: date, start: ev ? ev.start : null, dup: false, clash: keepTime && clash.length ? clash.map(function (e) { return e.title; }) : [] };
+    }
+    function scheduleLabel(s) {
+      if (!s) return "";
+      return formatDateShort(s.date) + (s.start ? " às " + s.start : "") + (s.dup ? " (já estava na agenda)" : "") + (s.clash && s.clash.length ? " ⚠ conflita com: " + s.clash.join("; ") : "");
+    }
+    function afterAutoPilot(acc) {
+      refreshAllViews();
+      try { if (typeof renderCalendar === "function" && agendaView === "calendar") renderCalendar(); } catch (e) { /* ignore */ }
+      try { updateUpNext(); } catch (e) { /* ignore */ }
+      renderCaseGuideBar();
+      const modal = document.getElementById("accountModal");
+      if (acc && modal && !modal.classList.contains("hidden") && document.getElementById("accFormId").value === acc.id) {
+        renderAccountSidePanel(acc); renderOneClickButton(acc);
+        document.getElementById("accountModalSub").textContent = Number(acc.active_card_users || 0).toLocaleString("pt-BR") + " vidas · TPV " + (computeMonthlyTpv(acc) ? formatCurrencyBRL(computeMonthlyTpv(acc)) + "/mês" : "a preencher") + " · " + (acc.status || "");
+      }
+    }
+    /** WhatsApp ou Ligar: histórico + follow-up D+2 às 10:00. A fase sai de Não contactado pelo registro (logInteraction). */
+    function autoContactFollowup(acc, kind) {
+      const label = POST_CONTACT_LABEL[kind];
+      if (!acc || !label) return null;
+      // Conta ainda sem card (Não contactado): o 1º toque cria o card em Qualificando (20%)
+      if (!openOppOf(acc.id) && STATUS_TO_STAGE[acc.status] && STATUS_TO_STAGE[acc.status] <= 2) autoAdvancePipelineFromAccount(acc, "outcome", { stage: 2 });
+      const s = autoSchedule(acc, "Follow-up D+2 · retorno do contato por " + label, 2, "10:00", 30, kind === "tel" ? "Ligação" : "WhatsApp");
+      afterAutoPilot(acc);
+      return s;
+    }
+    function stageOf(accId) { const o = openOppOf(accId); return o ? Number(o.stage_weight) : 0; }
+    /** Proposta 3 Pilares / Simulação PAT enviada: Negociando (65%) + reunião de fechamento D+2 às 14:00. */
+    function sendProposalMilestone(accId, silentIfDone) {
+      const acc = findAccount(accId || document.getElementById("accFormId").value);
+      if (!acc) return null;
+      if (silentIfDone && acc.pat_simulation_sent && stageOf(acc.id) >= 4) return null;
+      const before = stageOf(acc.id);
+      acc.pat_simulation_sent = true;
+      const moved = before < 4 && before !== STAGE_WON;
+      logInteraction(acc.id, "Proposta enviada", "📊 Simulação PAT + Proposta enviada" + (moved ? " — Card avançado automaticamente para Negociando" : ""), true);
+      const s = autoSchedule(acc, "Reunião de Fechamento ROI PAT com CFO/RH", 2, "14:00", 60, "Ligação");
+      persistState();
+      afterAutoPilot(acc);
+      showToast("Proposta registrada" + (moved ? ", card em Negociando (65%)" : "") + " e reunião de fechamento em " + scheduleLabel(s) + ".", "📊");
+      return s;
+    }
+    /** Minuta / contrato enviado: Contrato enviado (85%) + lembrete de assinatura D+2. */
+    function sendContractMilestone(accId) {
+      const acc = findAccount(accId || document.getElementById("accFormId").value);
+      if (!acc) return null;
+      const before = stageOf(acc.id);
+      const moved = before < 5 && before !== STAGE_WON;
+      logInteraction(acc.id, "Contrato enviado", "📄 Minuta contratual enviada para Jurídico/Compras" + (moved ? " — Card avançado automaticamente para Contrato enviado" : ""), true);
+      const s = autoSchedule(acc, "Lembrete de assinatura do contrato", 2, "10:00", 30, "E-mail");
+      afterAutoPilot(acc);
+      showToast("Minuta registrada" + (moved ? ", card em Contrato enviado (85%)" : "") + " e lembrete de assinatura em " + scheduleLabel(s) + ".", "📄");
+      return s;
+    }
+
+    // ---------- Auto-Pilot pela conversa (voz, WhatsApp colado ou notas de vídeo) ----------
+    const AP_SAMPLES = {
+      wa: "Confirmou 480 vidas (R$ 850), pediu Simulação PAT e marcamos quinta às 14h",
+      video: "Reunião concluída com RH e CFO, aprovaram proposta e pediram minuta de contrato",
+      won: "Contrato assinado digitalmente hoje! 1ª recarga programada"
+    };
+    const WEEKDAY_IDX = { domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6 };
+    function parseBrNumber(s) { return Number(String(s).replace(/\./g, "").replace(",", ".")); }
+    /** Lê o texto e devolve só o que está escrito nele: vidas, ticket, fase e data/hora. Nada é inventado. */
+    function parseConversation(text) {
+      const raw = String(text || "");
+      const t = normalizeText(raw);
+      const out = { lives: null, ticket: null, stage: null, stageWhy: "", when: null };
+      const lm = raw.match(/(\d{1,3}(?:\.\d{3})+|\d+)\s*(?:vidas|colaboradores|funcion[aá]rios|pessoas)/i);
+      if (lm) { const n = parseBrNumber(lm[1]); if (n > 0 && n < 1000000) out.lives = n; }
+      const tm = raw.match(/R\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(mil\b)?/i);
+      if (tm && !tm[2]) { const v = parseBrNumber(tm[1]); if (v > 0 && v <= 5000) out.ticket = v; } // acima de R$ 5.000 não é ticket por vida
+      const rules = [
+        [6, /contrato assinado|assinou o contrato|assinaram|assinatura (concluida|feita)|fechamos|fechou com a swile|(1a|primeira) recarga/],
+        [5, /minuta|contrato enviado|enviar o contrato|enviamos o contrato|pediram o contrato|pediu o contrato|juridico/],
+        [4, /proposta enviada|enviei a proposta|enviamos a proposta|simulacao (pat )?enviada|enviei a simulacao|aprovaram a proposta|aprovou a proposta/],
+        [3, /reuniao|marcamos|agendamos|call|video|pediu (a )?simulacao|pediu (a )?proposta|confirmou|discovery/],
+        [2, /respondeu|atendeu|retornou|interessad|qualific/]
+      ];
+      for (let i = 0; i < rules.length; i++) {
+        const m = t.match(rules[i][1]);
+        if (m) { out.stage = rules[i][0]; out.stageWhy = m[0]; break; }
+      }
+      // Data e hora: "quinta às 14h", "amanhã 10:30", "12/11 às 9h", "hoje"
+      let date = null;
+      const dm = t.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
+      if (dm) {
+        const now = new Date(); let y = dm[3] ? Number(dm[3].length === 2 ? "20" + dm[3] : dm[3]) : now.getFullYear();
+        const d = new Date(y, Number(dm[2]) - 1, Number(dm[1]));
+        if (!dm[3] && d < new Date(now.getFullYear(), now.getMonth(), now.getDate())) d.setFullYear(y + 1);
+        if (!isNaN(d)) date = isoFromDate(d);
+      } else if (/\bamanha\b/.test(t)) date = addDaysIso(1);
+      else if (/\bhoje\b/.test(t) && /\b(as|a)\s*\d{1,2}\s*(h|:)/.test(t)) date = todayIso();
+      else {
+        const wm = t.match(/\b(segunda|terca|quarta|quinta|sexta|sabado|domingo)\b/);
+        if (wm) { const today = new Date().getDay(); let diff = (WEEKDAY_IDX[wm[1]] - today + 7) % 7; if (diff === 0) diff = 7; date = addDaysIso(diff); }
+      }
+      const hm = t.match(/\b(?:as|a)?\s*(\d{1,2})\s*(?:h|:)\s*(\d{2})?\b/);
+      let hour = null;
+      if (hm) { const h = Number(hm[1]), mi = Number(hm[2] || 0); if (h >= 7 && h <= 20 && mi < 60) hour = String(h).padStart(2, "0") + ":" + String(mi).padStart(2, "0"); }
+      if (date) out.when = { date: date, hm: hour };
+      return out;
+    }
+    const AP_NEXT_BY_STAGE = {
+      2: { title: "Follow-up D+2 · qualificar vidas e decisor", hm: "10:00", dur: 30, ch: "WhatsApp" },
+      3: { title: "Enviar Simulação PAT e Proposta 3 Pilares", hm: "10:00", dur: 30, ch: "E-mail" },
+      4: { title: "Reunião de Fechamento ROI PAT com CFO/RH", hm: "14:00", dur: 60, ch: "Ligação" },
+      5: { title: "Lembrete de assinatura do contrato", hm: "10:00", dur: 30, ch: "E-mail" }
+    };
+    function apSample(kind) {
+      const el = document.getElementById("apText");
+      if (!el || !AP_SAMPLES[kind]) return;
+      el.value = AP_SAMPLES[kind];
+      el.focus();
+    }
+    let apRecognizer = null;
+    function apToggleVoice() {
+      const btn = document.getElementById("apVoiceBtn");
+      if (apRecognizer) { try { apRecognizer.stop(); } catch (e) { /* ignore */ } return; }
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { showToast("Este navegador não tem reconhecimento de voz. Use o Chrome ou cole a conversa no campo.", "ℹ️"); return; }
+      const r = new SR();
+      r.lang = "pt-BR"; r.continuous = true; r.interimResults = false;
+      r.onresult = function (ev) {
+        const el = document.getElementById("apText");
+        for (let i = ev.resultIndex; i < ev.results.length; i++) if (ev.results[i].isFinal) el.value = (el.value ? el.value.trim() + " " : "") + ev.results[i][0].transcript.trim();
+      };
+      r.onerror = function (ev) { showToast("Microfone: " + (ev.error === "not-allowed" ? "permissão negada" : ev.error), "⚠️"); };
+      r.onend = function () { apRecognizer = null; if (btn) btn.textContent = "🎙 Ouvir Ligação / Ditar por Voz"; };
+      try { r.start(); apRecognizer = r; if (btn) btn.textContent = "⏹ Parar de ouvir"; showToast("Ouvindo pelo microfone deste computador (pt-BR).", "🎙"); }
+      catch (e) { apRecognizer = null; showToast("Não foi possível abrir o microfone.", "⚠️"); }
+    }
+    function apInterpret() {
+      const acc = findAccount(document.getElementById("accFormId").value);
+      const el = document.getElementById("apText");
+      const out = document.getElementById("apResult");
+      if (!acc || !el) return;
+      const text = (el.value || "").trim();
+      if (!text) { showToast("Cole a conversa, dite por voz ou use uma simulação.", "ℹ️"); return; }
+      const p = parseConversation(text);
+      const changes = [];
+      const accPatch = {};
+      // 1. Vidas e ticket: só o que está escrito no texto
+      if (p.lives !== null && Number(acc.active_card_users) !== p.lives) { changes.push(["Vidas", Number(acc.active_card_users || 0).toLocaleString("pt-BR"), p.lives.toLocaleString("pt-BR")]); acc.active_card_users = p.lives; accPatch.active_card_users = p.lives; if (!Number(acc.employees_count) || Number(acc.employees_count) < p.lives) { acc.employees_count = p.lives; accPatch.employees_count = p.lives; } }
+      if (p.ticket !== null && Number(acc.avg_monthly_ticket) !== p.ticket) { changes.push(["Ticket médio", formatCurrencyBRL(Number(acc.avg_monthly_ticket) || 0), formatCurrencyBRL(p.ticket)]); acc.avg_monthly_ticket = p.ticket; accPatch.avg_monthly_ticket = p.ticket; }
+      if (accPatch.active_card_users || accPatch.avg_monthly_ticket) {
+        changes.push(["TPV mensal", "", formatCurrencyBRL(computeMonthlyTpv(acc))]);
+        persistState();
+        remoteWrite("Vidas e ticket", function () { return db.update("crm_accounts", acc.id, accPatch); });
+      }
+      // 2. Fase (só avança)
+      const before = stageOf(acc.id);
+      logInteraction(acc.id, "Nota", "🤖 Auto-Pilot leu a conversa: \"" + text.slice(0, 300) + "\"", true, true);
+      if (p.stage) {
+        const res = autoAdvancePipelineFromAccount(acc, "outcome", { stage: p.stage });
+        const after = stageOf(acc.id) || (p.stage === STAGE_WON && acc.status === "Fechado ✅" ? STAGE_WON : before);
+        if (res) changes.push(["Fase", before ? SF_STAGE_NAMES[before] : "sem oportunidade", SF_STAGE_NAMES[res.stage] + " (" + STAGE_PROBS[res.stage] + "%)"]);
+        else changes.push(["Fase", SF_STAGE_NAMES[after] || "—", "mantida (o texto indica " + SF_STAGE_NAMES[p.stage] + "; o card já estava nela ou adiante)"]);
+      }
+      if (p.stage === 4 || p.stage === 5) acc.pat_simulation_sent = true;
+      // 3. Agenda: data/hora do texto; sem data, o próximo passo padrão da fase em D+2
+      const st = stageOf(acc.id);
+      let s = null;
+      if (p.when) {
+        const title = p.stage >= 5 ? "Assinatura do contrato" : p.stage === 4 ? "Reunião de Fechamento ROI PAT com CFO/RH" : "Reunião · " + (p.stage === 3 ? "Simulação PAT com RH/CFO" : "próximo passo");
+        const days = Math.round((new Date(p.when.date + "T12:00:00") - new Date(todayIso() + "T12:00:00")) / 86400000);
+        s = autoSchedule(acc, title, days, p.when.hm || "10:00", 60, "Ligação", "Data e hora lidas da conversa.", !!p.when.hm);
+        if (s && !s.dup && s.ev && st >= 1 && st < 3) { /* reunião marcada: Em contato */ autoAdvancePipelineFromAccount(acc, "outcome", { stage: 3 }); }
+      } else if (AP_NEXT_BY_STAGE[st]) {
+        const n = AP_NEXT_BY_STAGE[st];
+        s = autoSchedule(acc, n.title, 2, n.hm, n.dur, n.ch);
+      }
+      if (s) changes.push(["Agenda / Next Step", "", (s.fu ? s.fu.action_title : "") + " · " + scheduleLabel(s)]);
+      persistState();
+      afterAutoPilot(acc);
+      if (out) {
+        out.innerHTML = changes.length
+          ? '<p class="font-semibold" style="color:#86efac">✅ Agente Swile atualizou o CRM sozinho (leitura local, sem IA):</p><ul class="mt-1 space-y-0.5">' +
+            changes.map(function (c) { return '<li><span style="color:var(--muted)">' + esc(c[0]) + ':</span> ' + (c[1] ? '<s style="color:var(--faint)">' + esc(c[1]) + '</s> → ' : '') + '<span class="text-white">' + esc(c[2]) + '</span></li>'; }).join("") + '</ul>'
+          : '<p style="color:#fcd34d">Nada para atualizar: o texto não traz vidas, ticket, fase ou data. A conversa ficou no histórico.</p>';
+        out.classList.remove("hidden");
+      }
+      showToast(changes.length ? "Auto-Pilot: " + changes.length + " atualização(ões) em " + acc.company_name + "." : "Conversa registrada no histórico.", "🤖");
+    }
+    let apAccId = null;
+    function renderAutoPilotPanel(acc) {
+      const box = document.getElementById("accAutoPilot");
+      if (!box) return;
+      box.classList.toggle("hidden", !acc);
+      if (!acc) { apAccId = null; return; }
+      const demo = demoActive();
+      box.open = demo || box.open;
+      const sims = document.getElementById("apSims");
+      if (sims) sims.classList.toggle("hidden", !demo);
+      if (apAccId === acc.id) return; // mesma conta: mantém texto e resultado
+      apAccId = acc.id;
+      const res = document.getElementById("apResult");
+      if (res) { res.classList.add("hidden"); res.innerHTML = ""; }
+      const ta = document.getElementById("apText");
+      if (ta) ta.value = "";
+    }
+
+    // ---------- Roteiro ao vivo do Case (Q1–Q7) + Resetar Demo ----------
+    const CASE_GUIDE = [
+      { q: "Q1", label: "Prospecção & Rotina" },
+      { q: "Q2", label: "Pipeline CRM" },
+      { q: "Q3", label: "KPIs & Governança" },
+      { q: "Q4", label: "Reversão Concorrentes RJ" },
+      { q: "Q5", label: "Resultado Fechamento Mês" },
+      { q: "Q6", label: "As 3 Ferramentas" },
+      { q: "Q7", label: "Trabalho em Equipe" }
+    ];
+    const CASE_GUIDE_EXTRA = {
+      Q1: ["Contador ao vivo: cada WhatsApp, ligação e registro soma nas atividades do dia (meta da rotina: " + DAILY_ACTIVITY_GOAL + ")."],
+      Q4: ["Na ficha de cada conta, aba 2 traz a Vacina do Decreto 12.712 com a fonte oficial."],
+      Q6: ["No app: Auto-Pilot na ficha (voz ou conversa colada atualiza vidas, ticket, fase e agenda)."],
+      Q7: ["A Swile é certificada B Corp (B Lab: Swile S.A.S. e subsidiárias, nota 86,8).",
+        "Plano: rituais semanais de troca entre os polos do RJ e passagem SDR → Closer → CS com o histórico completo da conta no CRM."]
+    };
+    let caseGuideActive = null;
+    function caseGuideGo(q) {
+      const c = PB_CASE.find(function (x) { return x.q === q; });
+      caseGuideActive = q;
+      if (q === "Q1") { switchTab("followups"); }
+      else if (q === "Q2") switchTab("pipeline");
+      else if (q === "Q3") {
+        switchTab("reports");
+        const more = document.getElementById("t24More");
+        if (more && "open" in more) more.open = true;
+        const k = document.getElementById("t24Kpi8") || document.getElementById("caseKpiGrid");
+        if (k && k.scrollIntoView) setTimeout(function () { k.scrollIntoView({ behavior: "smooth", block: "center" }); }, 60);
+      }
+      else if (q === "Q4") { switchTab("playbook"); setPlaybookTab("matrix"); }
+      else if (q === "Q5") demoCase("reports-funnel");
+      else if (q === "Q6") switchTab("accounts");
+      else if (q === "Q7") { switchTab("playbook"); setPlaybookTab("chave"); }
+      if (q !== "Q3" && q !== "Q5") window.scrollTo({ top: 0, behavior: "smooth" });
+      const card = document.getElementById("caseGuideCard");
+      if (card && c) {
+        const items = c.body.concat(CASE_GUIDE_EXTRA[q] || []);
+        card.innerHTML = '<div class="flex items-start justify-between gap-2"><p class="font-semibold text-white"><span style="color:#c4b5fd">' + esc(q) + '</span> · ' + esc(c.title) + '</p>' +
+          '<button type="button" class="icon-btn" aria-label="Fechar roteiro" onclick="closeCaseGuideCard()">' + icon("x") + '</button></div>' +
+          '<ul class="mt-1.5 space-y-1" style="color:#c3c8d4">' + items.map(function (b) { return '<li class="flex gap-2"><span style="color:var(--faint)">•</span><span>' + esc(b) + '</span></li>'; }).join("") + '</ul>' +
+          '<p class="mt-1.5 text-[10.5px]" style="color:var(--faint)">Plano de trabalho do Playbook · metas são premissas, não resultado.</p>';
+        card.classList.remove("hidden");
+      }
+      renderCaseGuideBar();
+    }
+    function closeCaseGuideCard() {
+      caseGuideActive = null;
+      const card = document.getElementById("caseGuideCard");
+      if (card) card.classList.add("hidden");
+      renderCaseGuideBar();
+    }
+    const CASE_BAR_KEY = "swile_case_bar_collapsed";
+    function toggleCaseGuideBar() {
+      const bar = document.getElementById("caseGuideBar");
+      if (!bar) return;
+      const c = !bar.classList.contains("collapsed");
+      bar.classList.toggle("collapsed", c);
+      try { localStorage.setItem(CASE_BAR_KEY, c ? "1" : "0"); } catch (e) { /* ignore */ }
+    }
+    let caseBarInit = false;
+    function renderCaseGuideBar() {
+      const pills = document.getElementById("caseGuidePills");
+      if (!pills) return;
+      if (!caseBarInit) {
+        caseBarInit = true;
+        let c = false;
+        try { c = localStorage.getItem(CASE_BAR_KEY) === "1"; } catch (e) { /* ignore */ }
+        const bar = document.getElementById("caseGuideBar");
+        if (bar) bar.classList.toggle("collapsed", c);
+      }
+      pills.innerHTML = CASE_GUIDE.map(function (g) {
+        return '<button type="button" class="case-pill" data-case-q="' + g.q + '" aria-pressed="' + (caseGuideActive === g.q) + '" onclick="caseGuideGo(\'' + g.q + '\')"><b>' + g.q + '</b> ' + esc(g.label) + '</button>';
+      }).join("");
+      const n = todayActivityCount();
+      const act = document.getElementById("caseActCount");
+      if (act) { act.textContent = "⚡ " + n + "/" + DAILY_ACTIVITY_GOAL + " ativ. hoje"; act.title = n + " atividade(s) registrada(s) hoje neste CRM. Meta da rotina: " + DAILY_ACTIVITY_GOAL + " por dia útil."; }
+      const rb = document.getElementById("btnResetDemo");
+      if (rb) rb.title = demoActive() ? "Volta o cenário de demonstração à posição inicial (desfaz os testes feitos nele)" : "Carrega o cenário de demonstração na posição inicial (só neste navegador)";
+    }
+    /** Resetar Demo: refaz o cenário a partir da cópia dos dados reais. Nunca grava no banco nem apaga as contas reais. */
+    async function resetDemoScenario() {
+      if (!demoActive()) return startDemoScenario();
+      if (!(await uiConfirm("O cenário de demonstração volta à posição inicial: fases, histórico, agenda e calendário criados durante os testes saem. As contas reais e o banco não são tocados (a cópia delas continua guardada).", { title: "Resetar demonstração?", okLabel: "Resetar demo", danger: false }))) return;
+      let snap = null;
+      try { snap = JSON.parse(localStorage.getItem(DEMO_SNAPSHOT_KEY) || "null"); } catch (e) { snap = null; }
+      if (!snap || !Array.isArray(snap.accounts)) { showToast("Cópia dos dados reais não encontrada neste navegador; use Voltar aos dados reais.", "⚠️"); return; }
+      state.accounts = JSON.parse(JSON.stringify(snap.accounts));
+      state.opportunities = JSON.parse(JSON.stringify(snap.opportunities || []));
+      state.followups = JSON.parse(JSON.stringify(snap.followups || []));
+      state.interactions = JSON.parse(JSON.stringify(snap.interactions || []));
+      if (Array.isArray(snap.calEvents)) state.calEvents = JSON.parse(JSON.stringify(snap.calEvents));
+      state.demoMode = { startedAt: snap.savedAt, resetAt: new Date().toISOString() };
+      const r = applyDemoScenario();
+      persistState();
+      caseGuideActive = null;
+      const card = document.getElementById("caseGuideCard");
+      if (card) card.classList.add("hidden");
+      refreshAllViews();
+      renderDemoSeal();
+      renderCaseGuideBar();
+      try { if (agendaView === "calendar") renderCalendar(); updateUpNext(); } catch (e) { /* ignore */ }
+      showToast("Demonstração na posição inicial: " + r.moved + " empresas nas fases do roteiro.", "🔄");
     }
 
     // Webhook de saída (Make, n8n, Zapier, Pipedream). "no-cors" + text/plain evita bloqueio de CORS no navegador.
@@ -5293,6 +5675,7 @@
       renderContactFixBanner();
       renderCnpjBanner();
       renderDemoSeal();
+      renderCaseGuideBar();
       renderKanbanBoard();
       renderFollowupsTab();
       renderBattlecardDetail();
@@ -6496,6 +6879,8 @@
     function renderOneClickButton(acc) {
       const b = document.getElementById("btnOneClick");
       if (!b) return;
+      ["btnSendProposal", "btnSendContract"].forEach(function (id) { const x = document.getElementById(id); if (x) x.classList.toggle("hidden", !acc); });
+      renderAutoPilotPanel(acc);
       if (!acc) { b.classList.add("hidden"); return; }
       const opp = openOppOf(acc.id);
       const w = opp ? Number(opp.stage_weight) : 0;
@@ -6635,6 +7020,8 @@
 
     function closeAccountModal() {
       if (copilotListening) stopCopilotListening();
+      if (apRecognizer) { try { apRecognizer.stop(); } catch (e) { /* ignore */ } }
+      apAccId = null;
       document.getElementById("accountModal").classList.add("hidden");
     }
 
@@ -8131,6 +8518,7 @@
     function proposalAction(kind) {
       const acc = findAccount(proposalAccountId);
       const text = document.getElementById("proposalText").value;
+      if (acc && (kind === "copy" || kind === "email" || kind === "download")) setTimeout(function () { sendProposalMilestone(acc.id, true); }, 0);
       if (kind === "copy") return copyTextSafe(text, "Proposta copiada!");
       if (kind === "download") {
         downloadFile("Proposta_Swile_" + String(acc ? acc.company_name : "conta").replace(/[^\w\-]+/g, "_") + ".txt", text, "text/plain;charset=utf-8");
@@ -8994,6 +9382,8 @@
       if (bad.length) html += '<span class="pill-soft warn" title="' + esc("Não preenchido: dígito verificador não bate.\n" + bad.map(function (e) { return e.cnpj + " (" + e.razao + ")"; }).join("\n")) + '">⚠ ' + bad.length + ' CNPJ(s) inválido(s) no documento</span>';
       const inactive = checked.length - active.length;
       if (inactive > 0) html += '<span class="pill-soft warn" title="' + esc(checked.filter(function (a) { const i = cnpjIntelOf(a); return !(i && /ativa/i.test(i.situacao || "")); }).map(function (a) { const i = cnpjIntelOf(a); return a.company_name + ": " + ((i && i.situacao) || "situação não informada"); }).join("\n")) + '">' + inactive + ' sem situação ATIVA</span>';
+      const big = state.accounts.filter(function (a) { return Number(a.active_card_users) >= CASE_MIN_LIVES; }).length;
+      html += '<span class="pill-soft" title="Contas com ' + CASE_MIN_LIVES + ' vidas ou mais informadas na ficha (dado do CRM, não da Receita)">👥 ' + big + '/' + total + ' com ' + CASE_MIN_LIVES + '+ vidas</span>';
       box.innerHTML = html;
       box.classList.remove("hidden");
     }
@@ -9076,7 +9466,7 @@
     async function startDemoScenario() {
       if (demoActive()) { showToast("O cenário de demonstração já está ativo.", "🎭"); return; }
       if (!(await uiConfirm("Carregar o cenário de demonstração? As 15 empresas do seu roteiro vão para as fases simuladas (de Não contactado a Contrato assinado), só neste navegador. Empresas que não estão na carteira entram como contas de exemplo, com nome e CNPJ. Nada vai para o banco. O que você fizer durante a demonstração some quando voltar à carteira real.", { title: "Cenário de demonstração", okLabel: "Carregar demonstração", danger: false }))) return;
-      const snap = { savedAt: new Date().toISOString(), accounts: state.accounts, opportunities: state.opportunities, followups: state.followups, interactions: state.interactions || [] };
+      const snap = { savedAt: new Date().toISOString(), accounts: state.accounts, opportunities: state.opportunities, followups: state.followups, interactions: state.interactions || [], calEvents: state.calEvents || [] };
       try {
         localStorage.setItem(DEMO_SNAPSHOT_KEY, JSON.stringify(snap));
         if (!localStorage.getItem(DEMO_SNAPSHOT_KEY)) throw new Error("sem cópia");
@@ -9104,6 +9494,7 @@
         state.opportunities = snap.opportunities || [];
         state.followups = snap.followups || [];
         state.interactions = snap.interactions || [];
+        if (Array.isArray(snap.calEvents)) state.calEvents = snap.calEvents;
       } else {
         // Sem cópia (armazenamento limpo): tira só o que o cenário criou; com login, o banco recarrega os dados reais
         state.accounts = state.accounts.filter(function (a) { return !a.demo; });

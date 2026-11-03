@@ -279,129 +279,104 @@
     .seg button[aria-pressed="true"] { background: rgba(124,58,237,.25); color: #fff; }
     /* ===== Tela de entrada (Swile OS Gateway) ===== */
     html.gw-open, html.gw-open body { overflow: hidden; }
-    .gw { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; background: #07080d; color: #e2e8f0; font-family: inherit; }
+    .gw { position: fixed; inset: 0; z-index: 80; display: grid; grid-template-columns: 1fr; overflow-y: auto; background: #fff; color: #0f172a; font-family: inherit; }
     .gw[hidden] { display: none; }
-    .gw-glow { position: fixed; border-radius: 9999px; pointer-events: none; filter: blur(120px); }
-    .gw-glow.a { top: -6rem; left: -6rem; width: 26rem; height: 26rem; background: rgba(124,58,237,.22); }
-    .gw-glow.b { bottom: -6rem; right: -6rem; width: 24rem; height: 24rem; background: rgba(6,182,212,.14); }
-    .gw-shell { position: relative; width: 100%; max-width: 64rem; display: grid; grid-template-columns: 1fr; border-radius: 1.1rem; overflow: hidden; border: 1px solid rgba(255,255,255,.1); background: rgba(13,15,23,.96); box-shadow: 0 24px 80px rgba(0,0,0,.85); margin: auto; }
-    @media (min-width: 1024px) { .gw-shell { grid-template-columns: 7fr 5fr; } }
-    .gw-left { padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1.25rem; background: linear-gradient(135deg, #131624, #0d0f17 55%, #090a0f); border-top: 1px solid rgba(255,255,255,.1); }
-    @media (min-width: 1024px) { .gw-left { padding: 2.5rem; border-top: 0; border-right: 1px solid rgba(255,255,255,.1); } }
-    .gw-right { order: -1; padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; background: #0d0f17; }
-    @media (min-width: 1024px) { .gw-right { order: 0; padding: 2.5rem; } }
-    .gw-brand { display: flex; align-items: center; gap: .65rem; }
-    .gw-logo { width: 2rem; height: 2rem; border-radius: .55rem; background: #7c3aed; display: grid; place-items: center; font-weight: 700; color: #fff; box-shadow: 0 8px 24px rgba(124,58,237,.35); }
-    .gw-pill { display: inline-flex; align-items: center; gap: .35rem; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; padding: .2rem .6rem; border-radius: 9999px; border: 1px solid rgba(255,255,255,.12); color: #cbd5e1; background: rgba(255,255,255,.03); white-space: nowrap; }
-    .gw-pill i { width: .45rem; height: .45rem; border-radius: 9999px; background: currentColor; display: inline-block; }
-    .gw-pill.ok { color: #6ee7b7; border-color: rgba(16,185,129,.25); background: rgba(16,185,129,.08); }
-    .gw-pill.vi { color: #c4b5fd; border-color: rgba(139,92,246,.3); background: rgba(139,92,246,.1); }
-    .gw-pill.cy { color: #67e8f9; border-color: rgba(6,182,212,.25); background: rgba(6,182,212,.08); }
-    .gw-card-wrap { display: flex; justify-content: center; perspective: 900px; }
-    .gw-card { width: 100%; max-width: 22rem; aspect-ratio: 1.586; border-radius: 1.1rem; padding: 1.15rem 1.25rem; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
-      background: linear-gradient(135deg, #1e2235, #11131e 55%, #08090e); border: 1px solid rgba(255,255,255,.15);
-      box-shadow: 0 20px 50px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.2); transform: rotateY(-12deg) rotateX(6deg); transition: transform .4s ease; }
-    .gw-card:hover { transform: rotateY(-4deg) rotateX(2deg) scale(1.02); }
-    .gw-card::after { content: ""; position: absolute; inset: -40% -10% auto auto; width: 70%; height: 140%; background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.09) 50%, transparent 70%); transform: rotate(18deg); pointer-events: none; }
-    .gw-chip { width: 2.5rem; height: 1.8rem; border-radius: .35rem; background: linear-gradient(135deg, rgba(252,211,77,.85), rgba(245,158,11,.8)); border: 1px solid rgba(254,243,199,.4); }
-    .gw-quote { padding: 1rem; border-radius: .8rem; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.1); }
-    .gw-quote blockquote { transition: opacity .2s; min-height: 4.5em; }
-    .gw-stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,.1); text-align: center; }
-    .gw-stats b { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #fff; }
-    .gw-stats span { font-size: 10px; color: #94a3b8; }
-    .gw-input { width: 100%; border-radius: .75rem; background: #141824; border: 1px solid rgba(255,255,255,.1); padding: .65rem .85rem; font-size: 13px; color: #fff; outline: none; }
-    .gw-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,.2); }
-    .gw-btn { width: 100%; padding: .7rem 1rem; border-radius: .75rem; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; cursor: pointer; transition: background .15s, opacity .15s; }
+    @media (min-width: 1024px) { .gw { grid-template-columns: 1fr 1fr; overflow: hidden; } }
+    .gw-left { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem; padding: 1.5rem 16px 1.75rem; color: #fff; background: linear-gradient(160deg, #1E0B36 0%, #160A2A 55%, #0F071E 100%); }
+    @media (min-width: 1024px) { .gw-left { padding: 2.75rem 3rem; min-height: 100vh; } }
+    .gw-left::before { content: ""; position: absolute; width: 34rem; height: 34rem; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 9999px; background: radial-gradient(circle, rgba(124,58,237,.28), transparent 65%); pointer-events: none; }
+    .gw-wordmark { position: relative; font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; color: #fff; line-height: 1; }
+    .gw-wordmark span { font-weight: 500; opacity: .85; margin-left: .2rem; }
+    .gw-card-wrap { position: relative; display: flex; justify-content: center; perspective: 1000px; padding: .5rem 0; }
+    .gw-card { width: 100%; max-width: 16rem; aspect-ratio: 1.586; border-radius: 1rem; padding: 1rem 1.15rem; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; color: #fff;
+      background: linear-gradient(135deg, #2a2a2e 0%, #121214 50%, #050506 100%); border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 30px 70px rgba(0,0,0,.65), 0 0 0 1px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.18); transform: rotateY(-14deg) rotateX(8deg) rotateZ(-3deg); animation: gwFloat 6s ease-in-out infinite; }
+    @media (min-width: 1024px) { .gw-card { max-width: 24rem; padding: 1.4rem 1.6rem; border-radius: 1.25rem; } }
+    .gw-card::after { content: ""; position: absolute; inset: -40% -10% auto auto; width: 70%; height: 140%; background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.08) 50%, transparent 70%); transform: rotate(18deg); pointer-events: none; }
+    @keyframes gwFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+    .gw-card-name { font-size: 1.35rem; font-weight: 800; letter-spacing: -.03em; }
+    @media (min-width: 1024px) { .gw-card-name { font-size: 1.75rem; } }
+    .gw-chip { width: 2.4rem; height: 1.75rem; border-radius: .35rem; background: linear-gradient(135deg, #f8e3a1, #d4a537 45%, #b8862a 70%, #f1d27a); border: 1px solid rgba(255,240,200,.45); position: relative; }
+    .gw-chip::before { content: ""; position: absolute; inset: 28% 0; border-top: 1px solid rgba(90,60,10,.35); border-bottom: 1px solid rgba(90,60,10,.35); }
+    .gw-card-foot { display: flex; align-items: flex-end; justify-content: space-between; }
+    .gw-card-tag { font-size: 9px; font-weight: 700; letter-spacing: .16em; color: rgba(255,255,255,.85); }
+    @media (min-width: 1024px) { .gw-card-tag { font-size: 10px; } }
+    .gw-mc { display: inline-flex; }
+    .gw-mc i { width: 1.45rem; height: 1.45rem; border-radius: 9999px; display: block; }
+    .gw-mc i:first-child { background: #eb001b; }
+    .gw-mc i:last-child { background: #f79e1b; margin-left: -.55rem; mix-blend-mode: screen; opacity: .95; }
+    @media (min-width: 1024px) { .gw-mc i { width: 1.85rem; height: 1.85rem; } .gw-mc i:last-child { margin-left: -.7rem; } }
+    .gw-tagline { position: relative; font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; color: #fff; line-height: 1.3; }
+    @media (min-width: 1024px) { .gw-tagline { font-size: 1.6rem; max-width: 36rem; } }
+    .gw-right { display: flex; align-items: center; justify-content: center; padding: 2rem 16px 2.5rem; background: #FFFFFF; }
+    @media (min-width: 1024px) { .gw-right { padding: 3rem; min-height: 100vh; } }
+    .gw-panel { width: 100%; max-width: 23rem; }
+    .gw-pill { display: inline-flex; align-items: center; gap: .35rem; font-size: 12px; font-weight: 600; padding: .3rem .75rem; border-radius: 9999px; color: #6D28D9; background: #F3EEFF; white-space: nowrap; }
+    .gw-title { margin-top: 1rem; font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; color: #0f172a; }
+    .gw-label { display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: .35rem; }
+    .gw-input { width: 100%; border-radius: .75rem; background: #fff; border: 1px solid #e2e8f0; padding: .75rem .9rem; font-size: 14px; color: #0f172a; outline: none; transition: border-color .15s, box-shadow .15s; }
+    .gw-input::placeholder { color: #94a3b8; }
+    .gw-input:focus { border-color: #6D28D9; box-shadow: 0 0 0 3px rgba(109,40,217,.15); }
+    .gw-eye { position: absolute; right: .5rem; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 600; color: #64748b; padding: .2rem .4rem; border-radius: .4rem; }
+    .gw-eye:hover { color: #6D28D9; }
+    .gw-btn { width: 100%; padding: .8rem 1rem; border-radius: .75rem; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; cursor: pointer; transition: background .15s, opacity .15s; }
     .gw-btn:disabled { opacity: .6; cursor: progress; }
-    .gw-btn.primary { background: #7c3aed; color: #fff; box-shadow: 0 10px 24px rgba(124,58,237,.3); }
-    .gw-btn.primary:hover:not(:disabled) { background: #8b5cf6; }
-    .gw-btn.ghost { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); color: #e2e8f0; }
-    .gw-btn.ghost:hover { background: rgba(255,255,255,.08); }
-    .gw-sep { display: flex; align-items: center; gap: .75rem; margin: 1.1rem 0; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .gw-sep::before, .gw-sep::after { content: ""; flex: 1; border-top: 1px solid rgba(255,255,255,.1); }
+    .gw-btn.primary { background: #6D28D9; color: #fff; box-shadow: 0 10px 24px rgba(109,40,217,.25); }
+    .gw-btn.primary:hover:not(:disabled) { background: #5B21B6; }
+    .gw-btn.ghost { margin-top: .65rem; background: #F1F5F9; color: #334155; font-weight: 600; }
+    .gw-btn.ghost:hover { background: #E2E8F0; }
     .gw-alert { padding: .6rem .75rem; border-radius: .6rem; font-size: 12px; }
-    .gw-alert.err { background: rgba(244,63,94,.12); border: 1px solid rgba(244,63,94,.3); color: #fda4af; }
-    .gw-alert.info { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.28); color: #fcd34d; }
-    @media (prefers-reduced-motion: reduce) { .gw-card { transform: none; transition: none; } .gw-quote blockquote { transition: none; } }
+    .gw-alert.err { background: #FFF1F2; border: 1px solid #FECDD3; color: #BE123C; }
+    .gw-alert.info { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
+    @media (prefers-reduced-motion: reduce) { .gw-card { animation: none; } }
   </style>
 </head>
 <body class="min-h-screen selection:bg-violet-600 selection:text-white">
 
-  <!-- Tela de entrada (Swile OS Gateway): login real do Supabase ou modo local. Não guarda senha no código. -->
+  <!-- Tela de entrada Swile 2.0: login real do Supabase ou modo apresentação. Não guarda senha no código. -->
   <div id="swileGateway" class="gw" role="dialog" aria-modal="true" aria-labelledby="gwTitle">
-    <div class="gw-glow a"></div><div class="gw-glow b"></div>
-    <div class="gw-shell">
-      <section class="gw-left">
-        <div>
-          <div class="flex items-center justify-between gap-2 flex-wrap">
-            <div class="gw-brand">
-              <div class="gw-logo">S</div>
-              <div>
-                <div class="text-sm font-bold tracking-tight text-white">Swile 2.0 <span class="text-xs font-normal text-violet-300 ml-1">Executive CRM RJ</span></div>
-                <div class="text-[11px] text-slate-400">Expansão B2B Middle Market · Rio de Janeiro</div>
-              </div>
-            </div>
-            <span class="gw-pill vi"><i></i>Território RJ · &gt;200 vidas</span>
+    <section class="gw-left">
+      <div class="gw-wordmark">swile<span>2.0</span></div>
+      <div class="gw-card-wrap" aria-hidden="true">
+        <div class="gw-card">
+          <div class="flex items-start justify-between">
+            <span class="gw-card-name">swile</span>
           </div>
-          <div class="gw-card-wrap my-7" aria-hidden="true">
-            <div class="gw-card">
-              <div class="flex items-center justify-between">
-                <span class="text-lg font-extrabold tracking-tight text-white">swile<span class="text-violet-400">.</span></span>
-                <span class="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded" style="background:rgba(139,92,246,.2);color:#c4b5fd;border:1px solid rgba(139,92,246,.3)">Multibenefícios</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <div class="gw-chip"></div>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"><path d="M8.5 8.5a5 5 0 0 1 0 7"/><path d="M12 6a8.5 8.5 0 0 1 0 12"/><path d="M15.5 3.5a12 12 0 0 1 0 17"/></svg>
-              </div>
-              <div>
-                <div class="text-[10px] font-mono text-slate-400 uppercase">Hunter Executive · RJ</div>
-                <div class="text-xs font-mono font-semibold text-slate-100 tracking-wider mt-0.5">SWILE 2.0 · RIO DE JANEIRO</div>
-              </div>
-            </div>
+          <div class="flex items-center gap-3">
+            <div class="gw-chip"></div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.8" stroke-linecap="round"><path d="M8.5 8.5a5 5 0 0 1 0 7"/><path d="M12 6a8.5 8.5 0 0 1 0 12"/><path d="M15.5 3.5a12 12 0 0 1 0 17"/></svg>
           </div>
-          <div class="gw-quote">
-            <div class="flex items-center justify-between mb-1.5 gap-2">
-              <span class="text-[10px] font-mono uppercase tracking-wider text-violet-400 font-semibold">Mentalidade Hunter</span>
-              <button type="button" onclick="gatewayNextQuote()" class="text-[11px] text-slate-400 hover:text-white">Trocar frase ↻</button>
-            </div>
-            <blockquote id="gwQuoteText" class="text-sm md:text-base font-semibold text-white leading-relaxed">“O processo do seu sucesso começa aqui. Cada conta mapeada, cada objeção destravada e cada relação construída aproxima você do topo.”</blockquote>
+          <div class="gw-card-foot">
+            <span class="gw-card-tag">MULTIBENEFÍCIOS</span>
+            <span class="gw-mc"><i></i><i></i></span>
           </div>
         </div>
-        <div class="gw-stats">
-          <div><span>Meta mensal RJ</span><b>R$ 600 mil</b></div>
-          <div><span>Funil Salesforce</span><b style="color:#67e8f9">6 fases</b></div>
-          <div><span>Corte do Case</span><b style="color:#6ee7b7">&gt;200 vidas</b></div>
-        </div>
-      </section>
-      <section class="gw-right">
-        <div class="mb-5">
-          <span class="gw-pill vi mb-2">🔒 Acesso Executivo Swile 2.0</span>
-          <h1 id="gwTitle" class="text-xl font-bold text-white tracking-tight mt-2">Bem-vindo ao seu centro de comando</h1>
-          <p class="text-xs text-slate-400 mt-1">Acesse sua carteira Middle Market RJ, o Agente Swile e o forecast do funil.</p>
-        </div>
-        <div id="gwNotice" class="gw-alert info mb-3" hidden></div>
-        <form id="gwForm" class="space-y-4" onsubmit="gatewaySubmit(event)" novalidate>
+      </div>
+      <h2 class="gw-tagline">Execução Comercial Hunter · Rio de Janeiro</h2>
+    </section>
+    <section class="gw-right">
+      <div class="gw-panel">
+        <span class="gw-pill">🔒 Acesso Executivo Swile 2.0</span>
+        <h1 id="gwTitle" class="gw-title">Bem-vindo, Michel</h1>
+        <div id="gwNotice" class="gw-alert info mt-4" hidden></div>
+        <form id="gwForm" class="space-y-4 mt-6" onsubmit="gatewaySubmit(event)" novalidate>
           <div>
-            <label for="gwEmail" class="block text-xs font-medium text-slate-300 mb-1">E-mail</label>
-            <input id="gwEmail" type="email" autocomplete="username" required class="gw-input" placeholder="seu@email.com" />
+            <label for="gwEmail" class="gw-label">E-mail corporativo</label>
+            <input id="gwEmail" type="email" autocomplete="username" required class="gw-input" placeholder="seu e-mail de acesso" />
           </div>
           <div>
-            <label for="gwPassword" class="block text-xs font-medium text-slate-300 mb-1">Senha</label>
+            <label for="gwPassword" class="gw-label">Senha</label>
             <div class="relative">
-              <input id="gwPassword" type="password" autocomplete="current-password" required class="gw-input" style="padding-right:4.5rem" placeholder="Sua senha" />
-              <button id="gwTogglePass" type="button" onclick="gatewayTogglePassword()" class="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-400 hover:text-white px-1.5 py-0.5" aria-pressed="false">Mostrar</button>
+              <input id="gwPassword" type="password" autocomplete="current-password" required class="gw-input" style="padding-right:4.5rem" placeholder="••••••••" />
+              <button id="gwTogglePass" type="button" onclick="gatewayTogglePassword()" class="gw-eye" aria-pressed="false">Mostrar</button>
             </div>
           </div>
           <div id="gwError" class="gw-alert err" role="alert" hidden></div>
           <button id="gwSubmit" type="submit" class="gw-btn primary">Entrar no Swile 2.0 →</button>
         </form>
-        <div class="gw-sep">ou acesso direto</div>
-        <button id="gwLocal" type="button" onclick="gatewayContinueLocal()" class="gw-btn ghost" title="Abre com os dados guardados neste navegador, sem login. Para os dados do banco, entre com e-mail e senha.">⚡ Entrar em Modo Apresentação (Acesso Rápido)</button>
-        <label class="mt-2 inline-flex items-center gap-2 text-[11px] text-slate-400 cursor-pointer"><input id="gwRememberLocal" type="checkbox" class="accent-violet-600" /> Abrir direto neste dispositivo</label>
-        <p class="text-[11px] text-slate-500 mt-3">Acesso direto usa os dados deste navegador; os dados do banco abrem só com login.</p>
-        <p class="text-[11px] text-slate-500 mt-3 pt-3 text-center" style="border-top:1px solid rgba(255,255,255,.08)">Ambiente Corporativo Swile 2.0 · Operação Comercial Middle Market RJ <button type="button" class="underline underline-offset-2 hover:text-white ml-1" onclick="gatewayOpenDbTab()" title="Criar login ou configurar o banco">Primeiro acesso</button> · <button type="button" id="gwInstallBtn" class="underline underline-offset-2 hover:text-white" onclick="openInstallModal()">📲 Instalar no celular</button></p>
-      </section>
-    </div>
+        <button id="gwLocal" type="button" onclick="gatewayContinueLocal()" class="gw-btn ghost" title="Abre com os dados guardados neste navegador, sem login. Para os dados do banco, entre com e-mail e senha.">⚡ Entrar em Modo Apresentação</button>
+      </div>
+    </section>
   </div>
   <script>
     // Decide antes de pintar o CRM: sessão salva, volta do link de e-mail ou modo local escolhido pulam a tela.
@@ -417,6 +392,8 @@
           if (sess && (sess.refresh_token || sess.access_token)) skip = true;
         }
         if (skip) gw.hidden = true; else document.documentElement.classList.add("gw-open");
+        var lastEmail = localStorage.getItem("swile_gw_last_email");
+        if (!skip && lastEmail) document.getElementById("gwEmail").value = lastEmail;
       } catch (e) { document.documentElement.classList.add("gw-open"); }
     })();
   </script>
@@ -11286,6 +11263,7 @@
     function showGateway(notice) {
       const g = gatewayEl();
       if (!g) return;
+      gatewayPrefillEmail();
       gatewaySetNotice(notice || "");
       gatewaySetError("");
       const pw = document.getElementById("gwPassword");
@@ -11297,6 +11275,13 @@
         const em = document.getElementById("gwEmail");
         if (em && !em.value) em.focus(); else if (pw) pw.focus();
       }, 30);
+    }
+    // Só lembra o e-mail usado num login que deu certo neste aparelho; nunca a senha.
+    const GATEWAY_EMAIL_KEY = "swile_gw_last_email";
+    function gatewayPrefillEmail() {
+      const em = document.getElementById("gwEmail");
+      if (!em || em.value) return;
+      try { const v = localStorage.getItem(GATEWAY_EMAIL_KEY); if (v) em.value = v; } catch (e) { /* ignore */ }
     }
     function hideGateway() {
       const g = gatewayEl();
@@ -11374,6 +11359,7 @@
         return;
       }
       gatewayFails = 0;
+      try { localStorage.setItem(GATEWAY_EMAIL_KEY, email); } catch (e) { /* ignore */ }
       document.getElementById("gwPassword").value = "";
       const ae = document.getElementById("inputAuthEmail");
       if (ae) ae.value = email;

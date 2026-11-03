@@ -325,6 +325,25 @@
     .gw-btn.primary:hover:not(:disabled) { background: #5B21B6; }
     .gw-btn.ghost { margin-top: .65rem; background: #F1F5F9; color: #334155; font-weight: 600; }
     .gw-btn.ghost:hover { background: #E2E8F0; }
+    .acc-tabs button { font-size: 12px; font-weight: 500; padding: .4rem .85rem; border-radius: 9999px; color: #cbd5e1; border: 1px solid var(--line); white-space: nowrap; background: transparent; }
+    .acc-tabs button:hover { color: #fff; border-color: rgba(255,255,255,.25); }
+    .acc-tabs button[aria-selected="true"] { background: #6D28D9; border-color: #6D28D9; color: #fff; }
+    #accountModal[data-acctab="dossie"] [data-acc-tab]:not([data-acc-tab="dossie"]),
+    #accountModal[data-acctab="plano"] [data-acc-tab]:not([data-acc-tab="plano"]),
+    #accountModal[data-acctab="pat"] [data-acc-tab]:not([data-acc-tab="pat"]) { display: none !important; }
+    #accountModal[data-acctab="plano"] .acc-left, #accountModal[data-acctab="pat"] .acc-left { display: none; }
+    #accountModal[data-acctab="plano"] .acc-aside, #accountModal[data-acctab="pat"] .acc-aside { grid-column: 1 / -1; }
+    .one-click-btn { background: #6D28D9 !important; border-color: #6D28D9 !important; color: #fff !important; font-weight: 600; }
+    .one-click-btn:hover { background: #5B21B6 !important; }
+    .k-tpv { font-size: 11.5px; font-weight: 700; color: #fff; background: #6D28D9; border-radius: 9999px; padding: .1rem .55rem; white-space: nowrap; }
+    .k-prov { display: inline-block; font-size: 10.5px; color: #cbd5e1; border: 1px solid rgba(255,255,255,.12); border-radius: .4rem; padding: .05rem .45rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pill-soft { display: inline-flex; align-items: center; gap: .3rem; height: 1.6rem; padding: 0 .65rem; border-radius: 9999px; font-size: 11.5px; font-weight: 500; white-space: nowrap; color: #cbd5e1; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
+    .pill-soft.ok { color: #6ee7b7; background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); }
+    .pill-soft.warn { color: #fcd34d; background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.28); }
+    .pill-soft.bad { color: #fca5a5; background: rgba(244,63,94,.08); border-color: rgba(244,63,94,.28); }
+    .pill-soft.accent { color: #fff; background: #6D28D9; border-color: #6D28D9; cursor: pointer; }
+    .pill-soft.accent:hover:not(:disabled) { background: #5B21B6; }
+    button.pill-soft { cursor: pointer; }
     .gw-alert { padding: .6rem .75rem; border-radius: .6rem; font-size: 12px; }
     .gw-alert.err { background: #FFF1F2; border: 1px solid #FECDD3; color: #BE123C; }
     .gw-alert.info { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
@@ -530,7 +549,7 @@
           <svg class="ico"><use href="#i-kanban"/></svg><span>Pipeline</span><span id="navCountPipeline" class="count"></span>
         </button>
         <button id="tabBtn-followups" data-tab="followups" type="button" onclick="switchTab('followups')" class="nav-item">
-          <svg class="ico"><use href="#i-calendar"/></svg><span>Agenda e rotas</span><span id="navCountFollowups" class="count"></span>
+          <svg class="ico"><use href="#i-calendar"/></svg><span title="Agenda, calendário e rotas de campo">Rotas RJ</span><span id="navCountFollowups" class="count"></span>
         </button>
         <button id="tabBtn-playbook" data-tab="playbook" type="button" onclick="switchTab('playbook')" class="nav-item">
           <svg class="ico"><use href="#i-book"/></svg><span>Playbook</span>
@@ -539,19 +558,16 @@
           <svg class="ico"><use href="#i-chart"/></svg><span>Relatórios</span>
         </button>
       </nav>
-      <nav class="flex flex-col gap-0.5 px-3 mt-4 pt-4 border-t mx-3 !px-0" style="border-color:var(--line)" aria-label="Configuração">
-        <button id="tabBtn-integrations" data-tab="integrations" type="button" onclick="switchTab('integrations')" class="nav-item">
-          <svg class="ico"><use href="#i-plug"/></svg><span>Integrações</span>
-        </button>
-      </nav>
 
-      <div class="mt-auto p-4">
-        <div class="rounded-xl p-3 text-[11px] leading-relaxed" style="background:var(--surface);border:1px solid var(--line);color:var(--muted)">
-          <p class="font-medium text-slate-200 mb-1">Atalhos</p>
-          <p><kbd class="text-slate-300">Ctrl K</kbd> buscar · <kbd class="text-slate-300">N</kbd> nova conta · <kbd class="text-slate-300">F</kbd> follow-up</p>
-        </div>
-        <button id="btnInstallApp" type="button" class="btn btn-sm w-full mt-2 justify-center" onclick="openInstallModal()">📲 Instalar no celular</button>
-        <button id="tabBtn-supabase" data-tab="supabase" type="button" onclick="switchTab('supabase')" class="nav-item mt-2 !py-1.5 text-[12px]" title="Banco de dados, login e SQL"><span aria-hidden="true">⚙️</span><span>Sistema / DB</span></button>
+      <div class="mt-auto p-3">
+        <button id="btnInstallApp" type="button" class="btn btn-sm w-full mb-2 justify-center" onclick="openInstallModal()">📲 Instalar no celular</button>
+        <button id="btnSystemMenu" type="button" class="nav-item !py-1.5 text-[12px]" aria-expanded="false" aria-controls="systemMenu" onclick="toggleSystemMenu()" title="Integrações, banco de dados e login"><span aria-hidden="true">⚙</span><span>Sistema</span><span id="systemMenuCaret" class="ml-auto text-[10px]" style="color:var(--faint)">▸</span></button>
+        <nav id="systemMenu" class="hidden flex-col gap-0.5 pl-3 mt-0.5" aria-label="Sistema">
+          <button id="tabBtn-integrations" data-tab="integrations" type="button" onclick="switchTab('integrations')" class="nav-item !py-1.5 text-[12px]">
+            <svg class="ico"><use href="#i-plug"/></svg><span>Integrações</span>
+          </button>
+          <button id="tabBtn-supabase" data-tab="supabase" type="button" onclick="switchTab('supabase')" class="nav-item !py-1.5 text-[12px]" title="Banco de dados, login e SQL"><svg class="ico"><use href="#i-key"/></svg><span>Banco e login</span></button>
+        </nav>
       </div>
     </aside>
 
@@ -711,9 +727,12 @@
         <!-- =============================================================== -->
         <section id="view-accounts" class="hidden space-y-4 fade-in">
           <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
-            <div>
+            <div class="min-w-0">
               <h2 class="text-lg font-semibold text-white tracking-tight">Contas</h2>
-              <p class="text-sm" style="color:var(--muted)">Clique numa linha para abrir a ficha completa com histórico.</p>
+              <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                <span id="cnpjBanner" class="hidden contents"></span>
+                <span id="contactFixBanner" class="hidden contents"></span>
+              </div>
             </div>
             <div class="flex flex-wrap gap-2">
               <button id="btnWeeklyFeed" type="button" onclick="toggleWeeklyFeed()" class="btn btn-sm"><svg class="ico"><use href="#i-plus"/></svg>Abastecer Funil Semanal (&gt;200v)</button>
@@ -721,8 +740,6 @@
             </div>
           </div>
 
-          <div id="cnpjBanner" class="hidden card p-3.5 text-xs" style="border-color:rgba(6,182,212,.35);background:rgba(6,182,212,.05)"></div>
-          <div id="contactFixBanner" class="hidden card p-3.5 text-xs" style="border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.05)"></div>
 
           <details id="weeklyFeed" class="card text-xs" ontoggle="if(this.open)renderWeeklyFeed()">
             <summary class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 cursor-pointer">
@@ -839,7 +856,7 @@
                     <th><button type="button" class="th-sort" data-sort="provider" onclick="toggleAccountSort('provider')">Cartão atual<span class="sort-ind"></span></button></th>
                     <th class="text-center"><button type="button" class="th-sort" data-sort="score" onclick="toggleAccountSort('score')">Score<span class="sort-ind"></span></button></th>
                     <th>Próxima ação</th>
-                    <th class="text-right">Contato</th>
+                    <th class="text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody id="accountsTableBody"></tbody>
@@ -1126,7 +1143,10 @@
               <p id="reportSubtitle" class="text-sm" style="color:var(--muted)">Vendas, funil, prospecção e atividades.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2 no-print">
-              <button id="btnDemoReports" type="button" onclick="toggleDemoScenario()" class="btn btn-sm">🎯 Visão 2: cenário de demonstração</button>
+              <div class="seg rep-view" role="group" aria-label="Visão do relatório">
+                <button id="btnRepReal" type="button" onclick="setReportView('real')" aria-pressed="true">Carteira Real RJ</button>
+                <button id="btnDemoReports" type="button" onclick="setReportView('demo')" aria-pressed="false" title="Fases simuladas só neste navegador, sem gravar no banco">Cenário Meta Case (R$ 600K)</button>
+              </div>
               <label for="reportPeriod" class="sr-only">Período</label>
               <select id="reportPeriod" class="input w-auto h-8" onchange="renderReports()">
                 <option value="7">Últimos 7 dias</option>
@@ -1147,7 +1167,7 @@
             <p id="reportPrintMeta" class="text-sm"></p>
           </div>
 
-          <div id="reportExecDiag" class="card p-4 avoid-break" style="border-color:rgba(139,92,246,.35)"></div>
+          <div id="reportExecDiag" class="v1-only card p-4 avoid-break" style="border-color:rgba(139,92,246,.35)"></div>
 
           <div id="t24Panel" class="v24-only space-y-3" aria-label="Visão executiva Swile 2.0"></div>
 
@@ -1608,13 +1628,19 @@
 
       <!-- Barra de ações rápidas (só em conta existente) -->
       <div id="accQuickActions" class="hidden px-5 py-3 border-b flex flex-wrap gap-2" style="border-color:var(--line)"></div>
+      <!-- Ficha em 3 abas (só em conta existente) -->
+      <div id="accTabs" class="hidden acc-tabs px-5 pt-3 flex gap-1.5 overflow-x-auto" role="tablist" aria-label="Seções da ficha">
+        <button type="button" role="tab" id="accTab-dossie" data-acctab-btn="dossie" onclick="setAccTab('dossie')">1. Dossiê &amp; CNPJ</button>
+        <button type="button" role="tab" id="accTab-plano" data-acctab-btn="plano" onclick="setAccTab('plano')">2. Plano IA 5 Etapas</button>
+        <button type="button" role="tab" id="accTab-pat" data-acctab-btn="pat" onclick="setAccTab('pat')">3. Simulador PAT</button>
+      </div>
 
-      <div class="p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <div class="lg:col-span-8 space-y-4">
+      <div class="acc-grid p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div class="acc-left lg:col-span-8 space-y-4">
           <input id="accFormId" type="hidden" />
 
           <!-- Busca de lead: CNPJ (Receita via BrasilAPI) ou nome (Agente Swile + Google, só com chave) -->
-          <div id="leadLookup" class="rounded-xl border p-3.5 space-y-2.5 text-xs" style="border-color:rgba(6,182,212,.35);background:rgba(6,182,212,.05)">
+          <div data-acc-tab="dossie" id="leadLookup" class="rounded-xl border p-3.5 space-y-2.5 text-xs" style="border-color:rgba(6,182,212,.35);background:rgba(6,182,212,.05)">
             <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
               <p id="leadLookupTitle" class="font-medium text-white">🔍 Buscar empresa por CNPJ ou nome</p>
               <span class="text-[10.5px]" style="color:var(--faint)">CNPJ: Receita Federal via BrasilAPI · Nome: Agente Swile com Google (precisa da chave)</span>
@@ -1630,7 +1656,7 @@
             <div id="leadLookupOut" class="space-y-2"></div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div data-acc-tab="dossie" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="sm:col-span-2">
               <label for="accFormCompany" class="label">Empresa *</label>
               <input id="accFormCompany" type="text" class="input" placeholder="Nome da empresa" />
@@ -1657,7 +1683,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div data-acc-tab="dossie" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
               <label for="accFormProvider" class="label">Cartão atual</label>
               <select id="accFormProvider" class="input">
@@ -1723,7 +1749,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div data-acc-tab="dossie" class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label for="accFormAddress" class="label">Endereço</label>
               <input id="accFormAddress" type="text" class="input" />
@@ -1734,7 +1760,7 @@
             </div>
           </div>
 
-          <details id="accFormDetails" class="rounded-xl border" style="border-color:var(--line)">
+          <details data-acc-tab="dossie" id="accFormDetails" class="rounded-xl border" style="border-color:var(--line)">
             <summary class="flex items-center justify-between px-3.5 py-2.5 text-xs font-medium text-slate-200">
               Dores, reclamações e gatilho de abordagem
               <svg class="ico" style="color:var(--faint)"><use href="#i-right"/></svg>
@@ -1756,7 +1782,7 @@
           </details>
 
           <!-- Automação para conta nova -->
-          <div id="accNewAutomation" class="hidden rounded-xl border p-3.5 space-y-2.5 text-xs" style="border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.05)">
+          <div data-acc-tab="dossie" id="accNewAutomation" class="hidden rounded-xl border p-3.5 space-y-2.5 text-xs" style="border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.05)">
             <p class="font-medium text-white">Ao salvar, já deixar encaminhado</p>
             <label class="flex items-center gap-2 cursor-pointer" style="color:#c3c8d4">
               <input id="accAutoOpp" type="checkbox" checked class="accent-violet-500" />
@@ -1783,18 +1809,20 @@
         </div>
 
         <!-- Histórico da conta -->
-        <aside class="lg:col-span-4 space-y-3">
-          <div id="accDiagnosis" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:rgba(139,92,246,.35);background:rgba(139,92,246,.06)"></div>
-          <details id="accDossier" class="hidden rounded-xl border text-xs" style="border-color:rgba(6,182,212,.35);background:rgba(6,182,212,.04)">
+        <aside class="acc-aside lg:col-span-4 space-y-3">
+          <div data-acc-tab="plano" id="accDiagnosis" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:rgba(139,92,246,.35);background:rgba(139,92,246,.06)"></div>
+          <details data-acc-tab="plano" id="accDossier" class="hidden rounded-xl border text-xs" style="border-color:rgba(6,182,212,.35);background:rgba(6,182,212,.04)">
             <summary class="flex items-center justify-between gap-2 px-3.5 py-2.5 cursor-pointer">
               <span class="font-medium text-white">🕵️ Dossiê pré-contato · plano em 5 etapas</span>
               <span id="accDossierBadge" class="text-[10.5px] shrink-0" style="color:var(--faint)"></span>
             </summary>
             <div id="accDossierBody" class="px-3.5 pb-3.5 space-y-2.5"></div>
           </details>
-          <div id="accSnapshot" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line);background:var(--surface-2)"></div>
-          <div id="accComposer" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line)"></div>
-          <div id="accHomeOffice" class="hidden rounded-xl border p-3.5 text-xs space-y-2.5" style="border-color:var(--line)">
+          <div data-acc-tab="plano" id="accMeddpicc" class="hidden rounded-xl border p-3.5 text-xs space-y-1.5" style="border-color:var(--line)"></div>
+          <div data-acc-tab="plano" id="accVaccine" class="hidden rounded-xl border p-3.5 text-xs space-y-1.5" style="border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.04)"></div>
+          <div data-acc-tab="dossie" id="accSnapshot" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line);background:var(--surface-2)"></div>
+          <div data-acc-tab="plano" id="accComposer" class="hidden rounded-xl border p-3.5 text-xs space-y-2" style="border-color:var(--line)"></div>
+          <div data-acc-tab="plano" id="accHomeOffice" class="hidden rounded-xl border p-3.5 text-xs space-y-2.5" style="border-color:var(--line)">
             <div class="flex items-center justify-between gap-2">
               <p class="font-medium text-white">Home office: contato remoto</p>
               <span class="chip">1 clique</span>
@@ -1805,7 +1833,7 @@
               <div id="accOutcomes" class="grid grid-cols-2 gap-1.5"></div>
             </div>
           </div>
-          <details id="accCopilot" class="hidden rounded-xl border text-xs" style="border-color:var(--line)">
+          <details data-acc-tab="plano" id="accCopilot" class="hidden rounded-xl border text-xs" style="border-color:var(--line)">
             <summary class="flex items-center justify-between gap-2 px-3.5 py-2.5 cursor-pointer">
               <span class="font-medium text-white">Agente Swile · Copiloto de call</span>
               <span id="copilotLiveWrap"></span><span id="copilotLive" class="hidden live-dot text-[11px] font-semibold" style="color:#f87171">Ouvindo</span>
@@ -1845,7 +1873,7 @@
               </div>
             </div>
           </details>
-          <details id="accPatSim" class="hidden rounded-xl border text-xs" style="border-color:var(--line)">
+          <details data-acc-tab="pat" id="accPatSim" class="hidden rounded-xl border text-xs" style="border-color:var(--line)">
             <summary class="flex items-center justify-between gap-2 px-3.5 py-2.5 cursor-pointer">
               <span class="font-medium text-white">Simulador PAT e economia</span>
               <span id="patSumTotal" class="num" style="color:#6ee7b7"></span>
@@ -1876,8 +1904,13 @@
               <p class="text-[11px] leading-relaxed" style="color:var(--faint)">Incentivo PAT (só Lucro Real): dedução do IRPJ igual a 15% das despesas com o programa, limitada a 4% do IRPJ devido (Lei 6.321/1976, art. 1º; RIR/2018 – Decreto 9.580/2018, arts. 641 e 642). Desde 1º/01/2026, a LC 224/2025 reduz esse limite para 90% do original, 3,6% do IRPJ devido à alíquota de 15%; o gasto abaixo do limite continua dedutível por inteiro (Receita Federal, Perguntas e Respostas sobre a redução de benefícios, pergunta 21). A Receita deixou de aplicar os limites do Decreto 10.854/2021 (até 5 salários mínimos e 1 salário mínimo por trabalhador) na Solução de Consulta COSIT nº 3/2026. Estimativa comercial: confirme com a contabilidade do cliente.</p>
             </div>
           </details>
-          <div id="accResearch" class="hidden"></div>
-          <div>
+          <div data-acc-tab="pat" id="accPremiacao" class="hidden rounded-xl border p-3.5 text-xs space-y-1.5" style="border-color:var(--line)">
+            <p class="font-medium text-white">🏆 Premiação por desempenho (CLT art. 457, §§ 2º e 4º)</p>
+            <p style="color:#c3c8d4">Prêmios por desempenho acima do esperado não integram a remuneração nem são base de encargos, desde que cumpridos os requisitos da CLT. Vale como entrada pela Premiação quando o VR/VA está preso a contrato.</p>
+            <p class="text-[11px]" style="color:var(--faint)">Depende da análise jurídica do cliente: não prometa economia trabalhista ou tributária.</p>
+          </div>
+          <div data-acc-tab="dossie" id="accResearch" class="hidden"></div>
+          <div data-acc-tab="dossie">
             <p class="eyebrow mb-2">Histórico e próximos passos</p>
             <div id="accNoteBox" class="hidden mb-3 rounded-xl border p-2.5 space-y-2" style="border-color:var(--line)">
               <div class="flex gap-2">
@@ -1897,6 +1930,7 @@
 
       <div class="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 border-t" style="background:var(--surface);border-color:var(--line)">
         <div class="flex flex-wrap gap-2">
+          <button id="btnOneClick" type="button" onclick="oneClickWhatsApp()" class="btn btn-sm hidden one-click-btn"></button>
           <button id="btnCopyAccountPitch" type="button" onclick="copyPersonalizedPitchFromModal()" class="btn btn-sm"><svg class="ico"><use href="#i-copy"/></svg>Copiar mensagem CHAVE</button>
           <button id="btnDeleteAccount" type="button" onclick="deleteAccountFromModal()" class="btn btn-danger btn-sm hidden"><svg class="ico"><use href="#i-trash"/></svg>Excluir</button>
         </div>
@@ -5169,6 +5203,17 @@
       '</div>';
     }
 
+    /** Tabela de Contas: só 3 atalhos (WhatsApp, Ligar, Raio-X da conta). */
+    function accountQuickButtonsHtml(acc) {
+      const a = esc(acc.id);
+      const hasPhone = !!phoneDigits(acc.phone);
+      return '<div class="flex items-center justify-end gap-1" onclick="event.stopPropagation()">' +
+        '<button type="button" class="icon-btn wa" title="WhatsApp com mensagem pronta" aria-label="WhatsApp" onclick="contactAccount(\'' + a + '\', \'wa\')">' + icon("chat") + '</button>' +
+        '<button type="button" class="icon-btn" title="' + (hasPhone ? 'Ligar ' + esc(acc.phone) : 'Sem telefone') + '" aria-label="Ligar"' + (hasPhone ? '' : ' aria-disabled="true" style="opacity:.45"') + ' onclick="contactAccount(\'' + a + '\', \'tel\')">' + icon("phone") + '</button>' +
+        '<button type="button" class="btn btn-sm !h-7 !px-2 text-[11px]" title="Raio-X: dossiê, CNPJ e plano da conta" aria-label="Raio-X" onclick="openAccountModal(\'' + a + '\', \'dossie\')">🔎 Raio-X</button>' +
+      '</div>';
+    }
+
     function icon(name, cls) {
       return '<svg class="ico ' + (cls || "") + '" aria-hidden="true"><use href="#i-' + name + '"/></svg>';
     }
@@ -5213,6 +5258,7 @@
         else btn.removeAttribute("aria-current");
       });
       currentTab = tabKey;
+      if (tabKey === "integrations" || tabKey === "supabase") toggleSystemMenu(true);
       toggleSidebar(false);
       const title = document.getElementById("pageTitle");
       if (title) title.textContent = TAB_TITLES[tabKey] || "";
@@ -5222,6 +5268,16 @@
     }
 
     let currentTab = "cockpit";
+    /** Rodapé da barra lateral: "⚙ Sistema" abre Integrações e Banco e login. */
+    function toggleSystemMenu(force) {
+      const m = document.getElementById("systemMenu"), b = document.getElementById("btnSystemMenu"), c = document.getElementById("systemMenuCaret");
+      if (!m || !b) return;
+      const open = typeof force === "boolean" ? force : m.classList.contains("hidden");
+      m.classList.toggle("hidden", !open);
+      m.classList.toggle("flex", open);
+      b.setAttribute("aria-expanded", String(open));
+      if (c) c.textContent = open ? "▾" : "▸";
+    }
 
     function globalSearchAccounts(q) {
       const box = document.getElementById("searchAccounts");
@@ -5637,19 +5693,18 @@
               '<span class="font-medium text-white">' + esc(a.company_name) + '</span>' +
               (a.status === "Fechado ✅" ? '<span class="chip chip-ok">Cliente</span>' : a.status === "Perdido ❌" ? '<span class="chip chip-bad">Perdido</span>' : '') +
             '</div>' +
-            '<div class="text-[11px] mt-0.5 pl-3.5 max-w-[15rem] truncate" style="color:var(--muted)" title="' + esc(a.sector) + '">' + esc(a.sector) + '</div>' +
-            (cnpjDigits(a.cnpj).length === 14 ? '<div class="text-[11px] mt-0.5 pl-3.5">' + cnpjChipHtml(a, true) + '</div>' : '') +
+            (cnpjDigits(a.cnpj).length === 14 ? '<div class="acc-cnpj text-[11px] mt-0.5 pl-3.5">' + cnpjChipHtml(a, true) + '</div>' : '<div class="text-[11px] mt-0.5 pl-3.5 max-w-[15rem] truncate" style="color:var(--faint)">' + esc(a.sector || "sem CNPJ") + '</div>') +
           '</td>' +
           '<td class="whitespace-nowrap"><div class="text-slate-200">' + esc(String(a.polo_rj || "").split("/")[0].trim()) + '</div><div class="text-[11px] max-w-[9rem] truncate" style="color:var(--muted)">' + esc(a.neighborhood) + '</div></td>' +
-          '<td><div class="text-slate-200 max-w-[11rem] truncate">' + esc(a.decision_maker_name) + '</div><div class="text-[11px] num" style="color:var(--muted)">' + esc(a.phone) + '</div></td>' +
+          '<td><div class="text-slate-200 max-w-[11rem] truncate" title="' + esc([a.decision_maker_role, a.phone].filter(Boolean).join(" · ")) + '">' + esc(a.decision_maker_name || "—") + '</div></td>' +
           '<td class="text-right num text-white">' + Number(a.active_card_users || 0).toLocaleString("pt-BR") + '</td>' +
           '<td class="text-right num whitespace-nowrap"><div class="text-white">' + formatCurrencyBRL(tpv) + '</div><div class="text-[11px]" style="color:var(--muted)">' + formatCurrencyBRL(a.avg_monthly_ticket) + '/vida</div></td>' +
           '<td>' + providerChip(a.current_provider) + '</td>' +
           '<td class="text-center">' + scoreHtml(computeCommercialScore(a)) + '</td>' +
           (isLostAccount(a)
             ? '<td class="max-w-[16rem]" onclick="event.stopPropagation()">' + reactivateControlsHtml(a.id, "acct") + '</td>'
-            : '<td class="max-w-[16rem]"><p class="text-[11px] line-clamp-2" style="color:' + (noAction ? '#fcd34d' : '#aab2c3') + '">' + esc(nextAct) + '</p></td>') +
-          '<td class="text-right">' + contactButtonsHtml(a) + '</td>' +
+            : '<td class="max-w-[16rem]"><p class="text-[11px] truncate" title="' + esc(nextAct) + '" style="color:' + (noAction ? '#fcd34d' : '#aab2c3') + '">' + esc(nextAct) + '</p></td>') +
+          '<td class="text-right">' + accountQuickButtonsHtml(a) + '</td>' +
         '</tr>';
       }
 
@@ -5733,26 +5788,18 @@
           const next = pendingFollowupsOf(acc.id)[0];
           const closeN = opp.close_date ? daysFromToday(opp.close_date) : null;
 
-          html += '<div class="kcard space-y-2" draggable="true" data-opp="' + esc(opp.id) + '" ondragstart="kanbanDragStart(event)" ondragend="kanbanDragEnd(event)">' +
+          const prov = String(acc.current_provider || "A validar").replace(/\s*\(.*\)/, "");
+          html += '<div class="kcard space-y-2" draggable="true" data-opp="' + esc(opp.id) + '" ondragstart="kanbanDragStart(event)" ondragend="kanbanDragEnd(event)" title="' + esc(opp.probability + "% de probabilidade · ponderado " + formatCompactBRL(weighted) + (opp.close_date ? " · fecha " + formatDateShort(opp.close_date) + (closeN < 0 && st.weight < STAGE_WON ? " (vencida)" : "") : "") + (next ? " · próximo: " + next.action_title : "")) + '">' +
             '<div class="flex items-start justify-between gap-2">' +
               '<button type="button" onclick="openAccountModal(\'' + esc(acc.id) + '\')" class="text-left text-[13px] font-medium text-white hover:text-violet-300 leading-snug">' + esc(acc.company_name) + '</button>' +
-              '<div class="flex items-start gap-1 shrink-0">' + kanbanScoreRing(computeCommercialScore(acc)) +
-              '<button type="button" onclick="editOpportunity(\'' + esc(opp.id) + '\')" class="icon-btn !w-6 !h-6 -mr-1 -mt-0.5" title="Editar oportunidade" aria-label="Editar oportunidade">' + icon("edit", "!w-3.5 !h-3.5") + '</button></div>' +
+              '<button type="button" onclick="editOpportunity(\'' + esc(opp.id) + '\')" class="icon-btn !w-6 !h-6 -mr-1 -mt-0.5 shrink-0" title="Editar oportunidade" aria-label="Editar oportunidade">' + icon("edit", "!w-3.5 !h-3.5") + '</button>' +
             '</div>' +
-            '<div class="v24-only"><div class="k24-tpv">' + formatCompactBRL(tpv) + '</div>' +
-              '<div class="text-[10.5px] num mt-0.5 truncate" style="color:#94A3B8" title="TPV mensal · probabilidade → ponderado">por mês · ' + esc(opp.probability) + '% → ' + formatCompactBRL(weighted) + '</div></div>' +
-            '<div class="text-[11px] num space-y-0.5" style="color:var(--muted)">' +
-              '<div>' + esc(acc.current_provider) + ' · ' + Number(acc.active_card_users || 0).toLocaleString("pt-BR") + ' vidas</div>' +
-              (cnpjDigits(acc.cnpj).length === 14 ? '<div>' + cnpjChipHtml(acc, true) + '</div>' : '') +
-              '<div class="v1-only"><span class="text-slate-200">' + formatCurrencyBRL(tpv) + '</span> · ' + esc(opp.probability) + '% → ' + formatCompactBRL(weighted) + '</div>' +
-              (opp.close_date && st.weight < STAGE_WON ? '<div style="color:' + (closeN < 0 ? '#fca5a5' : 'var(--muted)') + '">Fecha ' + esc(formatDateShort(opp.close_date)) + (closeN < 0 ? ' (vencida)' : '') + '</div>' : '') +
+            (cnpjDigits(acc.cnpj).length === 14 ? '<div class="text-[11px]">' + cnpjChipHtml(acc, true) + '</div>' : '') +
+            '<div class="flex items-center justify-between gap-2">' +
+              '<span class="text-[11px] num whitespace-nowrap" style="color:var(--muted)">' + Number(acc.active_card_users || 0).toLocaleString("pt-BR") + ' vidas</span>' +
+              '<span class="k-tpv num" title="TPV mensal">' + (tpv ? formatCompactBRL(tpv) + "/mês" : "TPV a preencher") + '</span>' +
             '</div>' +
-            kanbanStageTrail(st.weight) +
-            (st.weight < STAGE_WON
-              ? (next
-                ? '<button type="button" onclick="editFollowup(\'' + esc(next.id) + '\')" class="w-full text-left text-[11px] rounded-md px-2 py-1 truncate" style="background:var(--surface);color:#aab2c3">' + icon("clock", "!w-3 !h-3 inline -mt-0.5 mr-1") + esc(relDateLabel(next.due_date)) + ' · ' + esc(next.action_title) + '</button>'
-                : '<button type="button" onclick="openFollowupModal(\'' + esc(acc.id) + '\')" class="w-full text-left text-[11px] rounded-md px-2 py-1" style="background:rgba(251,191,36,.08);color:#fcd34d">' + icon("alert", "!w-3 !h-3 inline -mt-0.5 mr-1") + 'Sem próximo passo · agendar</button>')
-              : '') +
+            '<div><span class="k-prov">' + esc(prov) + '</span></div>' +
             (st.weight < STAGE_WON ? kanbanMoveSelectHtml(opp.id, st.weight) : '') +
             '<div class="kcard-actions flex items-center justify-between pt-1">' +
               (st.weight > 1
@@ -6346,7 +6393,7 @@
     }
 
     // 7. MODAIS (CONTA, FOLLOW-UP, OPORTUNIDADE)
-    function openAccountModal(accountId) {
+    function openAccountModal(accountId, tab) {
       const modal = document.getElementById("accountModal");
       if (!modal) return;
       patSimAccountId = null;
@@ -6354,7 +6401,7 @@
       const acc = accountId ? findAccount(accountId) : null;
       document.getElementById("accountModalTitle").textContent = acc ? acc.company_name : "Nova conta";
       document.getElementById("accountModalSub").textContent = acc
-        ? (acc.code ? acc.code + " · " : "") + (acc.status || "") + " · score " + computeCommercialScore(acc)
+        ? Number(acc.active_card_users || 0).toLocaleString("pt-BR") + " vidas · TPV " + (computeMonthlyTpv(acc) ? formatCurrencyBRL(computeMonthlyTpv(acc)) + "/mês" : "a preencher") + " · " + (acc.status || "")
         : "Score, TPV e pipeline são calculados ao salvar.";
 
       document.getElementById("accFormId").value = acc ? acc.id : "";
@@ -6393,8 +6440,77 @@
       document.getElementById("accCopilot").open = false;
       renderAccountSidePanel(acc);
       checkCaseLives();
+      setAccTab(acc ? (ACC_TABS.indexOf(tab) >= 0 ? tab : "dossie") : "");
       modal.classList.remove("hidden");
       if (!acc) setTimeout(function () { document.getElementById("accFormCompany").focus(); }, 30);
+    }
+
+    // Ficha em 3 abas: Dossiê & CNPJ · Plano IA 5 Etapas · Simulador PAT. Conta nova mostra tudo (sem abas).
+    const ACC_TABS = ["dossie", "plano", "pat"];
+    function setAccTab(t) {
+      const modal = document.getElementById("accountModal");
+      const bar = document.getElementById("accTabs");
+      if (!modal || !bar) return;
+      if (ACC_TABS.indexOf(t) < 0) { delete modal.dataset.acctab; bar.classList.add("hidden"); return; }
+      modal.dataset.acctab = t;
+      bar.classList.remove("hidden");
+      bar.querySelectorAll("[data-acctab-btn]").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-acctab-btn") === t)); });
+      if (t === "pat") { const d = document.getElementById("accPatSim"); if (d) d.open = true; }
+      if (t === "plano") { const d = document.getElementById("accDossier"); if (d) d.open = true; }
+      const panel = modal.querySelector(".modal-panel");
+      if (panel) panel.scrollTop = 0;
+    }
+    /** MEDDPICC só com o que está na ficha; o que falta aparece como "a descobrir". */
+    function renderAccMeddpicc(acc) {
+      const box = document.getElementById("accMeddpicc");
+      if (!box) return;
+      if (!acc) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+      const tpv = computeMonthlyTpv(acc);
+      const opp = openOppOf(acc.id);
+      const w = opp ? Number(opp.stage_weight) : 0;
+      const gap = '<span style="color:#fcd34d">a descobrir</span>';
+      const row = function (k, label, v) { return '<div class="grid gap-2" style="grid-template-columns:1.6rem 7.5rem 1fr"><b class="num" style="color:#A78BFA">' + k + '</b><span style="color:var(--muted)">' + label + '</span><span class="text-slate-200 min-w-0">' + v + '</span></div>'; };
+      box.innerHTML = '<p class="font-medium text-white">🧭 MEDDPICC da conta</p>' +
+        row("M", "Métricas", tpv ? esc(formatCurrencyBRL(tpv)) + "/mês · " + Number(acc.active_card_users || 0).toLocaleString("pt-BR") + " vidas" : gap + " (vidas e benefício)") +
+        row("E", "Economic buyer", "CFO / financeiro " + '<span style="color:var(--faint)">(confirmar o nome)</span>') +
+        row("D", "Critérios", acc.rh_pains ? esc(acc.rh_pains) : gap) +
+        row("D", "Processo", w ? esc(SF_STAGE_NAMES[w] || "") + " · fase " + w + " de 6" : gap) +
+        row("P", "Paper process", "Compras e jurídico: prazo dos cartões e transição " + '<span style="color:var(--faint)">(confirmar)</span>') +
+        row("I", "Dor", acc.user_complaints ? esc(acc.user_complaints) : (acc.rh_pains ? esc(acc.rh_pains) : gap)) +
+        row("C", "Champion", acc.decision_maker_name ? esc(acc.decision_maker_name) + (acc.decision_maker_role ? " · " + esc(acc.decision_maker_role) : "") : gap) +
+        row("C", "Concorrência", acc.current_provider && !/validar/i.test(acc.current_provider) ? esc(acc.current_provider) : gap);
+      box.classList.remove("hidden");
+    }
+    /** Vacina do Decreto 12.712/2025 (objeção 7 do Playbook, com fonte). */
+    function renderAccVaccine(acc) {
+      const box = document.getElementById("accVaccine");
+      if (!box) return;
+      const o = OBJECTIONS_DATA.find(function (x) { return /interoperabilidade/i.test(x.title); });
+      if (!acc || !o) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+      box.innerHTML = '<p class="font-medium text-white">💉 Vacina Decreto 12.712/2025 (interoperabilidade)</p>' +
+        '<p style="color:#c3c8d4">' + esc(o.cause) + '</p>' +
+        '<p class="text-slate-200">' + esc(o.response) + '</p>' +
+        (o.source ? '<p class="text-[11px]" style="color:var(--faint)">Fonte: ' + esc(o.source) + '</p>' : '');
+      box.classList.remove("hidden");
+    }
+    function renderOneClickButton(acc) {
+      const b = document.getElementById("btnOneClick");
+      if (!b) return;
+      if (!acc) { b.classList.add("hidden"); return; }
+      const opp = openOppOf(acc.id);
+      const w = opp ? Number(opp.stage_weight) : 0;
+      const adv = w > 0 && w < 3;
+      b.textContent = "⚡ 1-Click: WhatsApp + Registrar Atividade" + (adv ? " + Avançar Etapa" : "");
+      b.title = adv ? "Abre o WhatsApp com a mensagem pronta, registra o contato, agenda o D+2 e leva a conta para Em contato." : "Abre o WhatsApp com a mensagem pronta, registra o contato e agenda o D+2. Da fase Em contato em diante, o avanço é manual (Kanban ou Avançar).";
+      b.classList.remove("hidden");
+    }
+    function oneClickWhatsApp() {
+      const id = document.getElementById("accFormId").value;
+      if (!id || !findAccount(id)) return;
+      contactAccount(id, "wa");
+      postContactRegister(true);
+      const acc = findAccount(id);
+      if (acc) { renderAccountSidePanel(acc); renderOneClickButton(acc); }
     }
 
     function renderAccountSidePanel(acc) {
@@ -6413,10 +6529,18 @@
         document.getElementById("accCopilot").classList.add("hidden");
         renderLeadDiagnosis(null);
         renderAccountDossier(null);
+        renderAccMeddpicc(null);
+        renderAccVaccine(null);
+        document.getElementById("accPremiacao").classList.add("hidden");
+        renderOneClickButton(null);
         return;
       }
       renderLeadDiagnosis(acc);
       renderAccountDossier(acc);
+      renderAccMeddpicc(acc);
+      renderAccVaccine(acc);
+      document.getElementById("accPremiacao").classList.remove("hidden");
+      renderOneClickButton(acc);
       const a = esc(acc.id);
       const hasPhone = !!phoneDigits(acc.phone);
       const btn = function (kind, ic, label, extra) {
@@ -8620,11 +8744,8 @@
       if (!box) return;
       const list = pendingContactFixes();
       if (!list.length) { box.classList.add("hidden"); box.innerHTML = ""; return; }
-      box.innerHTML = '<div class="flex flex-wrap items-center justify-between gap-2"><p class="text-white font-medium">🧹 ' + list.length + ' conta(s) com e-mail inválido (endereço de site no lugar do e-mail) ou telefone provisório</p>' +
-        '<button type="button" id="btnApplyContactFix" class="btn btn-primary btn-sm" onclick="applyContactFixes()">Aplicar correções</button></div>' +
-        '<details class="mt-1"><summary class="cursor-pointer" style="color:var(--muted)">Ver o que muda em cada conta</summary><ul class="mt-1.5 space-y-1" style="color:#c3c8d4">' +
-        list.map(function (x) { return '<li><span class="text-white">' + esc(x.acc.company_name) + '</span> <span style="color:var(--faint)">(' + esc(x.acc.email_rh || x.acc.phone || "") + ')</span>: ' + esc(x.fix.notes.join("; ")) + '.</li>'; }).join("") +
-        '</ul></details><p class="mt-1 text-[11px]" style="color:var(--faint)">Só reorganiza o que já está na ficha: nenhum e-mail ou telefone novo é criado. Com login, grava no banco.</p>';
+      const detail = list.map(function (x) { return x.acc.company_name + ": " + x.fix.notes.join("; "); }).join("\n");
+      box.innerHTML = '<button type="button" id="btnApplyContactFix" class="pill-soft warn" onclick="applyContactFixes()" title="' + esc(detail + "\n\nSó reorganiza o que já está na ficha: nenhum e-mail ou telefone novo é criado.") + '">🧹 ' + list.length + ' contato(s) a corrigir</button>';
       box.classList.remove("hidden");
     }
     async function applyContactFixes() {
@@ -8850,26 +8971,30 @@
       showToast(ok + " CNPJ(s) conferido(s) na Receita" + (div ? ", " + div + " com razão social diferente da informada" : "") + (fail ? "; " + fail + " sem resposta (tente de novo)" : "") + ".", div || fail ? "⚠️" : "✅");
     }
     let cnpjVerifyDelayMs = 1200;
+    /** Selo compacto no topo de Contas: só mostra "ativo na Receita" para o que foi conferido de verdade (BrasilAPI). */
     function renderCnpjBanner() {
       const box = document.getElementById("cnpjBanner");
       if (!box) return;
+      const total = state.accounts.length;
       const pend = pendingCnpjChecks();
       const div = state.accounts.filter(function (a) { const s = cnpjStatusOf(a); return s && s.kind === "diverge"; });
       const bad = cnpjMapInvalid().filter(function (e) { return state.accounts.some(function (a) { return cnpjMapEntryFor(a) === e && !cnpjDigits(a.cnpj).length; }); });
-      if (!pend.length && !div.length && !bad.length) {
-        const ok = state.accounts.filter(function (a) { const s = cnpjStatusOf(a); return s && s.kind === "receita"; }).length;
-        const noC = state.accounts.filter(function (a) { return cnpjDigits(a.cnpj).length !== 14; }).length;
-        if (!ok) { box.classList.add("hidden"); box.innerHTML = ""; return; }
-        box.innerHTML = '<p class="font-medium" style="color:#6ee7b7">✅ ' + ok + ' de ' + state.accounts.length + ' contas com CNPJ conferido na Receita Federal (BrasilAPI)' + (noC ? ' · ' + noC + ' sem CNPJ cadastrado' : '') + '</p>';
-        box.classList.remove("hidden");
-        return;
+      const checked = state.accounts.filter(function (a) { const s = cnpjStatusOf(a); return s && (s.kind === "receita" || s.kind === "diverge"); });
+      const active = checked.filter(function (a) { const i = cnpjIntelOf(a); return i && /ativa/i.test(i.situacao || ""); });
+      const noC = state.accounts.filter(function (a) { return cnpjDigits(a.cnpj).length !== 14; });
+      if (!total) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+      let html = "";
+      if (checked.length && !pend.length && !div.length) {
+        html += '<span class="pill-soft ok" title="Conferido pela BrasilAPI (dados da Receita Federal)' + (noC.length ? '. Sem CNPJ: ' + esc(noC.map(function (a) { return a.company_name; }).join(", ")) : '') + '">✅ ' + active.length + '/' + total + ' CNPJs ativos na Receita</span>';
+      } else {
+        html += '<span class="pill-soft" title="Conferidos pela BrasilAPI (Receita Federal)">🏛 ' + active.length + '/' + total + ' CNPJs ativos na Receita</span>';
       }
-      box.innerHTML = '<div class="flex flex-wrap items-center justify-between gap-2"><p class="text-white font-medium">🏛 CNPJs da carteira' +
-        (pend.length ? ': ' + pend.length + ' ainda não conferido(s) na Receita' : '') + '</p>' +
-        (pend.length ? '<button type="button" id="btnVerifyCnpjs" class="btn btn-primary btn-sm"' + (cnpjVerifyRunning ? " disabled" : "") + ' onclick="verifyAllCnpjs()">' + (cnpjVerifyRunning ? "Conferindo…" : "Conferir na Receita") + '</button>' : '') + '</div>' +
-        (div.length ? '<p class="mt-1" style="color:#fca5a5">Razão social na Receita diferente da informada: ' + div.map(function (a) { return esc(a.company_name) + ' (' + esc(cnpjStatusOf(a).razao) + ')'; }).join("; ") + '. Confira se é a empresa certa.</p>' : '') +
-        (bad.length ? '<p class="mt-1" style="color:#fcd34d">Não preenchido porque o dígito verificador não bate: ' + bad.map(function (e) { return esc(e.cnpj) + ' (' + esc(e.razao) + ')'; }).join("; ") + '. Cole o CNPJ certo na ficha da conta.</p>' : '') +
-        '<p class="mt-1 text-[11px]" style="color:var(--faint)">Os CNPJs vieram do seu documento e só preenchem contas sem CNPJ salvo. "Conferir na Receita" consulta cada um pela BrasilAPI e mostra a razão social oficial.</p>';
+      if (pend.length) html += '<button type="button" id="btnVerifyCnpjs" class="pill-soft accent"' + (cnpjVerifyRunning ? " disabled" : "") + ' onclick="verifyAllCnpjs()" title="Consulta cada CNPJ na BrasilAPI, um por vez">' + (cnpjVerifyRunning ? "Conferindo…" : "Conferir " + pend.length + " na Receita") + '</button>';
+      if (div.length) html += '<span class="pill-soft bad" title="' + esc("Razão social na Receita diferente da informada:\n" + div.map(function (a) { return a.company_name + " → " + cnpjStatusOf(a).razao; }).join("\n")) + '">⚠ ' + div.length + ' com razão social diferente</span>';
+      if (bad.length) html += '<span class="pill-soft warn" title="' + esc("Não preenchido: dígito verificador não bate.\n" + bad.map(function (e) { return e.cnpj + " (" + e.razao + ")"; }).join("\n")) + '">⚠ ' + bad.length + ' CNPJ(s) inválido(s) no documento</span>';
+      const inactive = checked.length - active.length;
+      if (inactive > 0) html += '<span class="pill-soft warn" title="' + esc(checked.filter(function (a) { const i = cnpjIntelOf(a); return !(i && /ativa/i.test(i.situacao || "")); }).map(function (a) { const i = cnpjIntelOf(a); return a.company_name + ": " + ((i && i.situacao) || "situação não informada"); }).join("\n")) + '">' + inactive + ' sem situação ATIVA</span>';
+      box.innerHTML = html;
       box.classList.remove("hidden");
     }
 
@@ -8996,12 +9121,21 @@
       document.documentElement.toggleAttribute("data-demo", on);
       const seal = document.getElementById("demoSeal");
       if (seal) seal.classList.toggle("hidden", !on);
-      ["btnDemoScenario", "btnDemoReports"].forEach(function (id) {
+      const rr = document.getElementById("btnRepReal"), rd = document.getElementById("btnDemoReports");
+      if (rr) rr.setAttribute("aria-pressed", String(!on));
+      if (rd) rd.setAttribute("aria-pressed", String(on));
+      ["btnDemoScenario"].forEach(function (id) {
         const btn = document.getElementById(id);
         if (!btn) return;
         btn.textContent = on ? "📊 Visão 1: voltar à carteira real" : "🎯 Visão 2: cenário de demonstração";
         btn.title = on ? "Sai da demonstração e restaura os dados de antes" : "Carrega fases simuladas só neste navegador, sem gravar no banco";
       });
+    }
+    /** Seletor de Relatórios: Carteira Real RJ ↔ Cenário Meta Case (o cenário de demonstração). */
+    function setReportView(v) {
+      const want = v === "demo";
+      if (want === demoActive()) return;
+      return toggleDemoScenario();
     }
     function toggleDemoScenario() { return demoActive() ? exitDemoScenario() : startDemoScenario(); }
 
@@ -9556,42 +9690,34 @@
       const k = function (label) { return '<div class="t24-k">' + label + '</div>'; };
       const sub = function (html) { return '<div class="text-[11px] mt-1" style="color:#94A3B8">' + html + '</div>'; };
 
-      // SEÇÃO 1 · Termômetro da meta (4 cards)
+      // BLOCO 1 · 4 cards com barra de progresso (regra dos 5 segundos: 1 número, 1 barra, 1 linha)
       const gapMonth = Math.max(0, CASE_TARGET_MONTH - m.wonMonthTpv);
-      const c1 = '<div class="t24-card" id="t24CardMonth">' + k("Meta mensal RJ · " + fmtK(CASE_TARGET_MONTH)) +
-        '<div class="t24-v">' + fmtK(m.wonMonthTpv) + '</div>' + sub("assinado no mês · " + (gapMonth ? "faltam <b class='text-white'>" + fmtK(gapMonth) + "</b>" : "<b style='color:#6ee7b7'>meta batida</b>")) +
-        bar(m.wonMonthTpv / CASE_TARGET_MONTH, "#10B981") + sub("Forecast ponderado do funil: <b class='text-white'>" + fmtK(r.weighted) + "</b> (TPV × probabilidade da fase)") + '</div>';
+      const c1 = '<div class="t24-card" id="t24CardMonth" title="Forecast ponderado do funil: ' + fmtK(r.weighted) + ' (TPV × probabilidade da fase)">' + k("Faturamento assinado no mês") +
+        '<div class="t24-v">' + fmtK(m.wonMonthTpv) + '</div>' + bar(m.wonMonthTpv / CASE_TARGET_MONTH, "#10B981") +
+        sub(gapMonth ? "meta " + fmtK(CASE_TARGET_MONTH) + " · faltam <b class='text-white'>" + fmtK(gapMonth) + "</b>" : "<b style='color:#6ee7b7'>meta de " + fmtK(CASE_TARGET_MONTH) + " batida</b>") + '</div>';
       const m3 = Math.max(0, CASE_TARGET_QUARTER - prem.m1 - prem.m2);
       const accQ = prem.m1 + prem.m2 + m.wonMonthTpv;
       const seg = function (v, color) { return '<div class="h-full" style="width:' + Math.max(0, Math.min(100, v / CASE_TARGET_QUARTER * 100)).toFixed(1) + '%;background:' + color + '"></div>'; };
-      const c2 = '<div class="t24-card" id="t24CardQuarter">' + k("Meta trimestral · " + fmtK(CASE_TARGET_QUARTER)) +
-        '<div class="t24-v">' + fmtK(accQ) + '</div>' + sub("M1 + M2 (rampa informada) + assinado no M3") +
+      const c2 = '<div class="t24-card" id="t24CardQuarter">' + k("Recorrente trimestral · " + fmtK(CASE_TARGET_QUARTER)) +
+        '<div class="t24-v">' + fmtK(accQ) + '</div>' +
         '<div class="flex h-1.5 rounded-full mt-2 overflow-hidden" style="background:rgba(255,255,255,.08)">' + seg(prem.m1, "#64748B") + seg(prem.m2, "#94A3B8") + seg(m.wonMonthTpv, "#10B981") + '</div>' +
-        '<div class="flex flex-wrap items-end gap-1.5 mt-2 no-print">' +
+        '<details class="mt-1 no-print"><summary class="text-[11px] cursor-pointer" style="color:#94A3B8">M1 + M2 + M3 · ajustar rampa</summary>' +
+        '<div class="flex flex-wrap items-end gap-1.5 mt-1.5">' +
           '<label class="text-[10.5px]" style="color:#94A3B8">M1 <input id="t24M1" type="number" step="10000" min="0" class="input h-7 w-24 num" value="' + prem.m1 + '" onchange="saveT24Ramp()" /></label>' +
           '<label class="text-[10.5px]" style="color:#94A3B8">M2 <input id="t24M2" type="number" step="10000" min="0" class="input h-7 w-24 num" value="' + prem.m2 + '" onchange="saveT24Ramp()" /></label>' +
           '<span class="text-[10.5px] pb-1" style="color:#94A3B8">M3 = <b class="text-white num" id="t24M3">' + fmtK(m3) + '</b></span></div>' +
-        '<div class="text-[10px] mt-1" style="color:#64748B">Rampa M1/M2: premissa informada pelo usuário (editável). M3 = meta − M1 − M2.</div></div>';
+        '<div class="text-[10px] mt-1" style="color:#64748B">M1/M2: premissa informada pelo usuário. M3 = meta − M1 − M2.</div></details></div>';
       const cov = m.coverage, frac = Math.max(0, Math.min(1, cov / CASE_COVERAGE));
-      const R = 34, cx = 46, cy = 44, a0 = 150 * Math.PI / 180, sweep = 240 * Math.PI / 180;
-      const pt = function (a) { return (cx + R * Math.cos(a)).toFixed(1) + " " + (cy + R * Math.sin(a)).toFixed(1); };
-      const arc = function (f) { const a1 = a0 + sweep * f; return "M" + pt(a0) + " A" + R + " " + R + " 0 " + (sweep * f > Math.PI ? 1 : 0) + " 1 " + pt(a1); };
-      const gColor = frac >= 1 ? "#10B981" : frac >= .5 ? "#06B6D4" : "#F59E0B";
+      const covState = cov >= CASE_COVERAGE ? ["Saudável", "#6ee7b7"] : cov >= CASE_COVERAGE / 2 ? ["Atenção", "#fcd34d"] : ["Baixa", "#fca5a5"];
       const covGap = Math.max(0, CASE_TARGET_MONTH * CASE_COVERAGE - m.coverageTpv);
-      const inContact = state.opportunities.filter(function (o) { return Number(o.stage_weight) === 3; }).length;
-      const c3 = '<div class="t24-card flex items-center gap-2" id="t24CardCoverage"><svg width="92" height="80" viewBox="0 0 92 80" style="flex:none" role="img" aria-label="Cobertura do pipeline">' +
-        '<path d="' + arc(1) + '" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8" stroke-linecap="round"/>' +
-        (frac > 0 ? '<path d="' + arc(frac) + '" fill="none" stroke="' + gColor + '" stroke-width="8" stroke-linecap="round"/>' : '') +
-        '<text x="46" y="49" text-anchor="middle" fill="#F8FAFC" font-size="15" font-weight="700" font-family="JetBrains Mono, monospace">' + cov.toFixed(1).replace(".", ",") + 'x</text>' +
-        '<text x="46" y="76" text-anchor="middle" fill="#94A3B8" font-size="9">meta ' + CASE_COVERAGE + ',0x</text></svg>' +
-        '<div class="min-w-0">' + k("Cobertura de pipeline") + sub(fmtK(m.coverageTpv) + " em Negociando + Contrato enviado. Meta " + CASE_COVERAGE + "x = " + fmtK(CASE_TARGET_MONTH * CASE_COVERAGE) + ".") +
-        sub(covGap ? "Faltam <b class='text-white'>" + fmtK(covGap) + "</b>. " + inContact + " oportunidade(s) em Em contato podem subir para Negociando." : "<b style='color:#6ee7b7'>Cobertura batida.</b>") + '</div></div>';
+      const c3 = '<div class="t24-card" id="t24CardCoverage" title="' + esc(fmtK(m.coverageTpv) + " em Negociando + Contrato enviado. Meta " + CASE_COVERAGE + "x = " + fmtK(CASE_TARGET_MONTH * CASE_COVERAGE) + (covGap ? ". Faltam " + fmtK(covGap) + "." : ".")) + '">' + k("Cobertura em negociação") +
+        '<div class="t24-v">' + cov.toFixed(1).replace(".", ",") + 'x <span class="text-[12px] font-semibold align-middle" style="color:' + covState[1] + '">' + covState[0] + '</span></div>' +
+        bar(frac, covState[1]) + sub("meta " + CASE_COVERAGE + ",0x · " + fmtK(m.coverageTpv) + " em negociação") + '</div>';
       const actDay = m.activitiesPerDay || 0;
-      const c4 = '<div class="t24-card" id="t24CardPace">' + k("Velocidade e ritmo") +
+      const c4 = '<div class="t24-card" id="t24CardPace" title="Atividades por dia útil: ' + num1Br(actDay) + ' de 55 · no mês: ' + (m.activities || 0) + ' de ' + CASE_ACTIVITIES_MONTH + '">' + k("Sales velocity") +
         '<div class="t24-v">' + (velocity === null ? "sem dados" : fmtK(velocity) + "/dia") + '</div>' +
-        sub(velocity === null ? "precisa de oportunidades de Qualificando em diante com vidas e benefício" : d.velocityDay !== null ? "velocidade do pipeline com ciclo real" : "projeção do funil · ciclo de " + loadCyclePremise() + " dias (premissa)") +
-        sub("Atividades por dia útil: <b class='text-white'>" + num1Br(actDay) + "</b> de 55 · no mês: " + (m.activities || 0).toLocaleString("pt-BR") + " de " + CASE_ACTIVITIES_MONTH.toLocaleString("pt-BR")) +
-        bar(actDay / 55, "#F59E0B") + '</div>';
+        bar(actDay / 55, "#F59E0B") +
+        sub(velocity === null ? "faltam oportunidades com vidas e benefício" : d.velocityDay !== null ? "ciclo real · " + num1Br(actDay) + " atividades/dia" : "projeção · ciclo de " + loadCyclePremise() + " dias (premissa)") + '</div>';
 
       // SEÇÃO 2 · Funil oficial × referência do case + gargalo
       const maxRef = Math.max.apply(null, [1, 2, 3, 4, 5, 6].map(function (w) { return Math.max(CASE_FUNNEL[w], m.byStage[w].count); }));
@@ -9623,8 +9749,7 @@
           .sort(function (x, y) { return y.tpv - x.tpv; }).slice(0, 3);
         gAction = names.length ? "Ação: " + stageAdvice(gStage) + " em " + names.map(function (n) { return n.a.company_name; }).join(", ") + "." : "Ação: abastecer " + SF_STAGE_NAMES[gStage] + " (nenhuma conta nessa fase hoje).";
       }
-      const funnel = '<div class="t24-card lg:col-span-6" id="t24Funnel"><div class="text-xs font-semibold text-white">Funil Salesforce · CRM hoje × referência do case</div>' +
-        '<div class="text-[11px] mb-3" style="color:#94A3B8">Barra colorida: oportunidades em cada fase agora. Barra cinza: volume de referência por mês para fechar ' + fmtK(CASE_TARGET_MONTH) + ' (Questão 5).</div>' +
+      const funnel = '<div class="t24-card lg:col-span-6" id="t24Funnel"><div class="text-xs font-semibold text-white mb-3" title="Barra colorida: oportunidades em cada fase agora. Barra cinza: volume de referência por mês para fechar ' + fmtK(CASE_TARGET_MONTH) + ' (Questão 5).">Funil oficial · 6 fases Salesforce</div>' +
         '<div class="space-y-2">' + rows + '</div>' +
         '<div id="t24Bottleneck" class="rounded-lg p-2.5 mt-3 text-[12px]" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);color:#FDE68A">🚨 ' + esc(gargalo) + (gAction ? '<br><span style="color:#E2E8F0">' + esc(gAction) + '</span>' : '') + '</div></div>';
 
@@ -9644,17 +9769,16 @@
           '<input id="' + id + '" type="range" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" class="t24-range" style="accent-color:' + accent + '" oninput="t24SimChange()" aria-label="' + label + '" /></label>';
       };
       const simCard = '<div class="t24-card lg:col-span-6" id="t24SimCard">' +
-          '<div class="flex flex-wrap items-start justify-between gap-2 mb-2"><div><div class="text-xs font-semibold text-white">Simulador · o que precisa para ' + fmtK(CASE_TARGET_MONTH) + '/mês</div>' +
-          '<div class="text-[11px]" style="color:#94A3B8">Ajuste benefício, vidas por conta e win rate das propostas.</div></div>' +
+          '<div class="flex flex-wrap items-start justify-between gap-2 mb-2"><div class="text-xs font-semibold text-white" title="Ajuste benefício, vidas por conta e win rate das propostas.">Simulador de rampa trimestral</div>' +
           '<span id="t24PerMonth" class="text-xs num font-bold" style="color:#22D3EE"></span></div>' +
           '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">' +
             slider("t24Ticket", "Benefício por vida", t24Sim.ticket, 200, 2000, 25, "R$ " + t24Num(t24Sim.ticket), "#8B5CF6") +
             slider("t24Lives", "Vidas por conta", t24Sim.lives, 50, 3000, 10, t24Num(t24Sim.lives), "#34D399") +
             slider("t24Win", "Win rate das propostas", t24Sim.win, 1, 90, 1, t24Sim.win + "%", "#22D3EE") +
           '</div>' +
-          '<div id="t24Plan" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px] mb-2"></div>' +
+          '<div id="t24Plan" class="grid grid-cols-3 gap-1.5 text-[11px] mb-2"></div>' +
           '<div id="t24AreaSvg"></div>' +
-          '<p class="text-[10.5px] mt-1" style="color:#64748B">Curva: TPV recorrente em 6 meses se as ' + t24OpenProposals + ' proposta(s) abertas hoje (Negociando + Contrato enviado) virarem contratos com esse win rate a cada mês. Linha tracejada: base + meta. Simulação com premissas editáveis, não é previsão; valores iniciais vêm da carteira.</p>' +
+          '<p class="text-[10.5px] mt-1" style="color:#64748B" title="Curva: TPV recorrente em 3 meses se as ' + t24OpenProposals + ' proposta(s) abertas hoje (Negociando + Contrato enviado) virarem contratos com esse win rate a cada mês. Linha tracejada: base + meta. Valores iniciais vêm da carteira.">Simulação com premissas editáveis, não é previsão.</p>' +
         '</div>';
 
       // SEÇÃO 3 · Quem fechar agora + 8 KPIs + operadoras
@@ -9662,14 +9786,13 @@
         const a = findAccount(o.account_id);
         return a ? { o: o, a: a, w: Number(o.stage_weight), tpv: computeMonthlyTpv(a), pat: state.patSims && state.patSims[a.id] ? Number(state.patSims[a.id].pat) : null } : null;
       }).filter(Boolean).sort(function (x, y) { return y.w - x.w || y.tpv - x.tpv; }).slice(0, 5);
-      const topTable = '<div class="t24-card lg:col-span-7 overflow-hidden" id="t24Top5"><div class="text-xs font-semibold text-white">Quem fechar agora · top 5 por fase e TPV</div>' +
-        '<div class="text-[11px] mb-2" style="color:#94A3B8">Oportunidades abertas mais perto da assinatura. PAT só aparece com simulação salva (com IRPJ).</div>' +
+      const topTable = '<div class="t24-card overflow-hidden" id="t24Top5"><div class="text-xs font-semibold text-white mb-2" title="Oportunidades abertas da carteira mais perto da assinatura (fase, depois TPV). PAT só aparece com simulação salva (com IRPJ).">Top 5 contas do RJ para fechamento imediato</div>' +
         (top5.length ? '<div class="overflow-x-auto"><table class="w-full text-[12px]"><thead><tr class="text-left" style="color:#64748B"><th class="py-1 pr-2 font-medium">Conta</th><th class="py-1 px-2 font-medium">Fase</th><th class="py-1 px-2 font-medium text-right">TPV/mês</th><th class="py-1 px-2 font-medium text-right">PAT/ano</th><th class="py-1 pl-2"></th></tr></thead><tbody>' +
           top5.map(function (t) {
-            return '<tr class="divider"><td class="py-1.5 pr-2 text-white max-w-[12rem] truncate">' + esc(t.a.company_name) + '</td><td class="py-1.5 px-2 whitespace-nowrap" style="color:#CBD5E1">' + esc(REPORT_STAGE_NAMES[t.w]) + '</td>' +
+            return '<tr class="divider"><td class="py-1.5 pr-2 max-w-[12rem] truncate"><button type="button" class="text-white hover:text-violet-300 text-left truncate max-w-full" onclick="openAccountModal(\'' + esc(t.a.id) + '\')">' + esc(t.a.company_name) + '</button></td><td class="py-1.5 px-2 whitespace-nowrap" style="color:#CBD5E1">' + esc(REPORT_STAGE_NAMES[t.w]) + '</td>' +
               '<td class="py-1.5 px-2 text-right num text-white">' + (t.tpv ? fmtK(t.tpv) : '<span style="color:#fcd34d">a preencher</span>') + '</td>' +
               '<td class="py-1.5 px-2 text-right num" style="color:#CBD5E1">' + (t.pat ? fmtK(t.pat) : '<span style="color:#64748B">simular</span>') + '</td>' +
-              '<td class="py-1.5 pl-2 text-right no-print"><button type="button" class="btn btn-sm whitespace-nowrap" onclick="openAccountModal(\'' + esc(t.a.id) + '\')">⚡ Abrir e avançar</button></td></tr>';
+              '<td class="py-1.5 pl-2 text-right no-print"><button type="button" class="btn btn-sm whitespace-nowrap one-click-btn t24-adv" title="Avança para ' + esc(REPORT_STAGE_NAMES[Math.min(6, t.w + 1)] || "") + '" onclick="t24Advance(\'' + esc(t.o.id) + '\')">⚡ Avançar</button></td></tr>';
           }).join("") + '</tbody></table></div>' : '<p class="text-[12px]" style="color:#94A3B8">Nenhuma oportunidade aberta.</p>') + '</div>';
       const prov = {};
       r.accounts.forEach(function (a) { const kk = a.current_provider || "A validar"; if (!prov[kk]) prov[kk] = { n: 0, lives: 0 }; prov[kk].n++; prov[kk].lives += Number(a.active_card_users) || 0; });
@@ -9692,13 +9815,18 @@
         '<div id="t24Kpi8" class="grid grid-cols-2 lg:grid-cols-4 gap-2"></div></div>';
 
       box.innerHTML =
-        '<p class="eyebrow">1 · Termômetro da meta</p>' +
         '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">' + c1 + c2 + c3 + c4 + '</div>' +
-        '<p class="eyebrow pt-1">2 · Funil e simulador</p>' +
         '<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">' + funnel + simCard + '</div>' +
-        '<p class="eyebrow pt-1">3 · Ação imediata</p>' +
-        '<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">' + topTable + cols + '</div>' + kpi8;
+        topTable +
+        '<details id="t24More" class="no-print-collapse"><summary class="text-[12px] cursor-pointer py-1" style="color:#94A3B8">Mais indicadores: operadoras na carteira e 8 KPIs do case</summary>' +
+        '<div class="grid grid-cols-1 gap-4 mt-2">' + cols.replace("lg:col-span-5", "") + kpi8 + '</div></details>';
       t24DrawArea();
+    }
+    /** Top 5 de Relatórios: avança a oportunidade uma fase (mesma regra do botão Avançar do Kanban). */
+    function t24Advance(oppId) {
+      const opp = state.opportunities.find(function (o) { return o.id === oppId; });
+      if (!opp) return;
+      moveOpportunityStage(oppId, 1);
     }
     function saveT24Ramp() {
       const p = { m1: Number(document.getElementById("t24M1").value) || 0, m2: Number(document.getElementById("t24M2").value) || 0 };
@@ -9731,15 +9859,15 @@
       const planBox = document.getElementById("t24Plan");
       if (planBox) {
         const cell = function (label, v) { return '<div class="rounded-md px-2 py-1.5" style="background:rgba(15,23,42,.7)"><div style="color:#94A3B8">' + label + '</div><div class="num text-white font-semibold">' + v + '</div></div>'; };
-        planBox.innerHTML = cell("Ticket por contrato", fmtK(plan.ticket) + "/mês") + cell("Contratos/mês", plan.contracts) + cell("Propostas/mês", plan.proposals) +
-          cell("Reuniões/mês", plan.meetings) + cell("Contas mapeadas", plan.mapped) + cell("Atividades/dia útil", "~" + plan.activitiesDay);
+        planBox.innerHTML = cell("Contratos/mês", plan.contracts) + cell("Propostas/mês", plan.proposals) + cell("Atividades/dia útil", "~" + plan.activitiesDay);
+        planBox.title = "Ticket por contrato " + fmtK(plan.ticket) + "/mês · reuniões/mês " + plan.meetings + " · contas mapeadas " + plan.mapped;
       }
       const base = t24Base;
       const perMonth = t24OpenProposals * (t24Sim.win / 100) * t24Sim.lives * t24Sim.ticket;
-      const series = [1, 2, 3, 4, 5, 6].map(function (i) { return base + perMonth * i; });
-      const metaSeries = [1, 2, 3, 4, 5, 6].map(function (i) { return base + CASE_TARGET_MONTH * i; });
+      const series = [1, 2, 3].map(function (i) { return base + perMonth * i; });
+      const metaSeries = [1, 2, 3].map(function (i) { return base + CASE_TARGET_MONTH * i; });
       const maxV = Math.max.apply(null, series.concat(metaSeries)) || 1;
-      const X = function (i) { return 40 + i * 116; }, Y = function (v) { return Math.round(165 - (v / maxV) * 140); };
+      const X = function (i) { return 60 + i * 270; }, Y = function (v) { return Math.round(165 - (v / maxV) * 140); };
       const xy = series.map(function (v, i) { return [X(i), Y(v)]; });
       const curve = t24Curve(xy);
       const meta = metaSeries.map(function (v, i) { return (i ? "L" : "M") + X(i) + "," + Y(v); }).join(" ");
@@ -9748,11 +9876,11 @@
       out.innerHTML = '<svg viewBox="0 0 660 200" class="w-full" style="height:10rem" role="img" aria-label="Curva simulada de TPV recorrente">' +
         '<defs><linearGradient id="t24Grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#06B6D4" stop-opacity=".55"/><stop offset="65%" stop-color="#7C3AED" stop-opacity=".2"/><stop offset="100%" stop-color="#090A0F" stop-opacity="0"/></linearGradient></defs>' +
         [25, 72, 118, 165].map(function (y) { return '<line x1="40" y1="' + y + '" x2="620" y2="' + y + '" stroke="rgba(255,255,255,.06)" stroke-dasharray="3 3"/>'; }).join("") +
-        '<path d="' + curve + ' L' + X(5) + ',170 L' + X(0) + ',170 Z" fill="url(#t24Grad)"/>' +
+        '<path d="' + curve + ' L' + X(2) + ',170 L' + X(0) + ',170 Z" fill="url(#t24Grad)"/>' +
         '<path d="' + meta + '" fill="none" stroke="#F59E0B" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="5 4"/>' +
         '<path id="t24Curve" d="' + curve + '" fill="none" stroke="#06B6D4" stroke-width="3"/>' +
-        xy.map(function (p, i) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="' + (i === 5 ? "#10B981" : "#06B6D4") + '"><title>Mês ' + (i + 1) + ': ' + fmtK(series[i]) + '/mês</title></circle>'; }).join("") +
-        series.map(function (v, i) { return '<text x="' + X(i) + '" y="192" text-anchor="middle" fill="' + (i === 5 ? "#34D399" : "#94A3B8") + '" font-size="10" font-family="JetBrains Mono, monospace">M' + (i + 1) + ' ' + fmtK(v) + '</text>'; }).join("") +
+        xy.map(function (p, i) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="' + (i === 2 ? "#10B981" : "#06B6D4") + '"><title>Mês ' + (i + 1) + ': ' + fmtK(series[i]) + '/mês</title></circle>'; }).join("") +
+        series.map(function (v, i) { return '<text x="' + X(i) + '" y="192" text-anchor="middle" fill="' + (i === 2 ? "#34D399" : "#94A3B8") + '" font-size="10" font-family="JetBrains Mono, monospace">M' + (i + 1) + ' ' + fmtK(v) + '</text>'; }).join("") +
         '</svg>';
     }
 
